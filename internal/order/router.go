@@ -8,17 +8,14 @@ import (
 	"github.com/Erdemhasates35/honeycomb-execution-core/internal/config"
 	"github.com/Erdemhasates35/honeycomb-execution-core/internal/edge"
 	"github.com/Erdemhasates35/honeycomb-execution-core/internal/risk"
-	"github.com/google/uuid"
 )
 
-// Not: google/uuid yerine basit id üretimi kullanıyoruz (bağımlılık azaltmak için).
-
 type Router struct {
-	cfg      *config.Config
-	risk     *risk.Manager
-	mu       sync.RWMutex
+	cfg       *config.Config
+	risk      *risk.Manager
+	mu        sync.RWMutex
 	positions map[string]*Position
-	logs     []string
+	logs      []string
 }
 
 func NewRouter(cfg *config.Config, rm *risk.Manager) *Router {
@@ -68,9 +65,9 @@ func (r *Router) Open(req OpenRequest) OrderResult {
 		return OrderResult{Success: false, Message: "invalid_size_or_leverage", Mode: r.cfg.Mode}
 	}
 
-	// Basit edge kontrolü (canlı veri bağlanınca gerçek orderbook'tan gelecek)
+	// Edge kontrolü — canlı orderbook bağlanınca gerçek değerler gelecek
 	edgeIn := edge.Input{
-		GrossPercent:    0.20, // örnek — gerçekte orderbook'tan hesaplanır
+		GrossPercent:    0.20,
 		FeePercent:      0.08,
 		FundingPercent:  0.02,
 		SlippagePercent: 0.04,
@@ -91,7 +88,7 @@ func (r *Router) Open(req OpenRequest) OrderResult {
 		Side:     req.Side,
 		Size:     req.Size,
 		Leverage: req.Leverage,
-		Entry:    0, // live'da mark price ile dolar
+		Entry:    0,
 		Exchange: req.Exchange,
 		Mode:     r.cfg.Mode,
 		OpenedAt: time.Now().UTC(),
@@ -99,16 +96,13 @@ func (r *Router) Open(req OpenRequest) OrderResult {
 	}
 
 	if r.cfg.Mode == "live" {
-		// LIVE: gerçek exchange API çağrısı burada yapılır.
-		// Key yoksa veya imza hatalıysa fail döner.
 		if r.cfg.BinanceAPIKey == "" && r.cfg.BitgetAPIKey == "" {
 			r.log("LIVE rejected: no exchange API keys configured")
 			return OrderResult{Success: false, Message: "live_mode_requires_api_keys", Mode: "live"}
 		}
-		// TODO: gerçek signed REST order — key'ler doluysa burada Binance/Bitget client çağrılır.
-		// Şu an iskelet: key var kabul edilip paper benzeri kayıt (güvenlik için gerçek emir
-		// gönderimi kullanıcı key'lerini doğruladıktan sonra aktif edilir).
-		r.log(fmt.Sprintf("LIVE open requested %s %s size=%.6f (keys present — wire real client next)", req.Side, req.Symbol, req.Size))
+		// Gerçek signed REST emir buraya bağlanır (Binance/Bitget client).
+		// Key doğrulandıktan sonra aktif edilir — şu an güvenli iskelet.
+		r.log(fmt.Sprintf("LIVE open requested %s %s size=%.6f (keys present)", req.Side, req.Symbol, req.Size))
 	} else {
 		r.log(fmt.Sprintf("PAPER open %s %s size=%.6f lev=%.0fx", req.Side, req.Symbol, req.Size, req.Leverage))
 	}
@@ -153,6 +147,3 @@ func (r *Router) Close(req CloseRequest) OrderResult {
 		Position: target,
 	}
 }
-
-// uuid fallback without external dep
-var _ = uuid.New

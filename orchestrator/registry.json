@@ -1,0 +1,10 @@
+{
+  "project": "honeycomb-execution-core",
+  "control_plane": {
+    "host": "127.0.0.1",
+    "port": 8787
+  },
+  "execution_ports": [8000, 8100],
+  "modes": ["TESTNET", "PAPER", "LIVE"],
+  "engines": []
+}

@@ -1,50 +1,43 @@
-# α-HONEYCOMB EXECUTION CORE (Go)
+# α-HONEYCOMB EXECUTION CORE
 
-Gerçek emir motoru — Binance + Bitget Futures.
+Gerçek emir motoru — Binance USDT-M Futures.
 
-## Önemli (Dürüstlük)
+## Canlı yürütme sözleşmesi
 
-- **Paper mode** varsayılandır. Gerçek para göndermez.
-- **Live mode** sadece geçerli API key + secret ile ve `EXECUTION_MODE=live` iken çalışır.
-- Linux x64 VPS içindir. Termux / Android desteklenmez.
-- Control Plane (Vercel dashboard) bu servise HTTP ile bağlanır.
+- `EXECUTION_MODE=live` yalnızca production Binance Futures endpoint'i ile kabul edilir.
+- Canlı modda sahte/paper/mock fill oluşturulmaz. Gerçek Binance signed REST emri başarısızsa işlem başarısızdır.
+- `MAX_CAPITAL_USDT` sermaye tavanıdır; `TRADE_CAPITAL_PCT` **%10'u aşamaz**.
+- `MAX_LEVERAGE` **1–50** aralığında zorunludur.
+- `MAX_POSITION_SIZE_USDT` ayrıca daha düşük bir notional tavanı uygulayabilir.
+- Canlı açılış isteği gerçek edge verisi (`expected_net_percent`) taşımalı ve `MIN_EDGE_PERCENT` eşiğini geçmelidir.
+- Testnet URL'si live modda fail-closed edilir.
+- İdempotency için Binance `newClientOrderId` kullanılır.
 
-## Hızlı Kurulum (Ubuntu VPS)
+## Çalıştırma
+
+Linux x64 execution worker üzerinde `.env` doldurulduktan sonra:
 
 ```bash
-# 1. Go kur
-sudo apt update && sudo apt install -y golang-go redis-server git
-
-# 2. Repo
-git clone https://github.com/Erdemhasates35/honeycomb-execution-core.git
-cd honeycomb-execution-core
-
-# 3. Env
-cp .env.example .env
-nano .env   # key'leri doldur
-
-# 4. Bağımlılık + çalıştır
 go mod tidy
+go test ./...
 go run ./cmd/engine
 ```
 
-Servis `http://VPS_IP:8080` üzerinde ayağa kalkar.
+Termux/Android tarafı execution worker değildir; kontrol/izleme istemcisi olarak kullanılmalıdır. Web/Android UI da yalnızca execution API'ye yetkili çağrı yapar; exchange secret'ları istemciye verilmez.
 
-## API Endpoints
+## API
 
 | Method | Path | Açıklama |
-|--------|------|----------|
-| GET | /health | Sağlık |
-| GET | /status | Risk state, mode, equity özeti |
-| POST | /order/open | Pozisyon aç (body: symbol, side, size, leverage) |
-| POST | /order/close | Pozisyon kapat |
-| GET | /positions | Açık pozisyonlar |
-| GET | /logs | Son loglar |
+|---|---|---|
+| GET | /health | Servis sağlık + mode |
+| GET | /status | Risk, pozisyon ve sermaye limitleri |
+| POST | /order/open | Gerçek Binance MARKET emir açılışı (`live`) |
+| POST | /order/close | Gerçek Binance pozisyon kapatılışı (`live`) |
+| GET | /positions | Yerel execution durumu |
+| GET | /logs | Execution logları |
 
-## Edge Kuralı
+`POST /order/open` body örneği: `{"symbol":"BTCUSDT","side":"LONG","size":0.001,"leverage":10,"exchange":"binance","expected_net_percent":0.20}`
 
-```
-ExpectedNet = Gross - Fee - Funding - Slippage - Spread - LatencyCost - ExecRisk
-IF ExpectedNet > MinEdge AND RiskState in {GREEN, YELLOW} → ALLOW
-ELSE → REJECT
-```
+## Mimari sınır
+
+Lovable/Supabase/Vercel/Web/Android katmanı UI, auth, telemetry ve read-model içindir. Exchange secret ve gerçek emir yetkisi yalnızca Linux x64 execution worker'dadır. L3 risk kapısı router'ın önündedir; canlı adapter L3'ü atlayamaz.

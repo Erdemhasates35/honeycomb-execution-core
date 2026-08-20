@@ -1,0 +1,19 @@
+name: Honeycomb Quality Gate
+on:
+  push:
+    branches: [main, 'upgrade/**']
+  pull_request:
+    branches: [main]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: pip install fastapi uvicorn httpx python-dotenv pydantic pytest
+      - run: python -m py_compile orchestrator/control_plane.py orchestrator/quality_gate.py nexus_testnet_bridge.py
+      - run: bash -n run_nexus_testnet.sh runtime/start_testnet.sh
+      - run: pytest -q

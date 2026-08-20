@@ -34,8 +34,31 @@ def sha256(path:Path)->str:
         for block in iter(lambda:f.read(1024*1024),b""): h.update(block)
     return h.hexdigest()
 
+def _default_registry()->dict[str,Any]:
+    """Return the canonical registry shape without credentials."""
+    return {"project":ROOT.name,"control_plane":{"host":HOST,"port":PORT},"execution_ports":[8000,8100],"modes":["TESTNET","PAPER","LIVE"],"engines":[]}
+
+def _read_registry()->tuple[dict[str,Any],bool]:
+    """Read registry defensively; recover invalid/empty JSON without losing known metadata."""
+    if not REGISTRY.exists(): return _default_registry(),True
+    try:
+        raw=REGISTRY.read_text(encoding="utf-8").strip()
+        value=json.loads(raw) if raw else {}
+        if not isinstance(value,dict): raise ValueError("registry root must be an object")
+        base=_default_registry(); base.update(value)
+        return base,False
+    except (OSError,UnicodeError,json.JSONDecodeError,TypeError,ValueError):
+        return _default_registry(),True
+
+def _write_registry(registry:dict[str,Any])->None:
+    """Persist registry atomically so concurrent reads never observe partial JSON."""
+    REGISTRY.parent.mkdir(parents=True,exist_ok=True)
+    temp=REGISTRY.with_suffix(".json.tmp")
+    temp.write_text(json.dumps(registry,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+    os.replace(temp,REGISTRY)
+
 def inventory()->dict[str,Any]:
-    """Build source inventory and update registry hashes."""
+    """Build source inventory and update registry hashes without allowing registry corruption to crash callers."""
     engines=[]; files=[]; patterns=("engine","alpha","brain","nexus","verify","sovereign","futures","scalp","orchestrator","control")
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix not in SOURCE_EXT or any(p in SKIP for p in path.parts): continue
@@ -46,9 +69,12 @@ def inventory()->dict[str,Any]:
             if score>=2: engines.append({"path":rel.as_posix(),"score":score,"sha256":digest})
         except Exception as exc: files.append({"path":rel.as_posix(),"error":str(exc)})
     data={"generated_at":time.time(),"files":files,"engines":sorted(engines,key=lambda x:(-x["score"],x["path"]))}; (ROOT/"runtime").mkdir(exist_ok=True)
-    (ROOT/"runtime"/"inventory.json").write_text(json.dumps(data,indent=2,ensure_ascii=False))
-    if REGISTRY.exists():
-        registry=json.loads(REGISTRY.read_text()); registry["engines"]=data["engines"]; REGISTRY.write_text(json.dumps(registry,indent=2,ensure_ascii=False))
+    (ROOT/"runtime"/"inventory.json").write_text(json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+    registry,recovered=_read_registry(); registry["engines"]=data["engines"]
+    if recovered: registry["registry_recovered_at"]=time.time()
+    try: _write_registry(registry)
+    except OSError: pass
+    data["registry_recovered"]=recovered
     return data
 
 def git_status()->dict[str,Any]:
@@ -99,12 +125,18 @@ def quality_report()->dict[str,Any]:
     return write_report(ROOT)
 
 def current_status()->dict[str,Any]:
-    """Compose runtime, source, database and quality telemetry."""
-    load_dotenv(); inv=inventory(); mode=os.getenv("HONEYCOMB_MODE","TESTNET").upper()
+    """Compose runtime, source, database and quality telemetry; degrade individual subsystems instead of crashing."""
+    load_dotenv(); mode=os.getenv("HONEYCOMB_MODE","TESTNET").upper()
     if STATE.exists():
         try: mode=str(json.loads(STATE.read_text()).get("mode",mode)).upper()
         except Exception: pass
-    return {"time":time.time(),"project":ROOT.name,"mode":mode,"control_plane":{"host":HOST,"port":PORT},"execution_ports":{"8000":port_probe(8000),"8100":port_probe(8100)},"pid":os.getpid(),"git":git_status(),"env":safe_env(),"engine_count":len(inv["engines"]),"source_file_count":len(inv["files"]),"databases":database_stats(),"quality":quality_report(),"launcher":str(ROOT/"run_nexus_testnet.sh") if (ROOT/"run_nexus_testnet.sh").exists() else None}
+    try: inv=inventory(); inventory_status={"ok":True,"registry_recovered":inv.get("registry_recovered",False)}
+    except Exception as exc: inv={"engines":[],"files":[]}; inventory_status={"ok":False,"error":type(exc).__name__}
+    try: quality=quality_report(); quality_status={"ok":True}
+    except Exception as exc: quality={"summary":{"repository_score":0.0,"core_9plus":False},"files":[]}; quality_status={"ok":False,"error":type(exc).__name__}
+    try: databases=database_stats()
+    except Exception as exc: databases=[]
+    return {"time":time.time(),"project":ROOT.name,"mode":mode,"control_plane":{"host":HOST,"port":PORT},"execution_ports":{"8000":port_probe(8000),"8100":port_probe(8100)},"pid":os.getpid(),"git":git_status(),"env":safe_env(),"engine_count":len(inv["engines"]),"source_file_count":len(inv["files"]),"databases":databases,"quality":quality,"telemetry":{"inventory":inventory_status,"quality":quality_status},"launcher":str(ROOT/"run_nexus_testnet.sh") if (ROOT/"run_nexus_testnet.sh").exists() else None}
 
 class Handler(BaseHTTPRequestHandler):
     """HTTP dashboard and control API."""
@@ -130,7 +162,7 @@ class Handler(BaseHTTPRequestHandler):
         mode=str(data.get("mode","")).upper()
         if mode not in {"TESTNET","PAPER","LIVE"}: self.send_json(400,{"error":"mode must be TESTNET, PAPER or LIVE"}); return
         if mode=="LIVE" and os.getenv("LIVE_ARMED")!="1": self.send_json(403,{"error":"LIVE_ARMED=1 required"}); return
-        STATE.write_text(json.dumps({"mode":mode,"changed_at":time.time()},indent=2)); self.send_json(200,{"ok":True,"mode":mode})
+        STATE.write_text(json.dumps({"mode":mode,"changed_at":time.time()},indent=2)+"\n"); self.send_json(200,{"ok":True,"mode":mode})
     def log_message(self,*args:Any)->None: return
 
 def main()->None:

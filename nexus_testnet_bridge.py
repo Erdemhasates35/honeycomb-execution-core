@@ -15,11 +15,17 @@ ENGINE_URL=os.getenv("ENGINE_URL","http://127.0.0.1:8000").rstrip("/")
 
 def env_first(*names:str)->str:
     """Return the first configured environment value."""
-    return next((os.getenv(n,"" ).strip() for n in names if os.getenv(n)),"")
+    return next((os.getenv(n,"").strip() for n in names if os.getenv(n)),"")
 
-BINANCE_KEY=env_first("BINANCE_TESTNET_API_KEY","BINANCE_API_KEY_TESTNET","BINANCE_FUTURES_API_KEY","BINANCE_API_KEY")
-BINANCE_SECRET=env_first("BINANCE_TESTNET_SECRET","BINANCE_API_SECRET_TESTNET","BINANCE_FUTURES_API_SECRET","BINANCE_API_SECRET","BINANCE_SECRET_KEY")
-app=FastAPI(title="Honeycomb Quantum Nexus Testnet Bridge",version="2.0.0",docs_url="/docs")
+ALLOW_GENERIC_KEYS=os.getenv("BINANCE_TESTNET_ALLOW_GENERIC_KEYS","0").strip().lower() in {"1","true","yes"}
+TESTNET_KEY=env_first("BINANCE_TESTNET_API_KEY")
+TESTNET_SECRET=env_first("BINANCE_TESTNET_SECRET")
+if ALLOW_GENERIC_KEYS:
+    TESTNET_KEY=TESTNET_KEY or env_first("BINANCE_API_KEY_TESTNET","BINANCE_FUTURES_API_KEY","BINANCE_API_KEY")
+    TESTNET_SECRET=TESTNET_SECRET or env_first("BINANCE_API_SECRET_TESTNET","BINANCE_FUTURES_API_SECRET","BINANCE_API_SECRET","BINANCE_SECRET_KEY","BINANCE_SECRET")
+BINANCE_KEY=TESTNET_KEY
+BINANCE_SECRET=TESTNET_SECRET
+app=FastAPI(title="Honeycomb Quantum Nexus Testnet Bridge",version="2.1.0",docs_url="/docs")
 
 class Order(BaseModel):
     """Validated testnet order contract."""
@@ -61,6 +67,14 @@ def signed_params(params:dict[str,Any])->dict[str,Any]:
     result=dict(params); result["timestamp"]=int(time.time()*1000); result["recvWindow"]=5000
     query=urlencode(result); result["signature"]=hmac.new(BINANCE_SECRET.encode(),query.encode(),hashlib.sha256).hexdigest(); return result
 
+def classify_binance_error(status:int,data:Any)->dict[str,Any]:
+    """Normalize upstream auth failures without exposing credentials."""
+    code=data.get("code") if isinstance(data,dict) else None
+    message=str(data.get("msg","")) if isinstance(data,dict) else str(data)
+    if status==401 or code==-2015:
+        return {"category":"AUTHENTICATION_OR_PERMISSION","http_status":status,"binance_code":code,"message":message,"testnet_endpoint":BINANCE_BASE,"key_source":"BINANCE_TESTNET_API_KEY" if TESTNET_KEY else "MISSING"}
+    return {"category":"BINANCE_UPSTREAM_ERROR","http_status":status,"binance_code":code,"message":message}
+
 async def binance(method:str,path:str,params:dict[str,Any]|None=None,signed:bool=True)->Any:
     """Perform one bounded Binance testnet request; never targets mainnet."""
     if signed and not BINANCE_KEY: raise HTTPException(503,"Binance testnet API key is not configured")
@@ -71,7 +85,10 @@ async def binance(method:str,path:str,params:dict[str,Any]|None=None,signed:bool
             response=await client.request(method,BINANCE_BASE+path,params=payload,headers=headers)
         try: data=response.json()
         except Exception: data={"raw":response.text}
-        if response.status_code>=400: raise HTTPException(response.status_code,data)
+        if response.status_code>=400:
+            detail=classify_binance_error(response.status_code,data)
+            logger.error("binance_request_failed path=%s category=%s code=%s",path,detail["category"],detail.get("binance_code"))
+            raise HTTPException(response.status_code,detail)
         return data
     except HTTPException: raise
     except httpx.HTTPError as exc: logger.error("binance_request_failed path=%s error=%s",path,exc); raise HTTPException(502,"Binance testnet upstream unavailable") from exc
@@ -87,7 +104,7 @@ async def engine_get(path:str)->Any:
 async def root()->dict[str,Any]: return {"service":"honeycomb-testnet-bridge","status":"online","exchange":"BINANCE_USDM_TESTNET","engine":ENGINE_URL}
 
 @app.get("/health")
-async def health()->dict[str,Any]: return {"ok":True,"service":"testnet-bridge","exchange":"BINANCE_USDM_TESTNET","credentials_configured":bool(BINANCE_KEY and BINANCE_SECRET),"engine_url":ENGINE_URL}
+async def health()->dict[str,Any]: return {"ok":True,"service":"testnet-bridge","exchange":"BINANCE_USDM_TESTNET","credentials_configured":bool(BINANCE_KEY and BINANCE_SECRET),"credential_source":"testnet" if TESTNET_KEY and TESTNET_SECRET else ("generic_explicit_opt_in" if ALLOW_GENERIC_KEYS and BINANCE_KEY and BINANCE_SECRET else "missing"),"engine_url":ENGINE_URL}
 
 @app.get("/ready")
 async def ready()->dict[str,Any]:
@@ -99,10 +116,20 @@ async def ready()->dict[str,Any]:
 
 @app.get("/status")
 async def status()->dict[str,Any]:
-    result={"bridge":"online","binance_testnet":"configured" if BINANCE_KEY and BINANCE_SECRET else "missing_credentials","engine":{"online":False}}
+    result={"bridge":"online","binance_testnet":"configured" if BINANCE_KEY and BINANCE_SECRET else "missing_credentials","credential_source":"testnet" if TESTNET_KEY and TESTNET_SECRET else ("generic_explicit_opt_in" if ALLOW_GENERIC_KEYS and BINANCE_KEY and BINANCE_SECRET else "missing"),"engine":{"online":False}}
     try: result["engine"]={"online":True,"data":await engine_get("/health")}
     except HTTPException as exc: result["engine"]={"online":False,"error":exc.detail}
     return result
+
+@app.get("/testnet/auth-check")
+async def auth_check()->dict[str,Any]:
+    """Verify the configured testnet credentials against the account endpoint."""
+    if not BINANCE_KEY or not BINANCE_SECRET: raise HTTPException(503,"Binance testnet credentials are not configured")
+    try:
+        account=await binance("GET","/fapi/v2/account")
+        return {"ok":True,"authenticated":True,"endpoint":BINANCE_BASE,"credential_source":"testnet","can_trade":bool(account.get("canTrade",False)) if isinstance(account,dict) else None}
+    except HTTPException as exc:
+        raise HTTPException(exc.status_code,{"ok":False,"authenticated":False,"endpoint":BINANCE_BASE,"credential_source":"testnet","detail":exc.detail}) from exc
 
 @app.get("/summary")
 async def summary()->Any: return await engine_get("/summary")

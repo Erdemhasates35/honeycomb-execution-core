@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Honeycomb deterministic control plane: inventory, quality, runtime telemetry and mode state."""
 from __future__ import annotations
-import hashlib,json,os,re,socket,subprocess,time
+import hashlib,json,os,re,socket,subprocess,tempfile,time
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -22,7 +22,7 @@ def load_dotenv()->None:
 
 def safe_env()->dict[str,str]:
     """Return allowlisted settings and only SET/NOT_SET secret state."""
-    names=["HONEYCOMB_MODE","AUTO_PAPER","AUTO_INTERVAL_SEC","TARGET_PROFIT_PERCENT","MAX_LOSS_PERCENT","TESTNET_PORT","TESTNET_RISK","TESTNET_LEVERAGE","TESTNET_TP_M","TESTNET_SL_P","TESTNET_HOLD_MAX","TESTNET_INTERVAL","TESTNET_COOLDOWN","TESTNET_MAX_POS_USDT","NET_MARGIN_TARGET_PCT","CONSECUTIVE_LOSS_THRESHOLD","SYMBOL_COOLDOWN_MIN","ERROR_REPEAT_THRESHOLD","MARGIN_PAUSE_MIN","ATR_PERCENTILE_FLOOR","MIN_ATR_PCT","LOW_VOL_ATR_PCT","LOW_VOL_RISK_MULT","LOW_VOL_CONFIDENCE","NORMAL_CONFIDENCE","FEE_RATE","COOLDOWN","LIVE_SYMBOLS","ENGINE_URL","BINANCE_TESTNET_URL"]
+    names=["HONEYCOMB_MODE","AUTO_PAPER","AUTO_INTERVAL_SEC","TARGET_PROFIT_PERCENT","MAX_LOSS_PERCENT","TESTNET_PORT","TESTNET_RISK","TESTNET_LEVERAGE","TESTNET_TP_M","TESTNET_SL_P","TESTNET_HOLD_MAX","TESTNET_INTERVAL","TESTNET_COOLDOWN","TESTNET_MAX_POS_USDT","NET_MARGIN_TARGET_PCT","CONSECUTIVE_LOSS_THRESHOLD","SYMBOL_COOLDOWN_MIN","ERROR_REPEAT_THRESHOLD","MARGIN_PAUSE_MIN","ATR_PERCENTILE_FLOOR","MIN_ATR_PCT","LOW_VOL_ATR_PCT","LOW_VOL_RISK_MULT","LOW_VOL_CONFIDENCE","NORMAL_CONFIDENCE","FEE_RATE","COOLDOWN","LIVE_SYMBOLS","ENGINE_URL","BINANCE_TESTNET_URL","BINANCE_TESTNET_ALLOW_GENERIC_KEYS"]
     out={k:os.environ[k] for k in names if k in os.environ}
     for secret in ("BINANCE_TESTNET_API_KEY","BINANCE_TESTNET_SECRET","BINANCE_API_KEY","BINANCE_API_SECRET","BINANCE_SECRET"): out[secret]="SET" if os.getenv(secret) else "NOT_SET"
     return out
@@ -33,6 +33,33 @@ def sha256(path:Path)->str:
     with path.open("rb") as f:
         for block in iter(lambda:f.read(1024*1024),b""): h.update(block)
     return h.hexdigest()
+
+def write_json_atomic(path:Path,payload:Any)->None:
+    """Persist JSON atomically so a dashboard read can never observe a partial document."""
+    path.parent.mkdir(parents=True,exist_ok=True)
+    fd,tmp=tempfile.mkstemp(prefix=f".{path.name}.",suffix=".tmp",dir=str(path.parent),text=True)
+    try:
+        with os.fdopen(fd,"w",encoding="utf-8") as handle:
+            json.dump(payload,handle,indent=2,ensure_ascii=False); handle.write("\n"); handle.flush(); os.fsync(handle.fileno())
+        os.replace(tmp,path)
+    finally:
+        try: os.unlink(tmp)
+        except FileNotFoundError: pass
+
+def load_registry()->dict[str,Any]:
+    """Load registry and recover from empty/truncated/invalid JSON without losing its schema."""
+    default={"project":ROOT.name,"control_plane":{"host":HOST,"port":PORT},"execution_ports":[8000,8100],"modes":["TESTNET","PAPER","LIVE"],"engines":[]}
+    if not REGISTRY.exists(): return default
+    try:
+        raw=REGISTRY.read_text(encoding="utf-8").strip()
+        if not raw: return default
+        value=json.loads(raw)
+        if not isinstance(value,dict): return default
+        merged=dict(default); merged.update(value)
+        if not isinstance(merged.get("engines"),list): merged["engines"]=[]
+        return merged
+    except (OSError,UnicodeError,json.JSONDecodeError,TypeError,ValueError):
+        return default
 
 def inventory()->dict[str,Any]:
     """Build source inventory and update registry hashes."""
@@ -46,9 +73,8 @@ def inventory()->dict[str,Any]:
             if score>=2: engines.append({"path":rel.as_posix(),"score":score,"sha256":digest})
         except Exception as exc: files.append({"path":rel.as_posix(),"error":str(exc)})
     data={"generated_at":time.time(),"files":files,"engines":sorted(engines,key=lambda x:(-x["score"],x["path"]))}; (ROOT/"runtime").mkdir(exist_ok=True)
-    (ROOT/"runtime"/"inventory.json").write_text(json.dumps(data,indent=2,ensure_ascii=False))
-    if REGISTRY.exists():
-        registry=json.loads(REGISTRY.read_text()); registry["engines"]=data["engines"]; REGISTRY.write_text(json.dumps(registry,indent=2,ensure_ascii=False))
+    write_json_atomic(ROOT/"runtime"/"inventory.json",data)
+    registry=load_registry(); registry["engines"]=data["engines"]; write_json_atomic(REGISTRY,registry)
     return data
 
 def git_status()->dict[str,Any]:
@@ -130,7 +156,7 @@ class Handler(BaseHTTPRequestHandler):
         mode=str(data.get("mode","")).upper()
         if mode not in {"TESTNET","PAPER","LIVE"}: self.send_json(400,{"error":"mode must be TESTNET, PAPER or LIVE"}); return
         if mode=="LIVE" and os.getenv("LIVE_ARMED")!="1": self.send_json(403,{"error":"LIVE_ARMED=1 required"}); return
-        STATE.write_text(json.dumps({"mode":mode,"changed_at":time.time()},indent=2)); self.send_json(200,{"ok":True,"mode":mode})
+        write_json_atomic(STATE,{"mode":mode,"changed_at":time.time()}); self.send_json(200,{"ok":True,"mode":mode})
     def log_message(self,*args:Any)->None: return
 
 def main()->None:

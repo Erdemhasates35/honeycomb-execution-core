@@ -1,6 +1,7 @@
 package risk
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
@@ -14,22 +15,30 @@ const (
 	RED    State = "RED"
 )
 
+var (
+	ErrInvalidThreshold = errors.New("risk threshold must be positive")
+	ErrInvalidCooldown  = errors.New("risk cooldown must be non-negative")
+	ErrInvalidState     = errors.New("invalid risk state")
+)
+
 type Manager struct {
-	mu            sync.RWMutex
-	state         State
-	failCount     int
-	circuitOpen   bool
-	circuitUntil  time.Time
-	threshold     int
-	cooldownSec   int
+	mu           sync.RWMutex
+	state        State
+	failCount    int
+	circuitOpen  bool
+	circuitUntil time.Time
+	threshold    int
+	cooldownSec  int
 }
 
 func NewManager(threshold, cooldownSec int) *Manager {
-	return &Manager{
-		state:       GREEN,
-		threshold:   threshold,
-		cooldownSec: cooldownSec,
+	if threshold < 1 {
+		threshold = 1
 	}
+	if cooldownSec < 0 {
+		cooldownSec = 0
+	}
+	return &Manager{state: GREEN, threshold: threshold, cooldownSec: cooldownSec}
 }
 
 func (m *Manager) Current() State {
@@ -61,14 +70,22 @@ func (m *Manager) RecordSuccess() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.failCount = 0
-	if m.circuitOpen && time.Now().After(m.circuitUntil) {
+	if m.circuitOpen && !time.Now().Before(m.circuitUntil) {
 		m.circuitOpen = false
 		m.state = GREEN
 	}
 }
 
-func (m *Manager) SetState(s State) {
+func (m *Manager) SetState(s State) error {
+	if s != GREEN && s != YELLOW && s != ORANGE && s != RED {
+		return ErrInvalidState
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.state = s
+	if s == RED {
+		m.circuitOpen = true
+		m.circuitUntil = time.Now().Add(time.Duration(m.cooldownSec) * time.Second)
+	}
+	return nil
 }

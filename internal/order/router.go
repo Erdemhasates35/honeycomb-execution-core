@@ -60,9 +60,9 @@ func (r *Router) Open(req OpenRequest) OrderResult {
 		r.log("REJECT open: risk state not allowing new orders")
 		return OrderResult{Success: false, Message: "risk_state_blocks_new_orders", Mode: r.cfg.Mode}
 	}
-	if req.Size > r.cfg.MaxPositionSizeUSDT || req.Leverage > r.cfg.MaxLeverage {
-		r.log("REJECT open: configured position or leverage limit exceeded")
-		return OrderResult{Success: false, Message: "position_or_leverage_limit_exceeded", Mode: r.cfg.Mode}
+	if req.Leverage > r.cfg.MaxLeverage {
+		r.log("REJECT open: configured leverage limit exceeded")
+		return OrderResult{Success: false, Message: "leverage_limit_exceeded", Mode: r.cfg.Mode}
 	}
 
 	edgeIn := edge.Input{GrossPercent: 0.20, FeePercent: 0.08, FundingPercent: 0.02, SlippagePercent: 0.04, SpreadPercent: 0.02, LatencyCostPct: 0.01, ExecRiskPercent: 0.02}

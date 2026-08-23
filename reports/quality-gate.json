@@ -1,0 +1,923 @@
+{
+  "schema_version": 1,
+  "summary": {
+    "total": 45,
+    "repository_score": 7.58,
+    "core_9plus": false,
+    "core_count": 4
+  },
+  "files": [
+    {
+      "path": "BinanceFuturesEngineCatE.ts",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "documentation",
+        "validation"
+      ]
+    },
+    {
+      "path": "CatEofUsdcFuturesEngine.ts",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability"
+      ]
+    },
+    {
+      "path": "HelixSovereignEngine.ts",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "validation"
+      ]
+    },
+    {
+      "path": "alpha_brain.py",
+      "score": 6.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": true,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "observability",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "auto_paper.py",
+      "score": 6.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "documentation",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "bootstrap_honeycomb_control_plane.sh",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": false,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "maintainability"
+      ]
+    },
+    {
+      "path": "cmd/engine/main.go",
+      "score": 5.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": false,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "documentation",
+        "validation",
+        "security",
+        "tests"
+      ]
+    },
+    {
+      "path": "config.py",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "documentation",
+        "validation"
+      ]
+    },
+    {
+      "path": "engine.py",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "engine_alpha.py",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed"
+      ]
+    },
+    {
+      "path": "engine_alpha2.py",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed"
+      ]
+    },
+    {
+      "path": "engine_live.py",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "documentation",
+        "validation"
+      ]
+    },
+    {
+      "path": "engine_live2.py",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed"
+      ]
+    },
+    {
+      "path": "engine_scalp_tn.py",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "documentation",
+        "validation"
+      ]
+    },
+    {
+      "path": "engine_testnet.py",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed"
+      ]
+    },
+    {
+      "path": "fix_testnet_stack.sh",
+      "score": 10.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": []
+    },
+    {
+      "path": "index.ts",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "documentation",
+        "validation"
+      ]
+    },
+    {
+      "path": "internal/config/config.go",
+      "score": 6.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": false,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "documentation",
+        "validation",
+        "tests"
+      ]
+    },
+    {
+      "path": "internal/edge/calculator.go",
+      "score": 4.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": false,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": false,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "error_boundary",
+        "observability",
+        "documentation",
+        "validation",
+        "security",
+        "tests"
+      ]
+    },
+    {
+      "path": "internal/order/router.go",
+      "score": 6.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": false,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "documentation",
+        "validation",
+        "tests"
+      ]
+    },
+    {
+      "path": "internal/order/types.go",
+      "score": 5.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": false,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "documentation",
+        "validation",
+        "security",
+        "tests"
+      ]
+    },
+    {
+      "path": "internal/risk/state.go",
+      "score": 4.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": false,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": false,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "error_boundary",
+        "observability",
+        "documentation",
+        "validation",
+        "security",
+        "tests"
+      ]
+    },
+    {
+      "path": "master_alpha.py",
+      "score": 6.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": true,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "observability",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "nexus-cli.tsx",
+      "score": 6.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "documentation",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "nexus_engine_audit.sh",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "documentation",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "nexus_full_sync.sh",
+      "score": 10.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": []
+    },
+    {
+      "path": "nexus_futures_engine.ts",
+      "score": 10.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": []
+    },
+    {
+      "path": "nexus_testnet_bridge.py",
+      "score": 10.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": []
+    },
+    {
+      "path": "orchestrator/control_plane.py",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "validation"
+      ]
+    },
+    {
+      "path": "orchestrator/quality_gate.py",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": false,
+        "tests": true,
+        "no_debt_markers": false
+      },
+      "failed_checks": [
+        "maintainability",
+        "no_debt_markers"
+      ]
+    },
+    {
+      "path": "orchestrator/test_ui_control_plane.py",
+      "score": 5.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": false,
+        "observability": false,
+        "documentation": false,
+        "validation": true,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "error_boundary",
+        "observability",
+        "documentation",
+        "security"
+      ]
+    },
+    {
+      "path": "orchestrator/ui_control_plane.py",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "validation"
+      ]
+    },
+    {
+      "path": "quantum_sovereign_core.py",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": false,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "error_boundary",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "repair_and_testnet_order.sh",
+      "score": 10.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": []
+    },
+    {
+      "path": "run_honeycomb_ui.sh",
+      "score": 10.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": []
+    },
+    {
+      "path": "run_nexus_testnet.sh",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": true,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "runtime/start_testnet.sh",
+      "score": 10.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": []
+    },
+    {
+      "path": "runtime/test_auth.py",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": true,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "documentation"
+      ]
+    },
+    {
+      "path": "scripts/normalize_env.sh",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": true,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "documentation",
+        "security"
+      ]
+    },
+    {
+      "path": "scripts/repair_env_format.sh",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "documentation",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "sovereign_app.js",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "documentation",
+        "validation",
+        "security"
+      ]
+    },
+    {
+      "path": "tests/test_quality_gate.py",
+      "score": 5.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": false,
+        "observability": false,
+        "documentation": false,
+        "validation": true,
+        "security": false,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "error_boundary",
+        "observability",
+        "documentation",
+        "security"
+      ]
+    },
+    {
+      "path": "verify.ts",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "documentation",
+        "validation"
+      ]
+    },
+    {
+      "path": "verify2.ts",
+      "score": 9.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "validation"
+      ]
+    },
+    {
+      "path": "verify3.ts",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": true,
+        "error_boundary": true,
+        "observability": false,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "observability",
+        "documentation",
+        "validation"
+      ]
+    }
+  ]
+}

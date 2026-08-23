@@ -4,7 +4,180 @@
     "host": "127.0.0.1",
     "port": 8787
   },
-  "execution_ports": [8000, 8100],
-  "modes": ["TESTNET", "PAPER", "LIVE"],
-  "engines": []
+  "execution_ports": [
+    8000,
+    8100
+  ],
+  "modes": [
+    "TESTNET",
+    "PAPER",
+    "LIVE"
+  ],
+  "engines": [
+    {
+      "path": "bootstrap_honeycomb_control_plane.sh",
+      "score": 10,
+      "sha256": "183c122fffabc84903c275771629f21a9976fcf28747ecf16a8b6ba8f2a693e5"
+    },
+    {
+      "path": "orchestrator/control_plane.py",
+      "score": 10,
+      "sha256": "59b81ef4bac03743f21543c5af06fdb607c2b4b695feb9feb799a8698455e3f1"
+    },
+    {
+      "path": "engine_live2.py",
+      "score": 6,
+      "sha256": "d44a4b8a9b4474039037141fc1260dcc562c62d7f2529830dcd52879c7b828e6"
+    },
+    {
+      "path": "nexus-cli.tsx",
+      "score": 5,
+      "sha256": "9367ef048e1fa97db6af13906ed798e3c156687c5792386493b4a49d6816d69a"
+    },
+    {
+      "path": "nexus_engine_audit.sh",
+      "score": 5,
+      "sha256": "0ddedd3c0a7a690cd20fe5bbbe681362de3fc13129bb759a15a532b39263a74e"
+    },
+    {
+      "path": "nexus_full_sync.sh",
+      "score": 5,
+      "sha256": "17d4c46264a7af4329f8d0c7e7e4af6e575362cf418bd3fb39782f753aed73db"
+    },
+    {
+      "path": "verify2.ts",
+      "score": 5,
+      "sha256": "9c5db353624a1e7a327d11c084ae542de83400d01ab6917e40bf8822b199a7ac"
+    },
+    {
+      "path": "HelixSovereignEngine.ts",
+      "score": 4,
+      "sha256": "dd21d0ffc8e343e276e2a3228b038a15846cc9b8d3cf0728619572006e073bc6"
+    },
+    {
+      "path": "engine_alpha.py",
+      "score": 4,
+      "sha256": "6bd90b57a746c92137d379f11737143c20e0b4983448fa8de6349d61e876346a"
+    },
+    {
+      "path": "engine_alpha2.py",
+      "score": 4,
+      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
+    },
+    {
+      "path": "engine_scalp_tn.py",
+      "score": 4,
+      "sha256": "4b81117cc1201e918335ce0d2fb922f226e35c330a2b9c69b1bd001e50359e4e"
+    },
+    {
+      "path": "nexus_futures_engine.ts",
+      "score": 4,
+      "sha256": "939341564552825d20bef9218ecdfb6e43f7ef569c860b0283377eac6437b265"
+    },
+    {
+      "path": "repair_and_testnet_order.sh",
+      "score": 4,
+      "sha256": "4dab4accd509532ee224416ae6e26f24efb0eae5a6111edf3a9235d30db750e8"
+    },
+    {
+      "path": "verify.ts",
+      "score": 4,
+      "sha256": "96f076cd600846cf8d316476366756162b04f8c67bc981ac30ff8c3df8fd7730"
+    },
+    {
+      "path": "CatEofUsdcFuturesEngine.ts",
+      "score": 3,
+      "sha256": "01bec8651cc485e0819737a645f908888db8d8a12c9cb0406aecf35e7bd7395b"
+    },
+    {
+      "path": "engine.py",
+      "score": 3,
+      "sha256": "2a706743609b99d3529e01c2fa63bcdfce4e0a69c5b21ebe8c18a1334281fb65"
+    },
+    {
+      "path": "engine_testnet.py",
+      "score": 3,
+      "sha256": "272f9c202ed723e659e862e804307de00bbb5d181472e9a37b90fab2e87e9753"
+    },
+    {
+      "path": "fix_testnet_stack.sh",
+      "score": 3,
+      "sha256": "ea7741d2721cc28d50ff83892c9104cc98ccf7947b32c2091d5edf684ba3ad83"
+    },
+    {
+      "path": "master_alpha.py",
+      "score": 3,
+      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
+    },
+    {
+      "path": "nexus_testnet_bridge.py",
+      "score": 3,
+      "sha256": "5f04da81ab76eef16179d626b1f1d308585ec9f0800c989eaa47a0a43afa5327"
+    },
+    {
+      "path": "orchestrator/quality_gate.py",
+      "score": 3,
+      "sha256": "d8b4124342bf1230ebcfe0d3e01467cb2e9606efcdd7538a3d8bb33c040c6e21"
+    },
+    {
+      "path": "quantum_sovereign_core.py",
+      "score": 3,
+      "sha256": "1c520721a0d00bd1355a87645b0e069e8c04e9bfd110902cb4727eb10bd2f009"
+    },
+    {
+      "path": "run_honeycomb_ui.sh",
+      "score": 3,
+      "sha256": "5eab1154a07343faf49a7b371f0f03f172783efb41cbc7af50185e944d9086a4"
+    },
+    {
+      "path": "sovereign_app.js",
+      "score": 3,
+      "sha256": "85f8470d7f1fbbfdfe6a61e496a199a282c70fc23be223ff0777465c6ef0d687"
+    },
+    {
+      "path": "tests/test_quality_gate.py",
+      "score": 3,
+      "sha256": "b6f89248ea3efad3bd328f132b44499cd1ba392b0acc735aee4391a1195188a8"
+    },
+    {
+      "path": "verify3.ts",
+      "score": 3,
+      "sha256": "edcfe4bf7186f4c1ebfba0161aa1e3e502c660cf1237d754792c3c4fcdabce6b"
+    },
+    {
+      "path": "BinanceFuturesEngineCatE.ts",
+      "score": 2,
+      "sha256": "f72b44d9b82ce6b16f2ba1fec7a0c9f81777923f499a20ac54985395bb625fcd"
+    },
+    {
+      "path": "alpha_brain.py",
+      "score": 2,
+      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
+    },
+    {
+      "path": "engine_live.py",
+      "score": 2,
+      "sha256": "bc97f50f856d67ddada1875049483103ae08d92728dce242a256a6ef2729ed04"
+    },
+    {
+      "path": "index.ts",
+      "score": 2,
+      "sha256": "25b47c0bb07fc86976ecc3ec33bc7ccc50f04e289e455f278f9ef7823aa17334"
+    },
+    {
+      "path": "orchestrator/test_ui_control_plane.py",
+      "score": 2,
+      "sha256": "2e5299781d1eb5c189beae640ebf88092cad2b0ff1613c9db40d9d5700a4098e"
+    },
+    {
+      "path": "orchestrator/ui_control_plane.py",
+      "score": 2,
+      "sha256": "5e39ab17e303e61a7023703685c58bc5d22d0c99e16cfc6efc96b1432296382f"
+    },
+    {
+      "path": "runtime/start_testnet.sh",
+      "score": 2,
+      "sha256": "1c03c204b90cd2417503c6b3bf78747dfe83c137472d8d9bdf8ec941b72b6edc"
+    }
+  ]
 }

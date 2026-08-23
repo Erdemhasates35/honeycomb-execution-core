@@ -8,8 +8,7 @@ The module is pure and deterministic: no network, no exchange I/O, no side effec
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
-from math import floor
+from decimal import Decimal, ROUND_HALF_UP
 
 D = Decimal
 BPS = D("0.0001")
@@ -26,15 +25,7 @@ class CostModel:
     other_bps: D = D("0")
 
     @classmethod
-    def from_bps(
-        cls,
-        maker_bps: float | str,
-        taker_bps: float | str,
-        slippage_bps: float | str = 0,
-        spread_bps: float | str = 0,
-        funding_bps: float | str = 0,
-        other_bps: float | str = 0,
-    ) -> "CostModel":
+    def from_bps(cls, maker_bps, taker_bps, slippage_bps=0, spread_bps=0, funding_bps=0, other_bps=0) -> "CostModel":
         values = [maker_bps, taker_bps, slippage_bps, spread_bps, funding_bps, other_bps]
         parsed = [D(str(v)) for v in values]
         if any(v < 0 for v in parsed):
@@ -88,18 +79,7 @@ def _q(value: D, places: str = "0.00000001") -> D:
     return value.quantize(D(places), rounding=ROUND_HALF_UP)
 
 
-def _pct(value: D) -> D:
-    return value * PCT
-
-
-def calculate_trade(
-    notional: float | str,
-    gross_move_pct: float | str,
-    side: str,
-    costs: CostModel,
-    entry_role: str = "taker",
-    exit_role: str = "taker",
-) -> TradeEconomics:
+def calculate_trade(notional, gross_move_pct, side, costs: CostModel, entry_role="taker", exit_role="taker") -> TradeEconomics:
     n = D(str(notional))
     move = D(str(gross_move_pct))
     if n <= 0:
@@ -108,8 +88,9 @@ def calculate_trade(
         raise ValueError("side must be LONG or SHORT")
 
     gross = n * move * PCT
-    fee_rate = costs.round_trip_rate(entry_role, exit_role)
-    trading_fee = n * (D(str(costs.maker_bps if entry_role == "maker" else costs.taker_bps)) * BPS + D(str(costs.maker_bps if exit_role == "maker" else costs.taker_bps)) * BPS)
+    entry_fee_bps = costs.maker_bps if entry_role.lower() == "maker" else costs.taker_bps
+    exit_fee_bps = costs.maker_bps if exit_role.lower() == "maker" else costs.taker_bps
+    trading_fee = n * (entry_fee_bps + exit_fee_bps) * BPS
     slippage_cost = n * costs.slippage_bps * BPS
     spread_cost = n * costs.spread_bps * BPS
     funding_cost = n * costs.funding_bps * BPS
@@ -133,11 +114,7 @@ def calculate_trade(
     )
 
 
-def break_even_win_rate(
-    take_profit_pct: float | str,
-    stop_loss_pct: float | str,
-    round_trip_cost_pct: float | str,
-) -> D:
+def break_even_win_rate(take_profit_pct, stop_loss_pct, round_trip_cost_pct) -> D:
     """Return p where p*(TP-C) - (1-p)*(SL+C) = 0."""
     tp = D(str(take_profit_pct))
     sl = D(str(stop_loss_pct))
@@ -151,13 +128,7 @@ def break_even_win_rate(
     return _q(loss / (win + loss), "0.000001")
 
 
-def expected_value_per_trade(
-    win_rate: float | str,
-    take_profit_pct: float | str,
-    stop_loss_pct: float | str,
-    round_trip_cost_pct: float | str,
-    notional: float | str,
-) -> D:
+def expected_value_per_trade(win_rate, take_profit_pct, stop_loss_pct, round_trip_cost_pct, notional) -> D:
     p = D(str(win_rate))
     if p < 0 or p > 1:
         raise ValueError("win_rate must be between 0 and 1")
@@ -168,16 +139,7 @@ def expected_value_per_trade(
     return _q(n * ((p * (tp - c) - (D("1") - p) * (sl + c)) * PCT))
 
 
-def risk_based_size(
-    equity: float | str,
-    risk_fraction: float | str,
-    stop_pct: float | str,
-    total_cost_pct: float | str,
-    adverse_buffer_pct: float | str,
-    leverage_cap: float | str,
-    max_notional: float | str,
-    min_notional: float | str = "5",
-) -> SizeResult:
+def risk_based_size(equity, risk_fraction, stop_pct, total_cost_pct, adverse_buffer_pct, leverage_cap, max_notional, min_notional="5") -> SizeResult:
     e = D(str(equity))
     rf = D(str(risk_fraction))
     stop = D(str(stop_pct))
@@ -209,14 +171,8 @@ def risk_based_size(
     )
 
 
-def normalize_legacy_fee_rate(value: float | str) -> D:
-    """Convert legacy FEE_RATE to decimal rate only when it is unambiguous.
-
-    Legacy Honeycomb used `0.04` to mean 0.04% (= 4 bps), while the Python
-    defaults use `0.0004`. Values between 0 and 0.01 are interpreted as a
-    decimal rate; values between 0.01 and 1 are interpreted as percent.
-    Values >= 1 are rejected because they are almost certainly a unit error.
-    """
+def normalize_legacy_fee_rate(value) -> D:
+    """Convert legacy FEE_RATE to decimal only when its units are unambiguous."""
     v = D(str(value))
     if v < 0:
         raise ValueError("fee rate cannot be negative")

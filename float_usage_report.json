@@ -1,0 +1,458 @@
+{
+  "./config.py": [
+    {
+      "type": "float_call",
+      "line": 32
+    }
+  ],
+  "./engine.py": [
+    {
+      "type": "float_call",
+      "line": 47
+    }
+  ],
+  "./auto_paper.py": [
+    {
+      "type": "float_call",
+      "line": 12
+    },
+    {
+      "type": "float_call",
+      "line": 13
+    }
+  ],
+  "./engine_testnet.py": [
+    {
+      "type": "float_call",
+      "line": 63
+    },
+    {
+      "type": "float_call",
+      "line": 66
+    },
+    {
+      "type": "float_call",
+      "line": 76
+    },
+    {
+      "type": "float_call",
+      "line": 77
+    },
+    {
+      "type": "float_call",
+      "line": 78
+    },
+    {
+      "type": "float_call",
+      "line": 79
+    },
+    {
+      "type": "float_call",
+      "line": 81
+    },
+    {
+      "type": "float_call",
+      "line": 85
+    },
+    {
+      "type": "float_call",
+      "line": 205
+    },
+    {
+      "type": "float_call",
+      "line": 206
+    },
+    {
+      "type": "float_call",
+      "line": 208
+    },
+    {
+      "type": "float_call",
+      "line": 210
+    },
+    {
+      "type": "float_call",
+      "line": 236
+    },
+    {
+      "type": "float_call",
+      "line": 254
+    },
+    {
+      "type": "float_call",
+      "line": 300
+    },
+    {
+      "type": "float_call",
+      "line": 312
+    },
+    {
+      "type": "float_call",
+      "line": 412
+    },
+    {
+      "type": "float_call",
+      "line": 478
+    }
+  ],
+  "./engine_live.py": [
+    {
+      "type": "float_call",
+      "line": 42
+    },
+    {
+      "type": "float_call",
+      "line": 43
+    },
+    {
+      "type": "float_call",
+      "line": 44
+    },
+    {
+      "type": "float_call",
+      "line": 45
+    },
+    {
+      "type": "float_call",
+      "line": 47
+    },
+    {
+      "type": "float_call",
+      "line": 51
+    },
+    {
+      "type": "float_call",
+      "line": 105
+    },
+    {
+      "type": "float_call",
+      "line": 123
+    },
+    {
+      "type": "float_call",
+      "line": 163
+    },
+    {
+      "type": "float_call",
+      "line": 217
+    },
+    {
+      "type": "float_call",
+      "line": 271
+    },
+    {
+      "type": "float_call",
+      "line": 278
+    }
+  ],
+  "./engine_live2.py": [
+    {
+      "type": "float_call",
+      "line": 52
+    },
+    {
+      "type": "float_call",
+      "line": 53
+    },
+    {
+      "type": "float_call",
+      "line": 54
+    },
+    {
+      "type": "float_call",
+      "line": 62
+    },
+    {
+      "type": "float_call",
+      "line": 136
+    },
+    {
+      "type": "float_call",
+      "line": 177
+    },
+    {
+      "type": "float_call",
+      "line": 325
+    },
+    {
+      "type": "float_call",
+      "line": 358
+    }
+  ],
+  "./engine_scalp_tn.py": [
+    {
+      "type": "float_call",
+      "line": 33
+    },
+    {
+      "type": "float_call",
+      "line": 123
+    }
+  ],
+  "./engine_alpha.py": [
+    {
+      "type": "float_call",
+      "line": 87
+    },
+    {
+      "type": "float_call",
+      "line": 88
+    },
+    {
+      "type": "float_call",
+      "line": 89
+    },
+    {
+      "type": "float_call",
+      "line": 90
+    },
+    {
+      "type": "float_call",
+      "line": 94
+    },
+    {
+      "type": "float_call",
+      "line": 109
+    },
+    {
+      "type": "float_call",
+      "line": 112
+    },
+    {
+      "type": "float_call",
+      "line": 172
+    },
+    {
+      "type": "float_call",
+      "line": 357
+    },
+    {
+      "type": "float_call",
+      "line": 358
+    },
+    {
+      "type": "float_call",
+      "line": 360
+    },
+    {
+      "type": "float_call",
+      "line": 362
+    },
+    {
+      "type": "float_call",
+      "line": 388
+    },
+    {
+      "type": "float_call",
+      "line": 406
+    },
+    {
+      "type": "float_call",
+      "line": 446
+    },
+    {
+      "type": "float_call",
+      "line": 458
+    },
+    {
+      "type": "float_call",
+      "line": 561
+    },
+    {
+      "type": "float_call",
+      "line": 623
+    }
+  ],
+  "./engine_alpha2.py": [
+    {
+      "type": "float_call",
+      "line": 52
+    },
+    {
+      "type": "float_call",
+      "line": 53
+    },
+    {
+      "type": "float_call",
+      "line": 54
+    },
+    {
+      "type": "float_call",
+      "line": 55
+    },
+    {
+      "type": "float_call",
+      "line": 59
+    },
+    {
+      "type": "float_call",
+      "line": 72
+    },
+    {
+      "type": "float_call",
+      "line": 73
+    },
+    {
+      "type": "float_call",
+      "line": 74
+    },
+    {
+      "type": "float_call",
+      "line": 137
+    },
+    {
+      "type": "float_call",
+      "line": 137
+    },
+    {
+      "type": "float_call",
+      "line": 315
+    },
+    {
+      "type": "float_call",
+      "line": 316
+    },
+    {
+      "type": "float_call",
+      "line": 318
+    },
+    {
+      "type": "float_call",
+      "line": 320
+    },
+    {
+      "type": "float_call",
+      "line": 342
+    },
+    {
+      "type": "float_call",
+      "line": 350
+    },
+    {
+      "type": "float_call",
+      "line": 368
+    },
+    {
+      "type": "float_call",
+      "line": 408
+    },
+    {
+      "type": "float_call",
+      "line": 420
+    },
+    {
+      "type": "float_call",
+      "line": 421
+    },
+    {
+      "type": "float_call",
+      "line": 583
+    },
+    {
+      "type": "float_call",
+      "line": 636
+    }
+  ],
+  "./alpha_brain.py": [
+    {
+      "type": "float_call",
+      "line": 54
+    },
+    {
+      "type": "float_call",
+      "line": 91
+    },
+    {
+      "type": "float_call",
+      "line": 92
+    },
+    {
+      "type": "float_call",
+      "line": 93
+    },
+    {
+      "type": "float_call",
+      "line": 94
+    }
+  ],
+  "./master_alpha.py": [
+    {
+      "type": "float_call",
+      "line": 54
+    },
+    {
+      "type": "float_call",
+      "line": 58
+    },
+    {
+      "type": "float_call",
+      "line": 84
+    },
+    {
+      "type": "float_call",
+      "line": 85
+    },
+    {
+      "type": "float_call",
+      "line": 86
+    },
+    {
+      "type": "float_call",
+      "line": 87
+    }
+  ],
+  "./nexus_testnet_bridge.py": [
+    {
+      "type": "float_call",
+      "line": 121
+    }
+  ],
+  "./python_engine/engine.py": [
+    {
+      "type": "float_call",
+      "line": 41
+    }
+  ],
+  "./python_engine/exchange/adapter.py": [
+    {
+      "type": "float_call",
+      "line": 10
+    },
+    {
+      "type": "float_call",
+      "line": 14
+    },
+    {
+      "type": "float_call",
+      "line": 18
+    },
+    {
+      "type": "float_call",
+      "line": 22
+    }
+  ],
+  "./python_engine/funding/funding_scanner.py": [
+    {
+      "type": "float_call",
+      "line": 16
+    },
+    {
+      "type": "float_call",
+      "line": 17
+    },
+    {
+      "type": "float_call",
+      "line": 18
+    }
+  ],
+  "./python_engine/stat_arb/cointegration.py": [
+    {
+      "type": "float_call",
+      "line": 11
+    },
+    {
+      "type": "float_call",
+      "line": 15
+    }
+  ]
+}

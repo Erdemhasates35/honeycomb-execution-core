@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3
 # -*- coding: utf-8 -*-
 import time, threading, json, urllib.request, urllib.parse, urllib.error, hmac, hashlib, os, sys, locale
-from flask import Flask, jsonify
+import flask, from flask, jsonify
 
 # Force UTF-8
 os.environ["PYTHONIOENCODING"] = "utf-8"

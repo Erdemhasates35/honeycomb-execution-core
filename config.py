@@ -1,8 +1,9 @@
 # config.py
 import os
 import sys
-import json
 from typing import Dict
+
+from execution_economics import normalize_legacy_fee_rate
 
 
 def load_env(path: str) -> Dict[str, str]:
@@ -14,7 +15,6 @@ def load_env(path: str) -> Dict[str, str]:
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
                     env[k.strip()] = v.strip().split("#")[0].strip()
-    # overlay with os.environ
     for k, v in os.environ.items():
         env.setdefault(k, v)
     return env
@@ -34,6 +34,14 @@ def _parse_float(v, default=None):
         return default
 
 
+def _required_positive(cfg: Dict, key: str, default: float):
+    value = _parse_float(cfg.get(key, default), default)
+    if value is None or value <= 0:
+        print(f"KRITIK: {key} must be > 0")
+        sys.exit(1)
+    return value
+
+
 def validate_startup(env_path: str = None) -> Dict:
     path = env_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
     ENV = load_env(path)
@@ -45,30 +53,24 @@ def validate_startup(env_path: str = None) -> Dict:
         sys.exit(1)
     cfg["MODE"] = mode
 
-    # Binance
     cfg["BINANCE_API_KEY"] = ENV.get("BINANCE_API_KEY") or ENV.get("API_KEY")
     cfg["BINANCE_SECRET"] = ENV.get("BINANCE_SECRET") or ENV.get("BINANCE_API_SECRET") or ENV.get("BINANCE_SECRET_KEY")
     cfg["BINANCE_BASE_URL"] = ENV.get("BINANCE_BASE_URL", "https://fapi.binance.com").strip()
 
-    # Global guards
     if cfg["MODE"] == "live":
-        # Secrets must exist
         if not cfg["BINANCE_API_KEY"] or not cfg["BINANCE_SECRET"]:
             print("KRITIK: LIVE mod için Binance API anahtarlari yok")
             sys.exit(1)
-        # Ensure base url is not testnet/sandbox
         lower = cfg["BINANCE_BASE_URL"].lower()
         if "testnet" in lower or "sandbox" in lower or "localhost" in lower:
             print("KRITIK: LIVE modu ancak gercek production endpoint ile calisabilir. BASE_URL: %s" % cfg["BINANCE_BASE_URL"])
             sys.exit(1)
-        # prevent mock/paper flags
-        for f in ("SIMULATION", "PAPER", "DRY_RUN", "AUTO_PAPER"):
+        for f in ("SIMULATION", "PAPER", "DRY_RUN"):
             if ENV.get(f) and ENV.get(f).lower() in ("1", "true", "yes"):
                 print(f"KRITIK: {f} etkin. LIVE baslatilamaz.")
                 sys.exit(1)
 
-    # Limits
-    cfg["MAX_LEVERAGE"] = _parse_int(ENV.get("MAX_LEVERAGE", "50"), 50)
+    cfg["MAX_LEVERAGE"] = _parse_int(ENV.get("MAX_LEVERAGE", "20"), 20)
     if not isinstance(cfg["MAX_LEVERAGE"], int) or cfg["MAX_LEVERAGE"] < 1 or cfg["MAX_LEVERAGE"] > 50:
         print("KRITIK: MAX_LEVERAGE must be integer between 1 and 50")
         sys.exit(1)
@@ -78,20 +80,46 @@ def validate_startup(env_path: str = None) -> Dict:
         print("KRITIK: LIVE_MAX_CAPITAL_PERCENT must be between 0 and 100")
         sys.exit(1)
 
-    # Port and runtime
     cfg["HTTP_PORT"] = _parse_int(ENV.get("HTTP_PORT", ENV.get("PORT", "8080")), 8080)
     cfg["AUTO_INTERVAL_SEC"] = _parse_int(ENV.get("AUTO_INTERVAL_SEC", "4"), 4)
 
-    # Defaults that other modules expect
-    cfg["FEE_RATE"] = _parse_float(ENV.get("FEE_RATE", ENV.get("FEE_RATE", "0.0004")), 0.0004)
+    # Explicit fee contract: bps, never ambiguous percentages.
+    legacy_fee = ENV.get("FEE_RATE")
+    if ENV.get("MAKER_FEE_BPS") is not None:
+        cfg["MAKER_FEE_BPS"] = _parse_float(ENV.get("MAKER_FEE_BPS"), 2.0)
+    elif legacy_fee is not None:
+        cfg["MAKER_FEE_BPS"] = normalize_legacy_fee_rate(legacy_fee) * 10000
+    else:
+        cfg["MAKER_FEE_BPS"] = 2.0
+
+    if ENV.get("TAKER_FEE_BPS") is not None:
+        cfg["TAKER_FEE_BPS"] = _parse_float(ENV.get("TAKER_FEE_BPS"), 5.0)
+    elif legacy_fee is not None:
+        cfg["TAKER_FEE_BPS"] = normalize_legacy_fee_rate(legacy_fee) * 10000
+    else:
+        cfg["TAKER_FEE_BPS"] = 5.0
+
+    for key in ("MAKER_FEE_BPS", "TAKER_FEE_BPS"):
+        if cfg[key] is None or cfg[key] < 0 or cfg[key] > 100:
+            print(f"KRITIK: {key} must be between 0 and 100 bps")
+            sys.exit(1)
+
+    cfg["SLIPPAGE_BPS"] = max(0.0, _parse_float(ENV.get("SLIPPAGE_BPS", "1.0"), 1.0))
+    cfg["SPREAD_BPS"] = max(0.0, _parse_float(ENV.get("SPREAD_BPS", "0.5"), 0.5))
+    cfg["FUNDING_BUFFER_BPS"] = max(0.0, _parse_float(ENV.get("FUNDING_BUFFER_BPS", "1.0"), 1.0))
+    cfg["OTHER_COST_BPS"] = max(0.0, _parse_float(ENV.get("OTHER_COST_BPS", "0.0"), 0.0))
+    cfg["RISK_PER_TRADE_PCT"] = _required_positive(ENV, "RISK_PER_TRADE_PCT", 0.75)
+    cfg["MAX_DAILY_LOSS_PCT"] = _required_positive(ENV, "MAX_DAILY_LOSS_PCT", 3.0)
+    cfg["MAX_POSITION_SIZE_USDT"] = _required_positive(ENV, "MAX_POSITION_SIZE_USDT", 200.0)
+    cfg["MIN_NET_EDGE_PCT"] = _required_positive(ENV, "MIN_NET_EDGE_PCT", 0.15)
+    cfg["ADVERSE_BUFFER_PCT"] = max(0.0, _parse_float(ENV.get("ADVERSE_BUFFER_PCT", "0.10"), 0.10))
+
+    # Backward-compatible decimal fee for legacy modules. New modules must use bps.
+    cfg["FEE_RATE"] = float(cfg["TAKER_FEE_BPS"]) / 10000.0
     cfg["TP_M"] = _parse_float(ENV.get("TP_M", "16.0"), 16.0)
     cfg["SL_P"] = _parse_float(ENV.get("SL_P", "0.55"), 0.55)
     cfg["HOLD_MAX"] = _parse_int(ENV.get("HOLD_MAX", "10"), 10)
-    cfg["MAX_POSITION_SIZE_USDT"] = _parse_float(ENV.get("MAX_POSITION_SIZE_USDT", "350"), 350.0)
     cfg["CIRCUIT_BREAKER_THRESHOLD"] = _parse_int(ENV.get("CIRCUIT_BREAKER_THRESHOLD", "3"), 3)
     cfg["CIRCUIT_BREAKER_COOLDOWN_SEC"] = _parse_int(ENV.get("CIRCUIT_BREAKER_COOLDOWN_SEC", "15"), 15)
-
-    # Expose raw ENV if needed
     cfg["_ENV_RAW"] = ENV
-
     return cfg

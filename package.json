@@ -10,9 +10,24 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.1",
     "@types/ws": "^8.5.12",
+    "ts-node": "^10.9.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.5.4"
-  }
+    "typescript": "^5.9.3"
+  },
+  "description": "Gerçek emir motoru — Binance + Bitget Futures.",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Erdemhasates35/honeycomb-execution-core.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/Erdemhasates35/honeycomb-execution-core/issues"
+  },
+  "homepage": "https://github.com/Erdemhasates35/honeycomb-execution-core#readme"
 }

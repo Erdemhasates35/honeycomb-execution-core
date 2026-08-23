@@ -5,6 +5,7 @@ from typing import Optional, Dict, Any
 import time
 import uuid
 
+from python_engine.idempotency import IdempotencySQLite
 
 @dataclass
 class RiskEngine:
@@ -12,14 +13,12 @@ class RiskEngine:
     max_leverage: int = 50
 
     def calculate_max_notional(self, account_equity: float) -> float:
-        """Return maximum notional allowed for a single new position based on account equity and live_max_capital_percent."""
         if account_equity <= 0:
             return 0.0
         pct = max(0.0, min(self.live_max_capital_percent, 100.0))
         return account_equity * (pct / 100.0)
 
     def enforce_leverage(self, requested: int) -> int:
-        """Return effective leverage honoring system max_leverage."""
         if requested is None:
             requested = 1
         try:
@@ -32,12 +31,17 @@ class RiskEngine:
             return self.max_leverage
         return r
 
+    def kelly_fraction(self, win_prob: float, win_loss_ratio: float, shrink: float = 1.0) -> float:
+        # Kelly f* = (p*(b+1) -1)/b where b = win_loss_ratio
+        if win_loss_ratio <= 0:
+            return 0.0
+        p = max(0.0, min(1.0, win_prob))
+        b = win_loss_ratio
+        f = (p * (b + 1) - 1) / b
+        f = max(0.0, f) * float(shrink)
+        return f
 
 class ExecutionGateway:
-    """Abstract execution gateway interface.
-    Concrete adapters should implement send_order and fetch_account/fetch_positions.
-    """
-
     def send_order(self, order: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError
 
@@ -47,23 +51,13 @@ class ExecutionGateway:
     def fetch_positions(self) -> Dict[str, Any]:
         raise NotImplementedError
 
-
 class OrderEngine:
-    """Order Engine responsible for creation, idempotency and basic lifecycle orchestration.
-    This is a skeleton demonstrating key behaviors required for production:
-    - idempotent client_order_id
-    - leverage and capital checks via RiskEngine
-    - not sending orders directly to exchange in tests
-    """
-
-    def __init__(self, gateway: ExecutionGateway, risk: RiskEngine):
+    def __init__(self, gateway: ExecutionGateway, risk: RiskEngine, idempotency_db: str = ':memory:'):
         self.gateway = gateway
         self.risk = risk
-        # in-memory idempotency store: client_order_id -> exchange_result
-        self._idempotency_store: Dict[str, Dict[str, Any]] = {}
+        self.idempotency = IdempotencySQLite(idempotency_db)
 
     def create_client_order_id(self, prefix: str = "hc") -> str:
-        # deterministic-ish but unique id
         return f"{prefix}-{int(time.time()*1000)}-{uuid.uuid4().hex[:8]}"
 
     def can_open_notional(self, account_equity: float, requested_notional: float) -> bool:
@@ -87,24 +81,20 @@ class OrderEngine:
 
     def send(self, order: Dict[str, Any]) -> Dict[str, Any]:
         cid = order.get("client_order_id")
-        if cid in self._idempotency_store:
-            # return previously stored result
-            return self._idempotency_store[cid]
-        # send to gateway
+        stored = self.idempotency.get(cid)
+        if stored:
+            return stored
         res = self.gateway.send_order(order)
-        # store result for idempotency
-        self._idempotency_store[cid] = res
+        self.idempotency.put(cid, res)
         return res
 
-
-# Simple in-memory mock gateway for tests (does not perform live calls)
+# Simple in-memory mock gateway for tests
 class MockGateway(ExecutionGateway):
     def __init__(self, account_equity: float = 1000.0):
         self._account_equity = account_equity
         self.sent_orders = []
 
     def send_order(self, order: Dict[str, Any]) -> Dict[str, Any]:
-        # simulate ack response
         res = {"orderId": int(time.time()*1000), "clientOrderId": order.get("client_order_id"), "status": "FILLED", "avgPrice": 1.0}
         self.sent_orders.append(order)
         return res

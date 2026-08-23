@@ -18,6 +18,24 @@ load_env(){
   done < .env
 }
 load_env
+
+# Canonical economics contract. All new fee inputs are bps; legacy engines receive
+# a normalized decimal FEE_RATE so `0.04` can never become a 4% commission.
+export MAKER_FEE_RATE="$(python - <<'PY'
+import os
+bps = float(os.environ.get('MAKER_FEE_BPS', '2'))
+print(f'{bps / 10000:.10f}')
+PY
+)"
+export TAKER_FEE_RATE="$(python - <<'PY'
+import os
+bps = float(os.environ.get('TAKER_FEE_BPS', '5'))
+print(f'{bps / 10000:.10f}')
+PY
+)"
+# Legacy modules that expose only one fee variable use conservative taker cost.
+export FEE_RATE="$TAKER_FEE_RATE"
+
 export HONEYCOMB_MODE=TESTNET TESTNET_PORT="${TESTNET_PORT:-8000}" ENGINE_URL="http://127.0.0.1:${TESTNET_PORT}"
 termux-wake-lock 2>/dev/null || true
 stop(){ for f in runtime/testnet-engine.pid runtime/testnet-bridge.pid; do [ -f "$f" ] && kill "$(cat "$f")" 2>/dev/null || true; done; }

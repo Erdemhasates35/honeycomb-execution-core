@@ -19,12 +19,7 @@ type Router struct {
 }
 
 func NewRouter(cfg *config.Config, rm *risk.Manager) *Router {
-	return &Router{
-		cfg:       cfg,
-		risk:      rm,
-		positions: make(map[string]*Position),
-		logs:      make([]string, 0, 200),
-	}
+	return &Router{cfg: cfg, risk: rm, positions: make(map[string]*Position), logs: make([]string, 0, 200)}
 }
 
 func (r *Router) log(msg string) {
@@ -55,70 +50,87 @@ func (r *Router) Positions() []*Position {
 	return out
 }
 
+func roleRateBPS(cfg *config.Config, role ExecutionRole) float64 {
+	if role == RoleMaker {
+		return cfg.MakerFeeBPS
+	}
+	return cfg.TakerFeeBPS
+}
+
+func (r *Router) executionCostPercent(req OpenRequest) float64 {
+	entry := req.EntryRole
+	exit := req.ExitRole
+	if entry == "" {
+		entry = RoleTaker
+	}
+	if exit == "" {
+		exit = RoleTaker
+	}
+	feeBPS := roleRateBPS(r.cfg, entry) + roleRateBPS(r.cfg, exit)
+	return feeBPS/100.0 +
+		r.cfg.SlippageBPS/100.0 +
+		r.cfg.SpreadBPS/100.0 +
+		r.cfg.FundingBufferBPS/100.0 +
+		r.cfg.OtherCostBPS/100.0
+}
+
 func (r *Router) Open(req OpenRequest) OrderResult {
 	if !r.risk.AllowNewOrder() {
 		r.log("REJECT open: risk state not allowing new orders")
 		return OrderResult{Success: false, Message: "risk_state_blocks_new_orders", Mode: r.cfg.Mode}
 	}
 
-	if req.Size <= 0 || req.Leverage <= 0 || req.Leverage > r.cfg.MaxLeverage {
+	if req.Size <= 0 || req.Size > r.cfg.MaxPositionSizeUSDT || req.Leverage <= 0 || req.Leverage > r.cfg.MaxLeverage {
 		return OrderResult{Success: false, Message: "invalid_size_or_leverage", Mode: r.cfg.Mode}
 	}
+	if req.ExpectedGrossPct <= 0 {
+		return OrderResult{Success: false, Message: "expected_gross_pct_required", Mode: r.cfg.Mode}
+	}
 
-	// Edge kontrolü — canlı orderbook bağlanınca gerçek değerler gelecek
+	entryRole := req.EntryRole
+	exitRole := req.ExitRole
+	if entryRole == "" {
+		entryRole = RoleTaker
+	}
+	if exitRole == "" {
+		exitRole = RoleTaker
+	}
+	if (entryRole != RoleMaker && entryRole != RoleTaker) || (exitRole != RoleMaker && exitRole != RoleTaker) {
+		return OrderResult{Success: false, Message: "invalid_execution_role", Mode: r.cfg.Mode}
+	}
+
+	costPct := r.executionCostPercent(req)
 	edgeIn := edge.Input{
-		GrossPercent:    0.20,
-		FeePercent:      0.08,
-		FundingPercent:  0.02,
-		SlippagePercent: 0.04,
-		SpreadPercent:   0.02,
-		LatencyCostPct:  0.01,
-		ExecRiskPercent: 0.02,
+		GrossPercent:    req.ExpectedGrossPct,
+		FeePercent:      (roleRateBPS(r.cfg, entryRole) + roleRateBPS(r.cfg, exitRole)) / 100.0,
+		FundingPercent:  r.cfg.FundingBufferBPS / 100.0,
+		SlippagePercent: r.cfg.SlippageBPS / 100.0,
+		SpreadPercent:   r.cfg.SpreadBPS / 100.0,
+		LatencyCostPct:   0,
+		ExecRiskPercent: r.cfg.AdverseBufferPercent,
 	}
 	res := edge.Calculate(edgeIn, r.cfg.MinEdgePercent)
 	if !res.Allowed {
-		r.log(fmt.Sprintf("REJECT open: edge=%.4f reason=%s", res.ExpectedNet, res.Reason))
+		r.log(fmt.Sprintf("REJECT open: gross=%.4f cost=%.4f net=%.4f reason=%s", req.ExpectedGrossPct, costPct, res.ExpectedNet, res.Reason))
 		return OrderResult{Success: false, Message: res.Reason, Mode: r.cfg.Mode}
 	}
 
-	id := fmt.Sprintf("pos_%d", time.Now().UnixNano())
-	pos := &Position{
-		ID:       id,
-		Symbol:   req.Symbol,
-		Side:     req.Side,
-		Size:     req.Size,
-		Leverage: req.Leverage,
-		Entry:    0,
-		Exchange: req.Exchange,
-		Mode:     r.cfg.Mode,
-		OpenedAt: time.Now().UTC(),
-		Status:   "OPEN",
-	}
-
+	// This Go router is not an exchange adapter. Never report a local stub as a live fill.
 	if r.cfg.Mode == "live" {
-		if r.cfg.BinanceAPIKey == "" && r.cfg.BitgetAPIKey == "" {
-			r.log("LIVE rejected: no exchange API keys configured")
-			return OrderResult{Success: false, Message: "live_mode_requires_api_keys", Mode: "live"}
-		}
-		// Gerçek signed REST emir buraya bağlanır (Binance/Bitget client).
-		// Key doğrulandıktan sonra aktif edilir — şu an güvenli iskelet.
-		r.log(fmt.Sprintf("LIVE open requested %s %s size=%.6f (keys present)", req.Side, req.Symbol, req.Size))
-	} else {
-		r.log(fmt.Sprintf("PAPER open %s %s size=%.6f lev=%.0fx", req.Side, req.Symbol, req.Size, req.Leverage))
+		r.log("LIVE rejected: exchange execution adapter is not wired into internal/order.Router")
+		return OrderResult{Success: false, Message: "live_exchange_adapter_not_wired", Mode: "live"}
 	}
 
+	id := fmt.Sprintf("pos_%d", time.Now().UnixNano())
+	pos := &Position{ID: id, Symbol: req.Symbol, Side: req.Side, Size: req.Size, Leverage: req.Leverage, Entry: 0, Exchange: req.Exchange, Mode: r.cfg.Mode, OpenedAt: time.Now().UTC(), Status: "OPEN"}
+
+	r.log(fmt.Sprintf("%s open %s %s size=%.6f lev=%.0fx gross=%.4f%% cost=%.4f%% net=%.4f%%", r.cfg.Mode, req.Side, req.Symbol, req.Size, req.Leverage, req.ExpectedGrossPct, costPct, res.ExpectedNet))
 	r.mu.Lock()
 	r.positions[id] = pos
 	r.mu.Unlock()
 	r.risk.RecordSuccess()
 
-	return OrderResult{
-		Success:  true,
-		OrderID:  id,
-		Message:  "position_opened",
-		Mode:     r.cfg.Mode,
-		Position: pos,
-	}
+	return OrderResult{Success: true, OrderID: id, Message: "position_opened", Mode: r.cfg.Mode, Position: pos}
 }
 
 func (r *Router) Close(req CloseRequest) OrderResult {
@@ -138,12 +150,5 @@ func (r *Router) Close(req CloseRequest) OrderResult {
 
 	target.Status = "CLOSED"
 	r.log(fmt.Sprintf("%s close %s id=%s", r.cfg.Mode, req.Symbol, target.ID))
-
-	return OrderResult{
-		Success:  true,
-		OrderID:  target.ID,
-		Message:  "position_closed",
-		Mode:     r.cfg.Mode,
-		Position: target,
-	}
+	return OrderResult{Success: true, OrderID: target.ID, Message: "position_closed", Mode: r.cfg.Mode, Position: target}
 }

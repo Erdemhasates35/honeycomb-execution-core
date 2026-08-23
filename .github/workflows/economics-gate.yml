@@ -1,0 +1,30 @@
+name: execution-economics-gate
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  economics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test runner
+        run: python -m pip install --upgrade pip pytest
+      - name: Compile economics modules
+        run: python -m py_compile execution_economics.py config.py scripts/audit_execution_economics.py
+      - name: Run economics tests
+        run: python -m pytest -q tests/test_execution_economics.py
+      - name: Run repository economics audit
+        run: python scripts/audit_execution_economics.py > economics-audit.json || test $? -eq 0
+      - name: Upload audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: execution-economics-audit
+          path: economics-audit.json

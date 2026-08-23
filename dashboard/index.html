@@ -1,1 +1,223 @@
-<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HONEYCOMB CONTROL PLANE</title><style>body{margin:0;background:#080b10;color:#dfe7ef;font:14px system-ui,sans-serif}main{max-width:1400px;margin:auto;padding:18px}h1{font-size:22px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.card{background:#111720;border:1px solid #26303b;border-radius:10px;padding:14px;margin-bottom:10px}.v{font-size:22px;font-weight:700;margin-top:6px}pre{white-space:pre-wrap;max-height:420px;overflow:auto;background:#06080b;padding:12px;border-radius:8px}small{opacity:.7}.ok{color:#79e2a0}.bad{color:#ff7d7d}</style></head><body><main><h1>HONEYCOMB / QUANTUM NEXUS CONTROL PLANE</h1><div class="grid" id="cards"></div><div class="card"><b>QUALITY CERTIFICATION</b><pre id="quality">loading...</pre></div><div class="card"><b>ENGINE INVENTORY</b><pre id="engines">loading...</pre></div><div class="card"><b>DATABASE / EXECUTION TELEMETRY</b><pre id="db">loading...</pre></div><div class="card"><b>RECENT LOG STREAM</b><pre id="logs">loading...</pre></div></main><script>const esc=v=>String(v??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));async function tick(){try{const s=await(await fetch('/api/status',{cache:'no-store'})).json();const card=(k,v,ok=true)=>`<div class="card"><small>${esc(k)}</small><div class="v ${ok?'ok':'bad'}">${esc(v)}</div></div>`;document.querySelector('#cards').innerHTML=[card('MODE',s.mode),card('CONTROL PLANE',`${s.control_plane.host}:${s.control_plane.port}`),card('ENGINE :8000',s.execution_ports['8000']?'UP':'DOWN',s.execution_ports['8000']),card('BRIDGE :8100',s.execution_ports['8100']?'UP':'DOWN',s.execution_ports['8100']),card('ENGINES',s.engine_count),card('SOURCE FILES',s.source_file_count),card('REPOSITORY QUALITY',`${s.quality.summary.repository_score}/10`,s.quality.summary.repository_score>=9),card('CORE 9+ GATE',s.quality.summary.core_9plus?'PASS':'FAIL',s.quality.summary.core_9plus),card('GIT',s.git?.dirty?'DIRTY':'CLEAN',!s.git?.dirty),card('BRANCH',s.git?.branch||'?')].join('');document.querySelector('#quality').textContent=(s.quality.files||[]).map(x=>`${x.path} | ${x.score}/10 | ${x.failed_checks.length?'FAIL:'+x.failed_checks.join(','):'PASS'}`).join('\n');const e=await(await fetch('/api/engines',{cache:'no-store'})).json();document.querySelector('#engines').textContent=e.map(x=>`${x.path} | inventory=${x.score}`).join('\n');document.querySelector('#db').textContent=JSON.stringify(s.databases,null,2);const l=await(await fetch('/api/logs?n=120',{cache:'no-store'})).json();document.querySelector('#logs').textContent=l.map(x=>`[${x.file}] ${x.line}`).join('\n')}catch(e){document.querySelector('#cards').innerHTML='<div class="card bad">CONTROL PLANE OFFLINE</div>'}}tick();setInterval(tick,1000)</script></body></html>
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HONEYCOMB CONTROL PLANE</title>
+<style>
+body{
+margin:0;
+background:#080b10;
+color:#dfe7ef;
+font:14px system-ui,sans-serif
+}
+main{
+max-width:1400px;
+margin:auto;
+padding:18px
+}
+h1{
+margin:0 0 14px;
+font-size:22px
+}
+.grid{
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(220px,1fr));
+gap:10px
+}
+.card{
+background:#111720;
+border:1px solid #26303b;
+border-radius:10px;
+padding:14px;
+margin-bottom:10px
+}
+.v{
+font-size:22px;
+font-weight:700;
+margin-top:6px
+}
+pre{
+white-space:pre-wrap;
+max-height:420px;
+overflow:auto;
+background:#06080b;
+padding:12px;
+border-radius:8px
+}
+small{
+opacity:.7
+}
+.ok{
+color:#79e2a0
+}
+.bad{
+color:#ff7d7d
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<h1>
+HONEYCOMB / QUANTUM NEXUS CONTROL PLANE
+</h1>
+
+<div class="grid" id="cards"></div>
+
+<div class="card">
+<b>ENGINE INVENTORY</b>
+<pre id="engines">loading...</pre>
+</div>
+
+<div class="card">
+<b>DATABASE / EXECUTION TELEMETRY</b>
+<pre id="db">loading...</pre>
+</div>
+
+<div class="card">
+<b>RECENT LOG STREAM</b>
+<pre id="logs">loading...</pre>
+</div>
+
+</main>
+
+<script>
+
+const esc = value =>
+String(value ?? "")
+.replace(
+/[&<>]/g,
+character => ({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;"
+}[character])
+);
+
+async function tick(){
+
+try{
+
+const status =
+await (
+await fetch("/api/status")
+).json();
+
+const card =
+(key,value,ok=true) =>
+`<div class="card">
+<small>${esc(key)}</small>
+<div class="v ${ok ? "ok" : "bad"}">
+${esc(value)}
+</div>
+</div>`;
+
+document.querySelector("#cards")
+.innerHTML = [
+
+card(
+"MODE",
+status.mode
+),
+
+card(
+"CONTROL PLANE",
+`${status.control_plane.host}:${status.control_plane.port}`
+),
+
+card(
+"ENGINE :8000",
+status.execution_ports["8000"]
+? "UP"
+: "DOWN",
+status.execution_ports["8000"]
+),
+
+card(
+"BRIDGE :8100",
+status.execution_ports["8100"]
+? "UP"
+: "DOWN",
+status.execution_ports["8100"]
+),
+
+card(
+"ENGINES",
+status.engine_count
+),
+
+card(
+"SOURCE FILES",
+status.source_file_count
+),
+
+card(
+"GIT",
+status.git?.dirty
+? "DIRTY"
+: "CLEAN",
+!status.git?.dirty
+),
+
+card(
+"BRANCH",
+status.git?.branch || "?"
+)
+
+].join("");
+
+const engines =
+await (
+await fetch("/api/engines")
+).json();
+
+document.querySelector("#engines")
+.textContent =
+engines
+.map(
+x =>
+`${x.path} | score=${x.score}`
+)
+.join("\n");
+
+document.querySelector("#db")
+.textContent =
+JSON.stringify(
+status.databases,
+null,
+2
+);
+
+const logs =
+await (
+await fetch("/api/logs?n=120")
+).json();
+
+document.querySelector("#logs")
+.textContent =
+logs
+.map(
+x =>
+`[${x.file}] ${x.line}`
+)
+.join("\n");
+
+}catch(error){
+
+document.querySelector("#cards")
+.innerHTML =
+'<div class="card bad">CONTROL PLANE OFFLINE</div>';
+
+}
+
+}
+
+tick();
+setInterval(tick,1000);
+
+</script>
+</body>
+</html>

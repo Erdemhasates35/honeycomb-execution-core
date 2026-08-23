@@ -7,9 +7,11 @@ import os
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+ROOT = Path(__file__).resolve().parents[1]
 HOST = os.getenv("UI_CONTROL_HOST", "127.0.0.1")
 PORT = int(os.getenv("UI_CONTROL_PORT", "8788"))
 CONTROL_URL = os.getenv("HONEYCOMB_CONTROL_URL", "http://127.0.0.1:8787").rstrip("/")
@@ -56,13 +58,13 @@ def fetch_json(url: str, method: str = "GET", body: bytes | None = None) -> tupl
             try:
                 return response.status, json.loads(raw) if raw else None
             except json.JSONDecodeError:
-                return response.status, {"error": "upstream_non_json"}
+                return response.status, {"error": "UPSTREAM_NON_JSON"}
     except urllib.error.HTTPError as exc:
         raw = exc.read().decode("utf-8", errors="replace")
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError:
-            payload = {"error": raw or "upstream_http_error"}
+            payload = {"error": raw or "UPSTREAM_HTTP_ERROR"}
         return exc.code, payload
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         return 503, {"error": "UPSTREAM_UNAVAILABLE", "detail": str(exc)}
@@ -85,6 +87,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
+        if path in {"/", "/index.html"}:
+            file = ROOT / "dashboard" / "index.html"
+            body = file.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if path == "/api/ui/capabilities":
             self.send_json(200, ui_capabilities())
             return

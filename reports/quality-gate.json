@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "summary": {
-    "total": 45,
-    "repository_score": 7.58,
+    "total": 49,
+    "repository_score": 7.59,
     "core_9plus": false,
     "core_count": 4
   },
@@ -63,6 +63,67 @@
         "no_debt_markers": true
       },
       "failed_checks": [
+        "validation"
+      ]
+    },
+    {
+      "path": "aggressive_futures_bot.py",
+      "score": 7.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": false,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "documentation",
+        "validation"
+      ]
+    },
+    {
+      "path": "aggressive_short_hunter.py",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "validation"
+      ]
+    },
+    {
+      "path": "ai_sovereign_engine.py",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
         "validation"
       ]
     },
@@ -462,6 +523,26 @@
         "validation",
         "security",
         "tests"
+      ]
+    },
+    {
+      "path": "long_sniper_hunter.py",
+      "score": 8.0,
+      "checks": {
+        "syntax": true,
+        "typed": false,
+        "error_boundary": true,
+        "observability": true,
+        "documentation": true,
+        "validation": false,
+        "security": true,
+        "maintainability": true,
+        "tests": true,
+        "no_debt_markers": true
+      },
+      "failed_checks": [
+        "typed",
+        "validation"
       ]
     },
     {

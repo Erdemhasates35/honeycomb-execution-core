@@ -7,6 +7,7 @@
     "start": "tsx verify.ts"
   },
   "dependencies": {
+    "ollama": "^0.6.3",
     "ws": "^8.18.0"
   },
   "devDependencies": {

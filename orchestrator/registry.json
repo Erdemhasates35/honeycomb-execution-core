@@ -90,6 +90,11 @@
       "sha256": "01bec8651cc485e0819737a645f908888db8d8a12c9cb0406aecf35e7bd7395b"
     },
     {
+      "path": "aggressive_futures_bot.py",
+      "score": 3,
+      "sha256": "539fba081c743e4b8598b6bfa212644e6bd66379dfac3a6110cf9d760e588d5c"
+    },
+    {
       "path": "engine.py",
       "score": 3,
       "sha256": "2a706743609b99d3529e01c2fa63bcdfce4e0a69c5b21ebe8c18a1334281fb65"
@@ -148,6 +153,11 @@
       "path": "BinanceFuturesEngineCatE.ts",
       "score": 2,
       "sha256": "f72b44d9b82ce6b16f2ba1fec7a0c9f81777923f499a20ac54985395bb625fcd"
+    },
+    {
+      "path": "ai_sovereign_engine.py",
+      "score": 2,
+      "sha256": "547f1df5974052f8e19b5b50a647c9109689b94c2812687fac6435f13e9dd610"
     },
     {
       "path": "alpha_brain.py",

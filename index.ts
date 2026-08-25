@@ -1,9 +1,20 @@
-import dotenv from 'dotenv';
+import fs from 'node:fs';
+import path from 'node:path';
 import { BinanceFuturesEngineCatE, type FuturesMarket } from './BinanceFuturesEngineCatE.js';
 
-dotenv.config();
+function loadEnv(): void {
+  const envPath = path.resolve(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) return;
+  for (const raw of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#') || !line.includes('=')) continue;
+    const [key, ...rest] = line.split('=');
+    if (key && process.env[key] === undefined) process.env[key] = rest.join('=').trim().replace(/^['"]|['"]$/g, '');
+  }
+}
 
 async function main() {
+  loadEnv();
   const apiKey = (process.env.BINANCE_API_KEY || '').trim();
   const apiSecret = (process.env.BINANCE_API_SECRET || process.env.BINANCE_SECRET || '').trim();
   const marketType = ((process.env.FUTURES_MARKET || 'USDT_M').toUpperCase() as FuturesMarket);
@@ -12,14 +23,7 @@ async function main() {
 
   console.log(`[PRODUCTION]: Starting BinanceFuturesEngineCatE | market=${marketType} | mainnet`);
   console.log(`[AUTH CHECK]: API Key Length: ${apiKey.length} | API Secret Length: ${apiSecret.length}`);
-
-  const engine = new BinanceFuturesEngineCatE({
-    apiKey,
-    apiSecret,
-    marketType,
-    recvWindow: Number(process.env.BINANCE_RECV_WINDOW || process.env.BINANCE_RECV_WINDOW_MS) || 5000,
-    maxRetries: Number(process.env.BINANCE_MAX_RETRIES) || 5,
-  });
+  const engine = new BinanceFuturesEngineCatE({ apiKey, apiSecret, marketType, recvWindow: Number(process.env.BINANCE_RECV_WINDOW || process.env.BINANCE_RECV_WINDOW_MS) || 5000, maxRetries: Number(process.env.BINANCE_MAX_RETRIES) || 5 });
 
   engine.on('connected', () => console.log('[STREAM]: User Data Stream connected.'));
   engine.on('orderUpdate', (order) => console.log('[EVENT]: Order Update:', order.s, 'Side:', order.S, 'PosSide:', order.ps, 'Price:', order.p, 'Qty:', order.q));
@@ -28,13 +32,7 @@ async function main() {
   engine.on('rateLimitExceeded', (data) => console.warn('[WARNING]: Rate limit warning emitted:', data));
   engine.on('error', (err) => console.error('[ENGINE ERROR]:', err.message));
 
-  const shutdown = async () => {
-    console.log('\n[SHUTDOWN]: Terminating Binance Futures Engine gracefully...');
-    engine.terminate();
-    console.log('[SHUTDOWN]: Complete.');
-    process.exit(0);
-  };
-
+  const shutdown = async () => { console.log('\n[SHUTDOWN]: Terminating Binance Futures Engine gracefully...'); engine.terminate(); console.log('[SHUTDOWN]: Complete.'); process.exit(0); };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 

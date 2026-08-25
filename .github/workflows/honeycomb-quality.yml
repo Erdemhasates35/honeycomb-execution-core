@@ -12,8 +12,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
       - run: python -m pip install --upgrade pip
       - run: pip install fastapi uvicorn httpx python-dotenv pydantic pytest
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
       - run: python -m py_compile orchestrator/control_plane.py orchestrator/quality_gate.py orchestrator/ui_control_plane.py nexus_testnet_bridge.py
       - run: bash -n run_nexus_testnet.sh run_honeycomb_ui.sh runtime/start_testnet.sh
       - run: pytest -q

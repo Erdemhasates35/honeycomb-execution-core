@@ -13,9 +13,10 @@ test('PAPER COIN-M uses public metadata and inverse-settlement PnL', async () =>
     feeRate: 0,
     slippageBps: 0,
     fetcher: async (url) => {
-      if (url.endsWith('/exchangeInfo')) return response({ symbols: [{ symbol: 'BTCUSD_PERP', contractSize: 100, marginAsset: 'BTC' }] });
-      if (url.includes('/ticker/price')) return response({ price: '100000' });
-      throw new Error(`unexpected URL ${url}`);
+      const u = String(url);
+      if (u.endsWith('/exchangeInfo')) return response({ symbols: [{ symbol: 'BTCUSD_PERP', contractSize: 100, marginAsset: 'BTC' }] });
+      if (u.includes('/ticker/price')) return response({ price: '100000' });
+      throw new Error(`unexpected URL ${u}`);
     },
   });
   await adapter.initialize();

@@ -1,43 +1,50 @@
 # Honeycomb Live Engines
 
-Three production engines on a shared kernel. No ghost fills. No hardcoded prices.
+Three production engines on a shared dual-venue HMAC kernel.
 
-| Engine | Venue | Port | Entry |
-|--------|-------|------|-------|
-| **APEX** | USDT-M (`fapi`) | 8091 | `python3 live/apex_usdt.py` |
-| **HELIX** | COIN-M (`dapi`) | 8092 | `python3 live/helix_coin.py` |
-| **MAKER SNIPER** | USDT or COIN (GTX) | 8093 | `python3 live/maker_sniper.py` |
+| Engine | Venue | Port | Command |
+|--------|-------|------|---------|
+| APEX | USDT-M fapi | 8091 | `python3 live/apex_usdt.py` |
+| HELIX | COIN-M dapi | 8092 | `python3 live/helix_coin.py` |
+| MAKER SNIPER | GTX post-only | 8093 | `python3 live/maker_sniper.py` |
 | Desk | local control | 8788 | `python3 live/desk.py` |
 
-## What this fixes
+## Critical: kernel
 
-1. Ghost fills — stale FALLBACK no longer opens or closes
-2. Mark vs fill — avgPrice + userTrades RP + commission
-3. Exchange SL — STOP_MARKET / TAKE_PROFIT_MARKET closePosition
-4. Multi-bot Cross bleed — single-flight flock
-5. COIN-M signature — HELIX signs only against dapi
-6. -1021 timestamp — server time sync + recvWindow 10s
-7. Connection reset 104 — backoff, never treated as fill
-8. Coin-flip sides — removed; EMA/RSI/ATR only
-9. Maker edge — GTX post-only
-10. Funding veto — skip when you would pay
+`live/kernel.py` may ship as a loader. Full implementation is dual-venue HMAC with:
+fill ledger (avgPrice + userTrades RP), exchange STOP/TP, stale-book halt, token bucket,
+single-flight flock, funding veto, slip reject, GTX.
+
+If `import live.kernel` fails, place the full `kernel.py` from the release artifact
+or run the write helper when published.
+
+## Fixes vs your forensic week
+
+1. No ghost fills (no FALLBACK prices)
+2. Fill-accurate RP from userTrades
+3. Exchange-resident SL/TP
+4. Cross-engine single-flight lock
+5. COIN-M signs only dapi (no fapi signature on USD_PERP)
+6. Time sync + recvWindow (kill -1021)
+7. Conn reset 104 backoff (never treated as fill)
+8. Coin-flip sides removed
+9. Maker GTX fee path
+10. Funding-window veto
 
 ## Honesty
 
-These cut specific failure modes. They do **not** guarantee 10x returns.
+These cut the failure modes behind ~-2.47 USDT week and Cross 50x liquidations.
+They do **not** guarantee 10x. Prefer ISOLATED + MAX_LEVERAGE<=20 on small capital.
+One aggressive engine at a time.
 
 ## Termux
 
 ```bash
 cd ~/honeycomb-execution-core
-# EXECUTION_MODE=live LIVE_ARMED=1 AUTO_PAPER=0
+git pull origin main
+# .env: EXECUTION_MODE=live LIVE_ARMED=1 AUTO_PAPER=0
 # BINANCE_API_KEY=... BINANCE_SECRET=...
 # MARGIN_TYPE=ISOLATED MAX_LEVERAGE=20
 
 python3 live/apex_usdt.py
-python3 live/helix_coin.py
-python3 live/maker_sniper.py
-python3 live/desk.py
 ```
-
-Run one aggressive engine at a time on small capital.

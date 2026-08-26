@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3
-# Auto-materialize full kernel from base64 parts if needed
-import base64, pathlib, sys
-_here = pathlib.Path(__file__).resolve().parent
-_parts = sorted(_here.glob("kernel.b64.*"))
+"""Loader: assemble from kernel.part* then re-export."""
+from pathlib import Path
+import importlib.util
+_here = Path(__file__).resolve().parent
+_parts = sorted(_here.glob("kernel.part*"))
 if _parts:
-    _data = base64.b64decode("".join(p.read_text().strip() for p in _parts))
+    _text = "".join(p.read_text() for p in _parts)
     _impl = _here / "_kernel_impl.py"
-    if not _impl.exists() or _impl.stat().st_size != len(_data):
-        _impl.write_bytes(_data)
-    import importlib.util
+    if not _impl.exists() or _impl.read_text() != _text:
+        _impl.write_text(_text)
     _spec = importlib.util.spec_from_file_location("live._kernel_impl", _impl)
     _mod = importlib.util.module_from_spec(_spec)
     _spec.loader.exec_module(_mod)
@@ -17,7 +17,5 @@ if _parts:
     ema = _mod.ema
     rsi = _mod.rsi
     atr = _mod.atr
-    TokenBucket = getattr(_mod, "TokenBucket", None)
-    SingleFlight = getattr(_mod, "SingleFlight", None)
 else:
-    raise ImportError("live/kernel.b64.* missing — run: python3 live/build_kernel.py")
+    raise ImportError("missing live/kernel.part* — run: python3 live/assemble_kernel.py")

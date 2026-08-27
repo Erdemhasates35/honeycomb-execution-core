@@ -98,6 +98,7 @@ class LiveKernel:
         self._off = 0
         self._filters: Dict[str, Dict] = {}
         self._stale_until = 0.0
+        self._dual = None
         self.log = log_fn or (lambda m: print(time.strftime("%H:%M:%S") + " [K] " + str(m), flush=True))
         self.sync_time()
 
@@ -108,6 +109,50 @@ class LiveKernel:
             self._off = server - int(time.time() * 1000)
         except Exception as e:
             self.log("time sync fail: %s" % e)
+
+    def load_exchange_info(self, symbols=None):
+        """Preload LOT_SIZE / PRICE_FILTER for given symbols (or all traded)."""
+        try:
+            info = self._http("GET", self.v["exchangeInfo"], {}, signed=False, weight=10)
+            want = set(s.upper() for s in (symbols or [])) if symbols else None
+            for s in info.get("symbols", []):
+                sym = s.get("symbol") or ""
+                if want is not None and sym not in want:
+                    continue
+                f = dict(DEFAULT_FILTER)
+                for fl in s.get("filters", []):
+                    t = fl.get("filterType")
+                    if t == "LOT_SIZE":
+                        f["stepSize"] = float(fl.get("stepSize", f["stepSize"]))
+                        f["minQty"] = float(fl.get("minQty", f["minQty"]))
+                    elif t in ("MIN_NOTIONAL", "NOTIONAL"):
+                        f["minNotional"] = float(fl.get("notional", fl.get("minNotional", f["minNotional"])))
+                    elif t == "PRICE_FILTER":
+                        f["tickSize"] = float(fl.get("tickSize", f["tickSize"]))
+                self._filters[sym] = f
+            self.log("exchangeInfo loaded filters=%d" % len(self._filters))
+        except Exception as e:
+            self.log("load_exchange_info: %s" % e)
+        return self._filters
+
+    def position_mode(self, dual=None):
+        """Read or set hedge (dualSidePosition). dual=True hedge, False one-way. None=read only."""
+        try:
+            if dual is None:
+                data = self._http("GET", self.v["dual"], {}, signed=True, weight=1)
+                self._dual = bool(data.get("dualSidePosition"))
+                return self._dual
+            self._http("POST", self.v["dual"], {"dualSidePosition": "true" if dual else "false"},
+                       signed=True, weight=1, is_order=True)
+            self._dual = bool(dual)
+            return self._dual
+        except Exception as e:
+            msg = str(e)
+            if "No need" in msg or "not modified" in msg.lower():
+                self._dual = bool(dual) if dual is not None else self._dual
+                return self._dual
+            self.log("position_mode: %s" % e)
+            return self._dual
 
     def _sign(self, params: Dict) -> str:
         qs = urllib.parse.urlencode(params, doseq=True)

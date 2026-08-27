@@ -111,7 +111,6 @@ class LiveKernel:
             self.log("time sync fail: %s" % e)
 
     def load_exchange_info(self, symbols=None):
-        """Preload LOT_SIZE / PRICE_FILTER for given symbols (or all traded)."""
         try:
             info = self._http("GET", self.v["exchangeInfo"], {}, signed=False, weight=10)
             want = set(s.upper() for s in (symbols or [])) if symbols else None
@@ -136,7 +135,6 @@ class LiveKernel:
         return self._filters
 
     def position_mode(self, dual=None):
-        """Read or set hedge (dualSidePosition). dual=True hedge, False one-way. None=read only."""
         try:
             if dual is None:
                 data = self._http("GET", self.v["dual"], {}, signed=True, weight=1)
@@ -247,6 +245,10 @@ class LiveKernel:
                 return float(a.get("availableBalance") or a.get("balance") or 0)
         return 0.0
 
+    def balance(self):
+        """Alias used by local helix/apex engines."""
+        return self.balance_usdt()
+
     def position_amt(self, symbol, side=None):
         data = self._http("GET", self.v["position"], {"symbol": symbol}, signed=True, weight=5)
         total = 0.0
@@ -308,7 +310,6 @@ class LiveKernel:
             self.log("cancel_all %s: %s" % (symbol, e))
 
     def resolve_fill(self, symbol, order_id, fallback_avg, qty):
-        """Source of truth: userTrades. Never invent avg from book."""
         time.sleep(0.15)
         try:
             trades = self._http("GET", self.v["userTrades"], {"symbol": symbol, "limit": 20}, signed=True, weight=5)

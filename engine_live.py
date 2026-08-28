@@ -24,15 +24,23 @@ def load_env(path):
 
 ENV = load_env(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
-API_KEY = ENV.get("BINANCE_API_KEY") or os.getenv("BINANCE_API_KEY")
-API_SEC = ENV.get("BINANCE_SECRET") or os.getenv("BINANCE_SECRET") or os.getenv("BINANCE_API_SECRET")
+API_KEY = (ENV.get("BINANCE_API_KEY") or os.getenv("BINANCE_API_KEY") or "").strip()
+API_SEC = (
+    ENV.get("BINANCE_SECRET_KEY")
+    or ENV.get("BINANCE_SECRET")
+    or ENV.get("BINANCE_API_SECRET")
+    or os.getenv("BINANCE_SECRET_KEY")
+    or os.getenv("BINANCE_SECRET")
+    or os.getenv("BINANCE_API_SECRET")
+    or ""
+).strip()
 if not API_KEY or not API_SEC:
-    print("KRITIK: BINANCE_API_KEY / BINANCE_SECRET eksik")
+    print("KRITIK: BINANCE_API_KEY / BINANCE_SECRET_KEY eksik")
     sys.exit(1)
 
 app = Flask(__name__)
 PORT = int(ENV.get("LIVE_PORT", "8082"))
-BASE_URL = ENV.get("BINANCE_FUTURES_URL", "https://fapi.binance.com")
+BASE_URL = ENV.get("BINANCE_FUTURES_URL", "https://fapi.binance.com").rstrip("/")
 
 SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]
 FALLBACK = {"BTCUSDT": 64000.0, "ETHUSDT": 1870.0, "SOLUSDT": 76.0, "BNBUSDT": 600.0}
@@ -52,6 +60,7 @@ MAX_POS_USDT = float(ENV.get("MAX_POSITION_SIZE_USDT", "350"))
 CB_THRESHOLD = int(ENV.get("CIRCUIT_BREAKER_THRESHOLD", "3"))
 CB_COOLDOWN = int(ENV.get("CIRCUIT_BREAKER_COOLDOWN_SEC", "15"))
 MIN_MARGIN = 0.6
+RECV_WINDOW = int(ENV.get("RECV_WINDOW", "10000"))
 
 balance = 10.0
 peak = 10.0
@@ -60,6 +69,7 @@ lock = threading.RLock()
 state = {"i": 0, "last": time.time()}
 cb_state = {"fails": 0, "locked_until": 0.0}
 hedge_mode = False
+_time_offset = 0  # server - local ms
 
 def safe(s):
     return str(s).encode("ascii", "replace").decode("ascii")
@@ -72,37 +82,79 @@ def log(msg):
             logs.pop()
     print(line, flush=True)
 
-def binance_request(method, endpoint, params=None, signed=True):
+def sync_time():
+    global _time_offset
+    try:
+        url = BASE_URL + "/fapi/v1/time"
+        req = urllib.request.Request(url, headers={"User-Agent": "hc-live"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        server = int(data["serverTime"])
+        _time_offset = server - int(time.time() * 1000)
+        log("TIME SYNC offset=%d ms" % _time_offset)
+    except Exception as e:
+        log("TIME SYNC FAIL: %s" % e)
+        _time_offset = 0
+
+def binance_request(method, endpoint, params=None, signed=True, retries=3):
     if params is None:
         params = {}
-    if signed:
-        params["timestamp"] = int(time.time() * 1000)
-        params["recvWindow"] = 5000
-        query = urllib.parse.urlencode(params)
-        sig = hmac.new(API_SEC.encode(), query.encode(), hashlib.sha256).hexdigest()
-        payload = query + "&signature=" + sig
-    else:
-        payload = urllib.parse.urlencode(params) if params else ""
-    headers = {
-        "X-MBX-APIKEY": API_KEY,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "hc-live"
-    }
-    if method == "GET":
-        url = BASE_URL + endpoint + ("?" + payload if payload else "")
-        req = urllib.request.Request(url, headers=headers)
-    else:
-        url = BASE_URL + endpoint
-        req = urllib.request.Request(url, data=payload.encode(), headers=headers, method=method)
-    with urllib.request.urlopen(req, timeout=8) as r:
-        return json.loads(r.read().decode("utf-8"))
+    params = dict(params)
+    last_err = None
+    for attempt in range(retries):
+        try:
+            if signed:
+                params["timestamp"] = int(time.time() * 1000) + _time_offset
+                params["recvWindow"] = RECV_WINDOW
+                # Tüm değerler string olmalı (Binance imza kuralı)
+                clean = {k: str(v) for k, v in params.items() if v is not None}
+                query = urllib.parse.urlencode(clean, doseq=True)
+                sig = hmac.new(API_SEC.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
+                payload = query + "&signature=" + sig
+            else:
+                payload = urllib.parse.urlencode({k: str(v) for k, v in params.items()}, doseq=True) if params else ""
+
+            headers = {
+                "X-MBX-APIKEY": API_KEY,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "hc-live-α"
+            }
+            if method == "GET":
+                url = BASE_URL + endpoint + ("?" + payload if payload else "")
+                req = urllib.request.Request(url, headers=headers)
+            else:
+                url = BASE_URL + endpoint
+                req = urllib.request.Request(url, data=payload.encode("utf-8"), headers=headers, method=method)
+
+            with urllib.request.urlopen(req, timeout=12) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            raw = e.read().decode() if e.fp else str(e)
+            try:
+                err = json.loads(raw)
+            except Exception:
+                err = {"code": e.code, "msg": raw}
+            code = err.get("code")
+            if code in (-1021, -1022):
+                log("SIG/TIME retry %d: %s" % (attempt + 1, err))
+                sync_time()
+                last_err = RuntimeError("Signature/time invalid: %s" % err)
+                time.sleep(0.2 * (attempt + 1))
+                continue
+            if code == -2015:
+                raise RuntimeError("API key invalid / IP restricted / yetki eksik (-2015)")
+            raise RuntimeError("HTTP %s: %s" % (e.code, err))
+        except (urllib.error.URLError, ConnectionResetError, TimeoutError, OSError) as e:
+            last_err = e
+            time.sleep(0.3 * (attempt + 1))
+    raise RuntimeError("request failed after retries: %s" % last_err)
 
 def get_balance_usdt():
     try:
         res = binance_request("GET", "/fapi/v2/balance")
         for a in res:
             if a.get("asset") == "USDT":
-                return float(a.get("balance", 0))
+                return float(a.get("availableBalance") or a.get("balance") or 0)
     except Exception as e:
         log("BALANCE ERR: %s" % e)
     return 0.0
@@ -139,8 +191,17 @@ def get_position_amt(symbol, side):
 def set_leverage(symbol, lev):
     try:
         binance_request("POST", "/fapi/v1/leverage", {"symbol": symbol, "leverage": int(lev)})
+        log("LEV OK %s %dx" % (symbol, int(lev)))
     except Exception as e:
-        log("LEV ERR: %s" % e)
+        log("LEV ERR %s: %s" % (symbol, e))
+
+def set_margin_type(symbol, isolated=True):
+    try:
+        mt = "ISOLATED" if isolated else "CROSSED"
+        binance_request("POST", "/fapi/v1/marginType", {"symbol": symbol, "marginType": mt})
+    except Exception as e:
+        if "No need" not in str(e) and "not modified" not in str(e).lower():
+            log("MARGIN ERR %s: %s" % (symbol, e))
 
 def place_market(symbol, side, qty, position_side=None, reduce_only=False):
     params = {
@@ -157,7 +218,7 @@ def place_market(symbol, side, qty, position_side=None, reduce_only=False):
 
 def fetch_px(symbol):
     try:
-        url = "https://fapi.binance.com/fapi/v1/ticker/price?symbol=" + symbol
+        url = BASE_URL + "/fapi/v1/ticker/price?symbol=" + symbol
         req = urllib.request.Request(url, headers={"Connection": "close", "User-Agent": "hc"})
         with urllib.request.urlopen(req, timeout=2) as r:
             px = float(json.loads(r.read().decode("utf-8"))["price"])
@@ -207,6 +268,7 @@ def open_pos(symbol, side, px, src):
         if qty <= 0:
             return
 
+        set_margin_type(symbol, isolated=True)
         set_leverage(symbol, int(LEV))
         binance_side = "BUY" if side == "LONG" else "SELL"
         pos_side = side if hedge_mode else None
@@ -337,6 +399,7 @@ def check_exit(pos, px):
 
 def loop():
     global hedge_mode, balance, peak
+    sync_time()
     try:
         hedge_mode = get_position_mode()
         log("MODE %s" % ("HEDGE" if hedge_mode else "ONE-WAY"))
@@ -431,5 +494,6 @@ def summary():
     })
 
 if __name__ == "__main__":
+    sync_time()
     threading.Thread(target=loop, daemon=True).start()
     app.run(host="0.0.0.0", port=PORT, debug=False, threaded=True, use_reloader=False)

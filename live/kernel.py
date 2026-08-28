@@ -90,8 +90,17 @@ class LiveKernel:
         self.env = env or load_env()
         self.venue = venue if venue in VENUES else "usdt"
         self.v = VENUES[self.venue]
-        self.key = api_key or self.env.get("BINANCE_API_KEY") or self.env.get("API_KEY") or ""
-        self.secret = (api_secret or self.env.get("BINANCE_API_SECRET") or self.env.get("BINANCE_SECRET") or self.env.get("API_SECRET") or "").encode()
+        self.key = (api_key or self.env.get("BINANCE_API_KEY") or self.env.get("API_KEY") or "").strip()
+        # BINANCE_SECRET_KEY alias eklendi — .env tutarsızlığını engeller
+        raw_sec = (
+            api_secret
+            or self.env.get("BINANCE_SECRET_KEY")
+            or self.env.get("BINANCE_API_SECRET")
+            or self.env.get("BINANCE_SECRET")
+            or self.env.get("API_SECRET")
+            or ""
+        ).strip()
+        self.secret = raw_sec.encode("utf-8")
         self.recv = int(self.env.get("RECV_WINDOW", "10000"))
         self.bucket = TokenBucket()
         self.flock = SingleFlight()
@@ -153,8 +162,10 @@ class LiveKernel:
             return self._dual
 
     def _sign(self, params: Dict) -> str:
-        qs = urllib.parse.urlencode(params, doseq=True)
-        sig = hmac.new(self.secret, qs.encode(), hashlib.sha256).hexdigest()
+        # Değerler string, insertion order korunur — Binance imza kuralı
+        clean = {k: str(v) for k, v in params.items() if v is not None}
+        qs = urllib.parse.urlencode(clean, doseq=True)
+        sig = hmac.new(self.secret, qs.encode("utf-8"), hashlib.sha256).hexdigest()
         return qs + "&signature=" + sig
 
     def _http(self, method, path, params=None, signed=False, weight=1, is_order=False, retries=3):
@@ -167,9 +178,9 @@ class LiveKernel:
             params["recvWindow"] = self.recv
             body = self._sign(params)
         else:
-            body = urllib.parse.urlencode(params, doseq=True)
+            body = urllib.parse.urlencode({k: str(v) for k, v in params.items()}, doseq=True)
         url = self.v["rest"] + path + (("?" + body) if method == "GET" and body else "")
-        data = body.encode() if method != "GET" else None
+        data = body.encode("utf-8") if method != "GET" else None
         headers = {"X-MBX-APIKEY": self.key, "Content-Type": "application/x-www-form-urlencoded"}
         last_err = None
         for attempt in range(retries):
@@ -186,6 +197,7 @@ class LiveKernel:
                 if code in (-1021, -1022):
                     self.sync_time()
                     last_err = RuntimeError("time/sig %s" % err)
+                    time.sleep(0.15 * (attempt + 1))
                     continue
                 if code == -2015:
                     raise RuntimeError("API key invalid or IP restricted (-2015)")

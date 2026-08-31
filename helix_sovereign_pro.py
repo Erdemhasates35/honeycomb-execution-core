@@ -12,44 +12,40 @@ from __future__ import annotations
 import json
 import os
 
-# α-SELF-EVOLVE: Her karar sonrası öğrenme kaydı (Türkçe log)
-def log_and_learn(symbol, side, score, conf, result, reason=""):
-    import sqlite3, time, json
-    ts = time.strftime("%Y-%m-%d %H:%M:%S")
-    msg = f"[{ts}] {symbol} {side} skor={score:.1f} conf={conf} → {result} | {reason}"
+def log_and_learn(symbol, side, score, conf, result, reason="", engine="helix", pnl=0.0, meta=None, **kwargs):
+    """Multi-brain öğrenme - tüm parametreleri yut"""
+    import sqlite3, time, json, os, glob
+    from datetime import datetime
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    msg = f"[{ts}] [{engine.upper()}] {symbol} {side} skor={score:.1f} conf={conf} → {result} | {reason}"
+    if pnl:
+        msg += f" | PnL={pnl:.4f}"
     print(f"[ÖĞRENME] {msg}")
-    try:
-        conn = sqlite3.connect("brain.db")
-        conn.execute("""CREATE TABLE IF NOT EXISTS evolve_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ts TEXT, symbol TEXT, side TEXT, score REAL, conf REAL,
-            result TEXT, reason TEXT
-        )""")
-        conn.execute("INSERT INTO evolve_log (ts,symbol,side,score,conf,result,reason) VALUES (?,?,?,?,?,?,?)",
-                     (ts, symbol, side, score, conf, result, reason))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"[ÖĞRENME-HATA] {e}")
+    brains = ["brain.db", "brain_master.db", "master_brain.db", "quantum_nexus_v3.db",
+              "sovereign_pro.db", "sovereign_pro_v3.db", "journal.db"]
+    brains += glob.glob("brain.db*") + glob.glob("*brain*.db")
+    for db in set(brains):
+        if not os.path.exists(db) and db not in ("brain.db", "brain_master.db"):
+            continue
+        try:
+            conn = sqlite3.connect(db, timeout=4)
+            conn.execute("""CREATE TABLE IF NOT EXISTS evolve_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, engine TEXT,
+                symbol TEXT, side TEXT, score REAL, conf REAL, result TEXT,
+                reason TEXT, pnl REAL DEFAULT 0, meta TEXT)""")
+            conn.execute(
+                "INSERT INTO evolve_log (ts,engine,symbol,side,score,conf,result,reason,pnl,meta) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (ts, engine, str(symbol), str(side), float(score or 0), float(conf or 0),
+                 str(result), str(reason)[:300], float(pnl or 0), json.dumps(meta or {}))
+            )
+            conn.commit()
+            conn.close()
+        except Exception as ex:
+            print(f"[ÖĞRENME-HATA] {db}: {ex}")
 
-import sys
-import threading
-import time
-import urllib.error
-import urllib.request
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Tuple
 
-from flask import Flask, jsonify, request
+# α-SELF-EVOLVE: Her karar sonrası öğrenme kaydı (Türkçe log)
 
-# ── path: live kernel ─────────────────────────────────────────────────────────
-ROOT = os.path.dirname(os.path.abspath(__file__))
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
-
-from live.kernel import LiveKernel, ema, rsi, atr  # noqa: E402
-
-# ── env ───────────────────────────────────────────────────────────────────────
 def _load_env() -> Dict[str, str]:
     env: Dict[str, str] = {}
     path = os.path.join(ROOT, ".env")

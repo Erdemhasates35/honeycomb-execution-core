@@ -12,31 +12,36 @@ from __future__ import annotations
 import json
 import os
 
-def log_and_learn(symbol, side, score, conf, result, reason="", engine="helix", pnl=0.0, meta=None, **kwargs):
-    """Multi-brain öğrenme - tüm parametreleri yut"""
+def log_and_learn(*args, **kwargs):
+    """Her türlü çağrıyı yutar - multi-brain öğrenme"""
     import sqlite3, time, json, os, glob
     from datetime import datetime
+    symbol = kwargs.get("symbol") or (args[0] if len(args)>0 else "?")
+    side   = kwargs.get("side")   or (args[1] if len(args)>1 else "?")
+    score  = kwargs.get("score")  or (args[2] if len(args)>2 else 0)
+    conf   = kwargs.get("conf")   or (args[3] if len(args)>3 else 0)
+    result = kwargs.get("result") or (args[4] if len(args)>4 else "FAIL")
+    reason = kwargs.get("reason") or (args[5] if len(args)>5 else "")
+    engine = kwargs.get("engine", "helix")
+    pnl    = kwargs.get("pnl", 0.0)
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    msg = f"[{ts}] [{engine.upper()}] {symbol} {side} skor={score:.1f} conf={conf} → {result} | {reason}"
-    if pnl:
-        msg += f" | PnL={pnl:.4f}"
-    print(f"[ÖĞRENME] {msg}")
-    brains = ["brain.db", "brain_master.db", "master_brain.db", "quantum_nexus_v3.db",
-              "sovereign_pro.db", "sovereign_pro_v3.db", "journal.db"]
+    print(f"[ÖĞRENME] [{ts}] [{engine.upper()}] {symbol} {side} skor={float(score):.1f} conf={conf} → {result} | {reason}")
+    brains = ["brain.db","brain_master.db","master_brain.db","quantum_nexus_v3.db",
+              "sovereign_pro.db","sovereign_pro_v3.db","journal.db"]
     brains += glob.glob("brain.db*") + glob.glob("*brain*.db")
     for db in set(brains):
-        if not os.path.exists(db) and db not in ("brain.db", "brain_master.db"):
+        if not os.path.exists(db) and db not in ("brain.db","brain_master.db"):
             continue
         try:
-            conn = sqlite3.connect(db, timeout=4)
+            conn = sqlite3.connect(db, timeout=3)
             conn.execute("""CREATE TABLE IF NOT EXISTS evolve_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, engine TEXT,
                 symbol TEXT, side TEXT, score REAL, conf REAL, result TEXT,
-                reason TEXT, pnl REAL DEFAULT 0, meta TEXT)""")
+                reason TEXT, pnl REAL DEFAULT 0)""")
             conn.execute(
-                "INSERT INTO evolve_log (ts,engine,symbol,side,score,conf,result,reason,pnl,meta) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO evolve_log (ts,engine,symbol,side,score,conf,result,reason,pnl) VALUES (?,?,?,?,?,?,?,?,?)",
                 (ts, engine, str(symbol), str(side), float(score or 0), float(conf or 0),
-                 str(result), str(reason)[:300], float(pnl or 0), json.dumps(meta or {}))
+                 str(result), str(reason)[:200], float(pnl or 0))
             )
             conn.commit()
             conn.close()
@@ -44,7 +49,6 @@ def log_and_learn(symbol, side, score, conf, result, reason="", engine="helix", 
             print(f"[ÖĞRENME-HATA] {db}: {ex}")
 
 
-# α-SELF-EVOLVE: Her karar sonrası öğrenme kaydı (Türkçe log)
 
 def _load_env() -> Dict[str, str]:
     env: Dict[str, str] = {}

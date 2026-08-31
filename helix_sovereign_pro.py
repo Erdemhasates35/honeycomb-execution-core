@@ -11,6 +11,27 @@ from __future__ import annotations
 
 import json
 import os
+
+# α-SELF-EVOLVE: Her karar sonrası öğrenme kaydı (Türkçe log)
+def log_and_learn(symbol, side, score, conf, result, reason=""):
+    import sqlite3, time, json
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    msg = f"[{ts}] {symbol} {side} skor={score:.1f} conf={conf} → {result} | {reason}"
+    print(f"[ÖĞRENME] {msg}")
+    try:
+        conn = sqlite3.connect("brain.db")
+        conn.execute("""CREATE TABLE IF NOT EXISTS evolve_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts TEXT, symbol TEXT, side TEXT, score REAL, conf REAL,
+            result TEXT, reason TEXT
+        )""")
+        conn.execute("INSERT INTO evolve_log (ts,symbol,side,score,conf,result,reason) VALUES (?,?,?,?,?,?,?)",
+                     (ts, symbol, side, score, conf, result, reason))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[ÖĞRENME-HATA] {e}")
+
 import sys
 import threading
 import time
@@ -73,31 +94,31 @@ MIN_SCORE = float(ENV.get("MIN_SCORE") or "55")
 AI_MIN_CONF = int(ENV.get("AI_CONFIDENCE_THRESHOLD") or "60")
 FEE_RATE = float(ENV.get("FEE_RATE") or "0.0004")
 
-# OpenRouter — ücretsiz / deneme odaklı modeller (güncel free tier)
+# OpenRouter — ücretsiz / deneme odaklı modeller (güncel nvidia/nemotron-3.5-lightning:inclusionai/ling-3.0-flash-fin:minimax/minimax-m3:meta-llama/llama-3.3-70b-instruct:qwen/qwen3-coder:free tier)
 # 2 finansal + 2 üretken
 AGENTS = [
     {
         "id": "fin_alpha",
         "role": "financial",
-        "model": ENV.get("OR_MODEL_FIN1") or "meta-llama/llama-3.1-8b-instruct:free",
+        "model": ENV.get("OR_MODEL_FIN1") or "meta-llama/nvidia/nemotron-3.5-lightning:nvidia/nemotron-3.5-lightning:inclusionai/ling-3.0-flash-fin:minimax/minimax-m3:meta-llama/llama-3.3-70b-instruct:qwen/qwen3-coder:free",
         "task": "momentum_risk",
     },
     {
         "id": "fin_beta",
         "role": "financial",
-        "model": ENV.get("OR_MODEL_FIN2") or "google/gemma-2-9b-it:free",
+        "model": ENV.get("OR_MODEL_FIN2") or "google/nvidia/nemotron-3.5-lightning:nvidia/nemotron-3.5-lightning:inclusionai/ling-3.0-flash-fin:minimax/minimax-m3:meta-llama/llama-3.3-70b-instruct:qwen/qwen3-coder:free",
         "task": "mean_reversion_structure",
     },
     {
         "id": "gen_coord",
         "role": "generative",
-        "model": ENV.get("OR_MODEL_GEN1") or "mistralai/mistral-7b-instruct:free",
+        "model": ENV.get("OR_MODEL_GEN1") or "mistralai/nvidia/nemotron-3.5-lightning:nvidia/nemotron-3.5-lightning:inclusionai/ling-3.0-flash-fin:minimax/minimax-m3:meta-llama/llama-3.3-70b-instruct:qwen/qwen3-coder:free",
         "task": "coordination_narrative",
     },
     {
         "id": "gen_risk",
         "role": "generative",
-        "model": ENV.get("OR_MODEL_GEN2") or "huggingfaceh4/zephyr-7b-beta:free",
+        "model": ENV.get("OR_MODEL_GEN2") or "huggingfaceh4/nvidia/nemotron-3.5-lightning:nvidia/nemotron-3.5-lightning:inclusionai/ling-3.0-flash-fin:minimax/minimax-m3:meta-llama/llama-3.3-70b-instruct:qwen/qwen3-coder:free",
         "task": "risk_story_and_veto",
     },
 ]
@@ -344,7 +365,13 @@ def try_open(symbol: str, side: str, score: float, conf: float) -> None:
             % (side, symbol, score, conf, lev, bal, RISK_PCT * 100)
         )
         if bal <= 0:
-            log("ENTER FAIL %s: futures wallet bakiye 0 — USDT futures'a aktar" % symbol)
+            log_and_learn(symbol, side, score, conf, "FAIL", "exception")
+            print("[GİRİŞ BAŞARISIZ]")
+            log_and_learn(symbol, side, score, conf, "FAIL", "exception")
+            print("[GİRİŞ BAŞARISIZ]")
+            print("[GİRİŞ BAŞARISIZ]")  # ENTER FAIL %s: futures wallet bakiye 0 — USDT futures'a aktar" % symbol)
+            print(f"[HATA DETAY] {type(e).__name__}: {e}")
+            log_and_learn(symbol, side, score, conf, "FAIL", str(e)[:200], engine="helix")
             return
         res = kernel.open_market(
             symbol,
@@ -392,7 +419,13 @@ def try_open(symbol: str, side: str, score: float, conf: float) -> None:
             )
         )
     except Exception as e:
-        log("ENTER FAIL %s: %s" % (symbol, e))
+            log_and_learn(symbol, side, score, conf, "FAIL", "exception")
+            print("[GİRİŞ BAŞARISIZ]")
+            log_and_learn(symbol, side, score, conf, "FAIL", "exception")
+            print("[GİRİŞ BAŞARISIZ]")
+            print("[GİRİŞ BAŞARISIZ]")  # ENTER FAIL %s: %s" % (symbol, e))
+            print(f"[HATA DETAY] {type(e).__name__}: {e}")
+            log_and_learn(symbol, side, score, conf, "FAIL", str(e)[:200], engine="helix")
 
 
 def manage_positions() -> None:

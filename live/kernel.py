@@ -2,8 +2,16 @@
 # -*- coding: utf-8 -*-
 """Honeycomb Live Kernel — dual-venue HMAC. No ghost fills. Exchange protect. Fill ledger."""
 from __future__ import annotations
-import fcntl, hashlib, hmac, json, os, threading, time, urllib.error, urllib.parse, urllib.request
+import fcntl, hashlib, hmac, json, math, os, sys, threading, time, urllib.error, urllib.parse, urllib.request
 from typing import Any, Dict, List, Optional, Tuple
+
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 
 VENUES = {
     "usdt": {
@@ -413,3 +421,446 @@ def atr(closes, period=14):
     if len(closes) < period + 1: return None
     trs = [abs(closes[i] - closes[i - 1]) for i in range(1, len(closes))]
     return sum(trs[-period:]) / period
+
+
+# =====================================================================
+# α-COUPLING APPEND — nothing above deleted. Missing live/__init__ surface.
+# =====================================================================
+
+def _finite_num(x, default=0.0):
+    """None/NaN/inf-safe float. Prevents latin-1/None crashes in score paths."""
+    try:
+        if x is None:
+            return default
+        v = float(x)
+        return v if math.isfinite(v) else default
+    except (TypeError, ValueError):
+        return default
+
+def _gt(a, b):
+    if a is None or b is None:
+        return False
+    return _finite_num(a) > _finite_num(b)
+
+def _lt(a, b):
+    if a is None or b is None:
+        return False
+    return _finite_num(a) < _finite_num(b)
+
+def _ge(a, b):
+    if a is None or b is None:
+        return False
+    return _finite_num(a) >= _finite_num(b)
+
+def _le(a, b):
+    if a is None or b is None:
+        return False
+    return _finite_num(a) <= _finite_num(b)
+
+def sma(values, period):
+    if not values or len(values) < period:
+        return None
+    return sum(values[-period:]) / float(period)
+
+def wma(values, period):
+    if not values or len(values) < period:
+        return None
+    w = list(range(1, period + 1))
+    s = values[-period:]
+    return sum(x * wi for x, wi in zip(s, w)) / float(sum(w))
+
+def macd(closes, fast=12, slow=26, signal=9):
+    if not closes or len(closes) < slow + signal:
+        return None, None, None
+    def _ema_series(vals, p):
+        k = 2.0 / (p + 1)
+        out = []
+        v = sum(vals[:p]) / p
+        out.append(v)
+        for x in vals[p:]:
+            v = x * k + v * (1 - k)
+            out.append(v)
+        return out
+    ef = _ema_series(closes, fast)
+    es = _ema_series(closes, slow)
+    n = min(len(ef), len(es))
+    macd_line = [ef[-n + i] - es[-n + i] for i in range(n)]
+    sig_s = _ema_series(macd_line, signal)
+    m = macd_line[-1]
+    s = sig_s[-1]
+    return m, s, m - s
+
+def bollinger_bands(closes, period=20, nstd=2.0):
+    if not closes or len(closes) < period:
+        return None, None, None
+    w = closes[-period:]
+    mid = sum(w) / period
+    var = sum((x - mid) ** 2 for x in w) / period
+    sd = math.sqrt(max(var, 0.0))
+    return mid + nstd * sd, mid, mid - nstd * sd
+
+def bollinger_pctb(closes, period=20, nstd=2.0):
+    up, mid, lo = bollinger_bands(closes, period, nstd)
+    if None in (up, mid, lo) or up == lo:
+        return None
+    return (closes[-1] - lo) / (up - lo)
+
+def stochastic(highs, lows, closes, period=14):
+    if min(len(highs), len(lows), len(closes)) < period:
+        return None, None
+    hh = max(highs[-period:])
+    ll = min(lows[-period:])
+    if hh == ll:
+        k = 50.0
+    else:
+        k = (closes[-1] - ll) / (hh - ll) * 100.0
+    return k, None
+
+def vwap(highs, lows, closes, volumes, period=None):
+    n = min(len(closes), len(highs), len(lows), len(volumes))
+    if n < 2:
+        return None
+    if period:
+        sl = slice(-period, None)
+    else:
+        sl = slice(None)
+    tp = [(highs[i] + lows[i] + closes[i]) / 3.0 for i in range(n)][sl]
+    vol = volumes[sl]
+    den = sum(vol) or 1e-12
+    return sum(t * v for t, v in zip(tp, vol)) / den
+
+def supertrend(highs, lows, closes, period=10, mult=3.0):
+    if len(closes) < period + 2:
+        return None, None
+    trs = []
+    for i in range(1, len(closes)):
+        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
+    atr_v = sum(trs[-period:]) / period
+    hl2 = (highs[-1] + lows[-1]) / 2.0
+    upper = hl2 + mult * atr_v
+    lower = hl2 - mult * atr_v
+    direction = 1 if closes[-1] > upper else (-1 if closes[-1] < lower else 0)
+    value = lower if direction >= 0 else upper
+    return value, direction
+
+def supertrend_dir(highs, lows, closes, period=10, mult=3.0):
+    _v, d = supertrend(highs, lows, closes, period, mult)
+    return d
+
+def adx(highs, lows, closes, period=14):
+    n = min(len(highs), len(lows), len(closes))
+    if n < period + 2:
+        return None
+    plus_dm, minus_dm, trs = [], [], []
+    for i in range(1, n):
+        up = highs[i] - highs[i - 1]
+        dn = lows[i - 1] - lows[i]
+        plus_dm.append(up if up > dn and up > 0 else 0.0)
+        minus_dm.append(dn if dn > up and dn > 0 else 0.0)
+        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
+    atr_v = sum(trs[-period:]) / period
+    if atr_v <= 0:
+        return 0.0
+    pdi = 100.0 * (sum(plus_dm[-period:]) / period) / atr_v
+    mdi = 100.0 * (sum(minus_dm[-period:]) / period) / atr_v
+    den = pdi + mdi
+    dx = 0.0 if den == 0 else abs(pdi - mdi) / den * 100.0
+    return dx
+
+def cci(highs, lows, closes, period=20):
+    n = min(len(highs), len(lows), len(closes))
+    if n < period:
+        return None
+    tp = [(highs[i] + lows[i] + closes[i]) / 3.0 for i in range(n)]
+    w = tp[-period:]
+    avg = sum(w) / period
+    md = sum(abs(x - avg) for x in w) / period
+    if md == 0:
+        return 0.0
+    return (tp[-1] - avg) / (0.015 * md)
+
+def obv(closes, volumes):
+    if min(len(closes), len(volumes)) < 2:
+        return None
+    v = 0.0
+    for i in range(1, len(closes)):
+        if closes[i] > closes[i - 1]:
+            v += volumes[i]
+        elif closes[i] < closes[i - 1]:
+            v -= volumes[i]
+    return v
+
+def roc(values, period=10):
+    if not values or len(values) < period + 1 or values[-period - 1] == 0:
+        return None
+    return (values[-1] - values[-period - 1]) / values[-period - 1] * 100.0
+
+def williams_r(highs, lows, closes, period=14):
+    if min(len(highs), len(lows), len(closes)) < period:
+        return None
+    hh = max(highs[-period:])
+    ll = min(lows[-period:])
+    if hh == ll:
+        return -50.0
+    return (hh - closes[-1]) / (hh - ll) * -100.0
+
+def mfi(highs, lows, closes, volumes, period=14):
+    n = min(len(highs), len(lows), len(closes), len(volumes))
+    if n < period + 1:
+        return None
+    pos = neg = 0.0
+    for i in range(n - period, n):
+        tp = (highs[i] + lows[i] + closes[i]) / 3.0
+        prev = (highs[i - 1] + lows[i - 1] + closes[i - 1]) / 3.0
+        raw = tp * volumes[i]
+        if tp > prev:
+            pos += raw
+        elif tp < prev:
+            neg += raw
+    if neg == 0:
+        return 100.0
+    mr = pos / neg
+    return 100.0 - (100.0 / (1.0 + mr))
+
+def atr_hlc(highs, lows, closes, period=14):
+    if min(len(highs), len(lows), len(closes)) < period + 1:
+        return None
+    trs = []
+    for i in range(1, len(closes)):
+        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
+    return sum(trs[-period:]) / period
+
+def live_order_fn(kernel, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
+    return kernel.open_market(symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=max_notional)
+
+def fetch_ohlcv(symbol, interval="5m", limit=80, base="https://fapi.binance.com"):
+    """Public OHLCV dict {o,h,l,c,v} — parliament / alpha_core compatible."""
+    url = "%s/fapi/v1/klines?symbol=%s&interval=%s&limit=%d" % (
+        base.rstrip("/"), symbol, interval, int(limit)
+    )
+    req = urllib.request.Request(url, headers={"User-Agent": "honeycomb-kernel-ohlcv", "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=8) as resp:
+        raw = json.loads(resp.read().decode("utf-8"))
+    return {
+        "o": [float(x[1]) for x in raw],
+        "h": [float(x[2]) for x in raw],
+        "l": [float(x[3]) for x in raw],
+        "c": [float(x[4]) for x in raw],
+        "v": [float(x[5]) for x in raw],
+    }
+
+
+class CircuitBreaker:
+    """Consecutive-failure trip with cooldown. Thread-safe."""
+
+    def __init__(self, fail_threshold=4, cooldown_sec=180, half_open_trial=True):
+        self.fail_threshold = fail_threshold
+        self.cooldown_sec = cooldown_sec
+        self.half_open_trial = half_open_trial
+        self.fails = 0
+        self.state = "CLOSED"
+        self.opened_at = 0.0
+        self._lock = threading.Lock()
+
+    def record_success(self):
+        with self._lock:
+            self.fails = 0
+            self.state = "CLOSED"
+
+    def record_failure(self):
+        with self._lock:
+            self.fails += 1
+            if self.fails >= self.fail_threshold:
+                self.state = "OPEN"
+                self.opened_at = time.time()
+
+    def allow(self):
+        with self._lock:
+            if self.state == "CLOSED":
+                return True
+            elapsed = time.time() - self.opened_at
+            if elapsed >= self.cooldown_sec:
+                if self.half_open_trial:
+                    self.state = "HALF_OPEN"
+                    return True
+                self.state = "CLOSED"
+                self.fails = 0
+                return True
+            return False
+
+    def status(self):
+        with self._lock:
+            return self.state
+
+    def time_until_reset(self):
+        with self._lock:
+            if self.state != "OPEN":
+                return 0.0
+            return max(0.0, self.cooldown_sec - (time.time() - self.opened_at))
+
+
+class CryptographicAuditLedger:
+    """Append-only hash-chained JSONL. Tamper-evident."""
+    GENESIS = "0" * 64
+
+    def __init__(self, path):
+        self.path = path
+        self._lock = threading.Lock()
+        d = os.path.dirname(os.path.abspath(path))
+        if d:
+            os.makedirs(d, exist_ok=True)
+        if not os.path.exists(self.path):
+            open(self.path, "a").close()
+
+    def _last_hash(self):
+        last = self.GENESIS
+        if not os.path.exists(self.path):
+            return last
+        with open(self.path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    last = json.loads(line).get("hash", last)
+                except Exception:
+                    pass
+        return last
+
+    def append(self, event):
+        with self._lock:
+            prev = self._last_hash()
+            rec = {"ts": time.time(), "prev_hash": prev, "data": event}
+            payload = json.dumps(rec, sort_keys=True, ensure_ascii=False).encode("utf-8")
+            rec["hash"] = hashlib.sha256(payload).hexdigest()
+            with open(self.path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            return rec
+
+    def verify_chain(self):
+        prev = self.GENESIS
+        if not os.path.exists(self.path):
+            return True, None
+        with open(self.path, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f, 1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except Exception:
+                    return False, i
+                if rec.get("prev_hash") != prev:
+                    return False, i
+                claimed = rec.get("hash")
+                recomputed = dict(rec)
+                recomputed.pop("hash", None)
+                payload = json.dumps(recomputed, sort_keys=True, ensure_ascii=False).encode("utf-8")
+                if hashlib.sha256(payload).hexdigest() != claimed:
+                    return False, i
+                prev = claimed
+        return True, None
+
+
+class PartialProfitEngine:
+    DEFAULT_STAGES = [(0.50, 0.35), (0.80, 0.35)]
+
+    def __init__(self, kernel, stages=None, log_fn=None):
+        self.kernel = kernel
+        self.stages = stages or list(self.DEFAULT_STAGES)
+        self.log = log_fn or (lambda m: None)
+        self._pos = {}
+        self._lock = threading.Lock()
+
+    def register(self, symbol, side, entry, tp, sl, qty, pos_side=None):
+        with self._lock:
+            self._pos[symbol] = {
+                "side": side, "entry": entry, "tp": tp, "sl": sl,
+                "qty": qty, "qty_remaining": qty, "stage": 0,
+                "pos_side": pos_side, "realized_net": 0.0,
+            }
+
+    def forget(self, symbol):
+        with self._lock:
+            return self._pos.pop(symbol, None)
+
+    def get(self, symbol):
+        with self._lock:
+            return dict(self._pos[symbol]) if symbol in self._pos else None
+
+    def update(self, symbol, current_price):
+        with self._lock:
+            pos = self._pos.get(symbol)
+            if not pos or pos.get("qty_remaining", 0) <= 0 or pos["stage"] >= len(self.stages):
+                return None
+            entry = float(pos["entry"])
+            dist = abs(float(pos["tp"]) - entry)
+            if dist <= 0:
+                return None
+            progress = (current_price - entry) / dist if pos["side"] == "LONG" else (entry - current_price) / dist
+            thresh, frac = self.stages[pos["stage"]]
+            if progress < thresh:
+                return None
+            close_qty = pos["qty_remaining"] * frac
+            try:
+                fill = self.kernel.close_market(symbol, pos["side"], close_qty, pos.get("pos_side"))
+                net = _finite_num(fill.get("rp")) - _finite_num(fill.get("commission"))
+                pos["qty_remaining"] = max(0.0, pos["qty_remaining"] - close_qty)
+                pos["stage"] += 1
+                pos["realized_net"] += net
+                remaining = pos["qty_remaining"]
+                stage_done = pos["stage"]
+                if remaining > 0:
+                    self.kernel.place_protect(symbol, pos["side"], entry, pos["tp"], pos["sl"], pos.get("pos_side"))
+                self.log("KISMİ KAR %s %s progress=%.0f%% closed=%.6f" % (pos["side"], symbol, progress * 100.0, close_qty))
+                return {"qty_closed": close_qty, "net": net, "remaining": remaining, "stage": stage_done}
+            except Exception as e:
+                self.log("KISMİ KAR HATA %s: %s" % (symbol, e))
+                return None
+
+
+class DynamicTrailingStopEngine:
+    DEFAULT_STAGES = [(0.35, 0.05), (0.60, 0.25), (0.85, 0.55)]
+
+    def __init__(self, kernel, stages=None, log_fn=None):
+        self.kernel = kernel
+        self.stages = stages or list(self.DEFAULT_STAGES)
+        self.log = log_fn or (lambda m: None)
+        self._pos = {}
+        self._lock = threading.Lock()
+
+    def register(self, symbol, side, entry, tp, sl):
+        with self._lock:
+            self._pos[symbol] = {"side": side, "entry": entry, "tp": tp, "sl": sl, "stage": 0}
+
+    def forget(self, symbol):
+        with self._lock:
+            return self._pos.pop(symbol, None)
+
+    def update(self, symbol, current_price):
+        with self._lock:
+            pos = self._pos.get(symbol)
+            if not pos:
+                return None
+            entry = float(pos["entry"])
+            dist = abs(float(pos["tp"]) - entry)
+            if dist <= 0:
+                return None
+            progress = (current_price - entry) / dist if pos["side"] == "LONG" else (entry - current_price) / dist
+            new_stage, lock_frac = None, None
+            for i, (thresh, frac) in enumerate(self.stages):
+                if progress >= thresh and i >= pos["stage"]:
+                    new_stage, lock_frac = i + 1, frac
+            if new_stage is None:
+                return None
+            new_sl = entry + lock_frac * dist if pos["side"] == "LONG" else entry - lock_frac * dist
+            try:
+                self.kernel.cancel_all(symbol)
+                self.kernel.place_protect(symbol, pos["side"], entry, pos["tp"], new_sl)
+                pos["sl"] = new_sl
+                pos["stage"] = new_stage
+                self.log("TRAIL %s %s stage=%d new_sl=%.6f" % (pos["side"], symbol, new_stage, new_sl))
+                return new_sl
+            except Exception as e:
+                self.log("TRAIL HATA %s: %s" % (symbol, e))
+                return None

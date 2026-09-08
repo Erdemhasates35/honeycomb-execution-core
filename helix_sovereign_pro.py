@@ -11,6 +11,14 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 def log_and_learn(*args, **kwargs):
     """Her türlü çağrıyı yutar - multi-brain öğrenme"""

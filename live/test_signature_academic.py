@@ -1,13 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-α-ACADEMIC SIGNATURE PROOF + LIVE KERNEL TEST
-=============================================
-Bu script:
-1. HMAC-SHA256 matematiksel doğruluğunu kanıtlar
-2. Mevcut LiveKernel imzasını test eder
-3. -2015 fail-closed davranışını simüle eder
-4. Termux'ta sıfır bağımlılıkla çalışır
+α-ACADEMIC SIGNATURE PROOF + LIVE KERNEL TEST (Termux-safe)
+==========================================================
+Sadece / eğik çizgi. $HOME kullanılır. Asla \\ yok.
 """
 from __future__ import annotations
 import hashlib
@@ -17,7 +13,6 @@ import sys
 import time
 import urllib.parse
 
-# --- Akademik kanıt fonksiyonu ---
 def academic_hmac_proof(secret: str, params: dict) -> str:
     clean = {str(k): str(v) for k, v in params.items() if v is not None}
     qs = urllib.parse.urlencode(sorted(clean.items()), doseq=True)
@@ -36,7 +31,6 @@ def run_academic_tests():
         "recvWindow": 5000,
     }
     result = academic_hmac_proof(secret, params)
-    # Bilinen değer (manuel hesaplanmış)
     expected_qs_part = "quantity=0.001&recvWindow=5000&side=BUY&symbol=BTCUSDT&timestamp=1699999999999&type=MARKET"
     assert expected_qs_part in result, "Query string sıralaması bozuldu"
     assert "&signature=" in result, "Signature eklentisi eksik"
@@ -57,7 +51,12 @@ def run_live_kernel_test():
 
     env = load_env()
     key = (env.get("BINANCE_API_KEY") or "").strip()
-    sec = (env.get("BINANCE_SECRET_KEY") or env.get("BINANCE_API_SECRET") or env.get("BINANCE_SECRET") or "").strip()
+    sec = (
+        env.get("BINANCE_SECRET_KEY")
+        or env.get("BINANCE_API_SECRET")
+        or env.get("BINANCE_SECRET")
+        or ""
+    ).strip()
 
     if not key or not sec:
         print("[WARN] API key/secret .env içinde yok — sadece offline test yapıldı")

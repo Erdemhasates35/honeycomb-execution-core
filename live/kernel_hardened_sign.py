@@ -1,16 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-α-HONEYCOMB LiveKernel — HARDENED SIGNATURE MODULE
-=================================================
-Akademik kanıt + sıfır kayıp imza + fail-closed -2015
-Bu dosya live/kernel.py içine drop-in olarak kullanılabilir
-veya mevcut _sign / _http metodlarını override eder.
+α-HONEYCOMB LiveKernel — HARDENED SIGNATURE MODULE (Termux-safe)
+===============================================================
+- Sadece / eğik çizgi kullanılır
+- Asla \\ veya karışık ayırıcı yok
+- Tüm yollar os.path / pathlib ile üretilir
+- $HOME ve $TMPDIR kullanılır
 """
 from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -20,20 +22,14 @@ from typing import Any, Dict, Optional
 def hardened_sign(secret: bytes, params: Dict[str, Any]) -> str:
     """
     Binance Futures resmi imza kuralı (sıralı + None-free).
-
     Akademik ispat:
     1. clean = {k: str(v) for k,v in params.items() if v is not None}
-    2. qs = urlencode(sorted(clean.items()))   ← alfabetik sıralama garantisi
+    2. qs = urlencode(sorted(clean.items()))
     3. sig = HMAC_SHA256(secret, qs.encode('utf-8')).hexdigest()
-    4. return qs + '&signature=' + sig
-
-    Bu yöntem hem Python 3.6- hem 3.7+ insertion-order hem de
-    herhangi bir dict sırası değişikliğine karşı 100% deterministiktir.
     """
     if not secret:
         raise RuntimeError("SECRET EMPTY — imza üretilemez. BINANCE_SECRET_KEY kontrol et.")
     clean = {str(k): str(v) for k, v in params.items() if v is not None}
-    # Alfabetik sıralama = akademik determinizm
     qs = urllib.parse.urlencode(sorted(clean.items()), doseq=True)
     sig = hmac.new(secret, qs.encode("utf-8"), hashlib.sha256).hexdigest()
     return qs + "&signature=" + sig
@@ -49,10 +45,7 @@ def hardened_http(
     is_order: bool = False,
     retries: int = 3,
 ) -> Any:
-    """
-    Fail-closed, time-sync, -2015 hard-stop, sorted-sign HTTP katmanı.
-    Mevcut LiveKernel._http yerine kullanılabilir.
-    """
+    """Fail-closed, time-sync, -2015 hard-stop, sorted-sign HTTP katmanı."""
     if time.time() < getattr(self, "_stale_until", 0.0):
         raise RuntimeError("stale-halt active %.0fs" % (self._stale_until - time.time()))
 
@@ -93,12 +86,10 @@ def hardened_http(
                 err = {"msg": raw}
             code = err.get("code")
             if code in (-1021, -1022):
-                # Zaman kayması → anında senkron
                 if hasattr(self, "sync_time"):
                     self.sync_time()
                 last_err = RuntimeError("time/sig %s" % err)
                 time.sleep(0.15 * (attempt + 1))
-                # timestamp yenile
                 if signed:
                     params["timestamp"] = int(time.time() * 1000) + getattr(self, "_off", 0)
                     body = hardened_sign(self.secret, params)
@@ -106,7 +97,6 @@ def hardened_http(
                     data = body.encode("utf-8") if method.upper() != "GET" else None
                 continue
             if code == -2015:
-                # Kritik: API key / IP / izin hatası → process fail-closed
                 raise RuntimeError(
                     "BINANCE -2015: Invalid API-key, IP or permissions. "
                     "LIVE_ARMED kapatıldı. Key/IP whitelist kontrol et."
@@ -119,7 +109,6 @@ def hardened_http(
     raise RuntimeError("net fail after %d retries: %s" % (retries, last_err))
 
 
-# LiveKernel sınıfına monkey-patch veya inheritance için hazır
 def apply_hardened_sign(kernel_instance):
     """Mevcut LiveKernel instance'ına hardened imza uygular."""
     kernel_instance._sign = lambda params: hardened_sign(kernel_instance.secret, params)

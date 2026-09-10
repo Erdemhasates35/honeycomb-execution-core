@@ -61,9 +61,9 @@ def _rebuild(req_or_url: Any, host: str) -> Any:
         new_url,
         data=getattr(req_or_url, "data", None),
         headers=headers,
-        origin_req_host=getattr(req_or_req, "origin_req_host", None),
-        unverifiable=getattr(req_or_req, "unverifiable", False),
-        method=getattr(req_or_req, "method", None),
+        origin_req_host=getattr(req_or_url, "origin_req_host", None),
+        unverifiable=getattr(req_or_url, "unverifiable", False),
+        method=getattr(req_or_url, "method", None),
     )
 
 
@@ -98,8 +98,6 @@ def urlopen(url_or_req: Any, data=None, timeout=None, *args, **kwargs):
         except (socket.gaierror, urllib.error.URLError, ConnectionResetError, ConnectionRefusedError, TimeoutError, OSError) as exc:
             _record(host, False)
             last_exc = exc
-            # Never replay a live order after a transport failure: the exchange
-            # may have accepted it while the client lost the response.
             if is_order:
                 break
             if idx + 1 < len(hosts):
@@ -115,8 +113,6 @@ def install() -> None:
     global _INSTALLED, _ORIGINAL
     if _INSTALLED:
         return
-    # sitecustomize imports this module after honeycomb_execution_guard. Extend
-    # the guard's host allow-list so its rate gate remains active on api1..api4.
     try:
         import honeycomb_execution_guard as guard
         guard._BINANCE_HOSTS.update({"api1.binance.com", "api2.binance.com", "api3.binance.com", "api4.binance.com"})

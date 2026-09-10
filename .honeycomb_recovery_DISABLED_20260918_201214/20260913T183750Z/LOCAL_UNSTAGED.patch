@@ -1,0 +1,2408 @@
+diff --git a/.gitignore b/.gitignore
+index fe19a9e..89ca025 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -28,3 +28,6 @@ secrets*
+ service-account*.json
+ token*.json
+ venv/
++
++# Honeycomb local deterministic repair backups
++.honeycomb_tools/syntax_repair_backups/
+diff --git a/.honeycomb_runtime/binance_guard.json b/.honeycomb_runtime/binance_guard.json
+index fdf254e..d202f53 100644
+--- a/.honeycomb_runtime/binance_guard.json
++++ b/.honeycomb_runtime/binance_guard.json
+@@ -1 +1 @@
+-{"last_acquire": 1789216145.8993895, "order_window_start": 1789216143.7923586, "orders_used": 0.0, "weight_used": 28.0, "weight_window_start": 1789216106.7496989}
+\ No newline at end of file
++{"last_acquire": 1789296461.1637266, "order_window_start": 1789296455.5523086, "orders_used": 7.0, "weight_used": 57.0, "weight_window_start": 1789296452.35296}
+\ No newline at end of file
+diff --git a/alpha_core.py b/alpha_core.py
+index a6a9f12..38fe26f 100644
+--- a/alpha_core.py
++++ b/alpha_core.py
+@@ -1,88 +1,4 @@
+-#!/usr/bin/env python3
+-# -*- coding: utf-8 -*-
+-"""
+-<<<<<<< HEAD
+-ALPHA CORE v2 — master_alpha.py'nin genişletilmiş hali.
+-Orijinal mimari korunur (rejim motoru, expectancy guard, drawdown state
+-machine, anti-martingale, korelasyon kalkanı) — üzerine 15+ gerçek
+-indikatör ve 6 zaman dilimi (1m/5m/15m/30m/1h/4h) eklenir.
+-Gerçek veri, mock yok — tüm klines Binance Futures REST'ten çekilir.
+-"""
+-import math
+-import os
+-import sqlite3
+-import time
+-import urllib.request
+-import json
+-from typing import Dict, List, Optional, Tuple
+-
+-DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alpha_brain.db")
+-CACHE_TTL = 15
+-BASE_URL = os.getenv("BINANCE_BASE_URL", "https://fapi.binance.com")
+-
+-
+-def conn():
+-    return sqlite3.connect(DB, timeout=12)
+-
+-
+-def init():
+-    with conn() as c:
+-        c.executescript(
+-            """
+-            CREATE TABLE IF NOT EXISTS trades(
+-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+-                ts INTEGER, symbol TEXT, side TEXT,
+-                net_pnl REAL, confidence REAL, regime TEXT
+-            );
+-            CREATE TABLE IF NOT EXISTS state(key TEXT PRIMARY KEY, value REAL);
+-            """
+-        )
+-        for k, v in {"equity_peak": 0.0, "risk_mult": 1.0, "defense_level": 0.0}.items():
+-            c.execute("INSERT OR IGNORE INTO state(key,value) VALUES(?,?)", (k, v))
+-        c.commit()
+-
+-
+-init()
+-
+-
+-def get_state(k, default=0.0):
+-    with conn() as c:
+-        r = c.execute("SELECT value FROM state WHERE key=?", (k,)).fetchone()
+-        return float(r[0]) if r else default
+-
+-
+-def set_state(k, v):
+-    with conn() as c:
+-        c.execute("INSERT OR REPLACE INTO state(key,value) VALUES(?,?)", (k, float(v)))
+-        c.commit()
+-
+-
+-def record_trade(symbol, side, net_pnl, confidence, regime):
+-    with conn() as c:
+-        c.execute(
+-            "INSERT INTO trades(ts,symbol,side,net_pnl,confidence,regime) VALUES(?,?,?,?,?,?)",
+-            (int(time.time()), symbol, side, net_pnl, confidence, regime),
+-        )
+-        c.commit()
+-    _update_expectancy_and_risk(net_pnl)
+-
+-
+-# ===================================================================== VERİ
+-_kmem: Dict[str, Tuple[float, Dict]] = {}
+-
+-
+-def klines(symbol: str, interval: str = "5m", limit: int = 80) -> Optional[Dict[str, List[float]]]:
+-    key = f"{symbol}_{interval}"
+-    now = time.time()
+-    if key in _kmem and now - _kmem[key][0] < CACHE_TTL:
+-        return _kmem[key][1]
+-    try:
+-        url = f"{BASE_URL}/fapi/v1/klines?symbol={symbol}&interval={interval}&limit={limit}"
+-        req = urllib.request.Request(url, headers={"User-Agent": "alpha-core/2.0"})
+-        with urllib.request.urlopen(req, timeout=6) as r:
+-            raw = json.loads(r.read().decode())
+-=======
+-alpha_core.py — Honeycomb technical decision core.
++# alpha_core.py — Honeycomb technical decision core.
+ 
+ Self-contained (own klines + indicators) so parliament/scanner never crash
+ with "klines is not defined" or circular live.__init__ imports.
+@@ -173,7 +89,12 @@ def ensure_db(path: str) -> str:
+         open(path, "a").close()
+         return path
+     except Exception:
+-        alt = os.path.join("/tmp", os.path.basename(path) or "honeycomb_alpha.db")
++        runtime_dir = os.path.join(ROOT, ".honeycomb_runtime")
++        os.makedirs(runtime_dir, exist_ok=True)
++        alt = os.path.join(
++            runtime_dir,
++            os.path.basename(path) or "honeycomb_alpha.db",
++        )
+         try:
+             open(alt, "a").close()
+             return alt
+@@ -200,7 +121,6 @@ def klines(symbol: str, interval: str = "5m", limit: int = 80) -> Optional[Dict[
+             raw = json.loads(r.read().decode("utf-8"))
+         if not raw:
+             return None
+->>>>>>> refs/remotes/origin/main
+         data = {
+             "o": [float(x[1]) for x in raw],
+             "h": [float(x[2]) for x in raw],
+@@ -211,20 +131,17 @@ def klines(symbol: str, interval: str = "5m", limit: int = 80) -> Optional[Dict[
+         _kmem[key] = (now, data)
+         return data
+     except Exception:
+-<<<<<<< HEAD
+         return None
+ 
+ 
+ # ================================================================ İNDİKATÖRLER
+ def ema(arr: List[float], p: int) -> Optional[float]:
+     if len(arr) < p:
+-=======
+         return hit[1] if hit else None
+ 
+ 
+ def ema(arr, p):
+     if not arr or len(arr) < p:
+->>>>>>> refs/remotes/origin/main
+         return None
+     k = 2.0 / (p + 1)
+     v = sum(arr[:p]) / p
+@@ -233,7 +150,6 @@ def ema(arr, p):
+     return v
+ 
+ 
+-<<<<<<< HEAD
+ def ema_series(arr: List[float], p: int) -> List[float]:
+     if len(arr) < p:
+         return []
+@@ -249,10 +165,8 @@ def ema_series(arr: List[float], p: int) -> List[float]:
+ 
+ def rsi(arr: List[float], p: int = 14) -> Optional[float]:
+     if len(arr) < p + 1:
+-=======
+ def rsi(arr, p=14):
+     if not arr or len(arr) < p + 1:
+->>>>>>> refs/remotes/origin/main
+         return None
+     g, l = [], []
+     for i in range(1, len(arr)):
+@@ -266,13 +180,10 @@ def rsi(arr, p=14):
+     return 100.0 - (100.0 / (1.0 + ag / al))
+ 
+ 
+-<<<<<<< HEAD
+ def atr(h: List[float], l: List[float], c: List[float], p: int = 14) -> Optional[float]:
+     if len(c) < p + 1:
+-=======
+ def atr(h, l, c, p=14):
+     if not c or len(c) < p + 1:
+->>>>>>> refs/remotes/origin/main
+         return None
+     trs = []
+     for i in range(1, len(c)):
+@@ -280,18 +191,14 @@ def atr(h, l, c, p=14):
+     return sum(trs[-p:]) / p
+ 
+ 
+-<<<<<<< HEAD
+ def momentum(c: List[float], p: int = 10) -> float:
+     if len(c) < p + 1:
+-=======
+ def momentum(c, p=10):
+     if not c or len(c) < p + 1 or c[-p - 1] == 0:
+->>>>>>> refs/remotes/origin/main
+         return 0.0
+     return (c[-1] - c[-p - 1]) / c[-p - 1] * 100.0
+ 
+ 
+-<<<<<<< HEAD
+ def macd(c: List[float], fast=12, slow=26, signal=9) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+     if len(c) < slow + signal:
+         return None, None, None
+@@ -399,7 +306,6 @@ def williams_r(h: List[float], l: List[float], c: List[float], p: int = 14) -> O
+         return None
+     hh = max(h[-p:])
+     ll = min(l[-p:])
+-=======
+ def macd(closes, fast=12, slow=26, signal=9):
+     if not closes or len(closes) < slow + signal:
+         return None, None, None
+@@ -437,13 +343,11 @@ def williams_r(h, l, c, p=14):
+     if min(len(h), len(l), len(c)) < p:
+         return -50.0
+     hh, ll = max(h[-p:]), min(l[-p:])
+->>>>>>> refs/remotes/origin/main
+     if hh == ll:
+         return -50.0
+     return (hh - c[-1]) / (hh - ll) * -100.0
+ 
+ 
+-<<<<<<< HEAD
+ def full_indicator_set(symbol: str, interval: str = "5m") -> Dict[str, float]:
+     """15+ indikatörü tek bir sözlükte döner — AI parlamentosuna ve loglara verilir."""
+     d = klines(symbol, interval, 80)
+@@ -471,7 +375,6 @@ def full_indicator_set(symbol: str, interval: str = "5m") -> Dict[str, float]:
+ 
+ 
+ # =================================================================== REJİM
+-=======
+ def mfi(h, l, c, v, p=14):
+     n = min(len(h), len(l), len(c), len(v))
+     if n < p + 1:
+@@ -550,7 +453,6 @@ def full_indicator_set(symbol: str, interval: str = "5m") -> Dict[str, float]:
+     return {k: round(finite(val), 5) for k, val in out.items() if val is not None}
+ 
+ 
+->>>>>>> refs/remotes/origin/main
+ def detect_regime(symbol: str) -> Tuple[str, float]:
+     d5 = klines(symbol, "5m", 60)
+     d15 = klines(symbol, "15m", 40)
+@@ -575,13 +477,10 @@ def detect_regime(symbol: str) -> Tuple[str, float]:
+     return "RANGE", atr_pct
+ 
+ 
+-<<<<<<< HEAD
+ # ============================================================ MULTI-HORIZON
+ TF_WEIGHTS = [("1m", 0.07), ("3m", 0.07), ("5m", 0.17), ("15m", 0.20), ("30m", 0.15), ("1h", 0.14), ("2h", 0.10), ("4h", 0.10)]
+ 
+ 
+-=======
+->>>>>>> refs/remotes/origin/main
+ def score_tf(symbol: str, interval: str) -> Tuple[float, Dict]:
+     d = klines(symbol, interval, 80)
+     if not d or len(d["c"]) < 40:
+@@ -591,11 +490,8 @@ def score_tf(symbol: str, interval: str) -> Tuple[float, Dict]:
+     r = rsi(c, 14)
+     a = atr(h, l, c, 14)
+     mom = momentum(c, 8)
+-<<<<<<< HEAD
+     m_line, m_sig, m_hist = macd(c)
+-=======
+     m_line, _s, m_hist = macd(c)
+->>>>>>> refs/remotes/origin/main
+     adx_v = adx(h, l, c, 14)
+     pctb = bollinger_pctb(c, 20)
+     if None in (e9, e21, r, a):
+@@ -621,7 +517,6 @@ def score_tf(symbol: str, interval: str) -> Tuple[float, Dict]:
+     if m_hist is not None:
+         s += 8 if m_hist > 0 else -8
+     if adx_v is not None and adx_v > 25:
+-<<<<<<< HEAD
+         s *= 1.15  # güçlü trendde skoru büyüt
+     if pctb is not None:
+         if pctb > 0.95:
+@@ -629,7 +524,6 @@ def score_tf(symbol: str, interval: str) -> Tuple[float, Dict]:
+         elif pctb < 0.05:
+             s += 5
+     return s, {"atr_pct": a / c[-1] * 100, "rsi": r, "mom": mom, "vol": vol_ratio, "adx": adx_v}
+-=======
+         s *= 1.15
+     if pctb is not None:
+         if pctb > 0.95:
+@@ -640,7 +534,6 @@ def score_tf(symbol: str, interval: str) -> Tuple[float, Dict]:
+         "atr_pct": a / c[-1] * 100,
+         "rsi": r, "mom": mom, "vol": vol_ratio, "adx": adx_v,
+     }
+->>>>>>> refs/remotes/origin/main
+ 
+ 
+ def multi_horizon(symbol: str) -> Tuple[float, Dict]:
+@@ -648,7 +541,6 @@ def multi_horizon(symbol: str) -> Tuple[float, Dict]:
+     for tf, w in TF_WEIGHTS:
+         sc, det = score_tf(symbol, tf)
+         total += sc * w
+-<<<<<<< HEAD
+         details[tf] = {"score": round(sc, 2), **{k: (round(v, 4) if isinstance(v, float) else v) for k, v in det.items()}}
+     return total, details
+ 
+@@ -867,7 +759,6 @@ def get_technical_decision(symbol: str, balance: float, open_positions: List[Tup
+ 
+ def on_trade_closed(symbol: str, side: str, net_pnl: float, confidence: float, regime: str) -> None:
+     record_trade(symbol, side, net_pnl, confidence, regime)
+-=======
+         if det:
+             details[tf] = det
+     return round(total, 4), details
+@@ -1172,4 +1063,3 @@ def get_technical_decision(symbol: str, *args: Any, **kwargs: Any) -> Dict[str,
+ # aliases used by older parliament copies
+ get_tech_decision = get_technical_decision
+ technical_decision = get_technical_decision
+->>>>>>> refs/remotes/origin/main
+diff --git a/extreme_scanner_engine.py b/extreme_scanner_engine.py
+index 5f1c5ff..ff4c8f0 100644
+--- a/extreme_scanner_engine.py
++++ b/extreme_scanner_engine.py
+@@ -1,6 +1,5 @@
+ #!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+-<<<<<<< HEAD
+ """
+ EXTREME SCANNER ENGINE — geniş sembol evreninde çoklu-osilatör aşırı
+ alım/satım taraması. (MİKRO-SCALPING & MAKER OPTİMİZASYONLU VERSİYON)
+@@ -28,7 +27,6 @@ import threading
+ import time
+ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+ from typing import Any, Dict, List
+-=======
+ """HONEYCOMB EXTREME SCANNER ENGINE — tactical reversal (LIVE).
+ 
+ Uses alpha_core.get_technical_decision / evaluate_entry_gate.
+@@ -41,19 +39,16 @@ import os
+ import sys
+ import time
+ from typing import Any, Dict, List, Tuple
+->>>>>>> refs/remotes/origin/main
+ 
+ ROOT = os.path.dirname(os.path.abspath(__file__))
+ if ROOT not in sys.path:
+     sys.path.insert(0, ROOT)
+ 
+-<<<<<<< HEAD
+ from live.kernel import (  # noqa: E402
+     LiveKernel, DynamicTrailingStopEngine, PartialProfitEngine, CircuitBreaker,
+     CryptographicAuditLedger, load_env,
+ )
+ import alpha_core  # noqa: E402
+-=======
+ try:
+     if hasattr(sys.stdout, "reconfigure"):
+         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+@@ -69,13 +64,11 @@ from live.kernel import (
+     load_env,
+ )
+ import alpha_core
+->>>>>>> refs/remotes/origin/main
+ 
+ try:
+     for _k, _v in load_env().items():
+         os.environ.setdefault(_k, _v)
+ except Exception as _e:
+-<<<<<<< HEAD
+     print("UYARI: .env yuklenemedi (%s)" % _e, flush=True)
+ 
+ ACCOUNT_LABEL = os.getenv("ACCOUNT_LABEL", "SCANNER")
+@@ -105,7 +98,6 @@ MAX_NOTIONAL = float(os.getenv("MAX_POSITION_SIZE_USDT", "150"))
+ FEE_RATE = float(os.getenv("FEE_RATE", "0.0001")) # MİKRO-SCALPING: Maker komisyon oranına ayarlandı
+ BRIDGE_HOST = os.getenv("BRIDGE_HOST", "127.0.0.1")
+ BRIDGE_PORT = int(os.getenv("HONEYCOMB_BRIDGE_PORT", "8200"))
+-=======
+     print("UYARI .env: %s" % _e, flush=True)
+ 
+ ACCOUNT_LABEL = os.getenv("ACCOUNT_LABEL", "SCANNER-OMEGA")
+@@ -126,14 +118,12 @@ MAX_POSITIONS = int(os.getenv("SCANNER_MAX_POSITIONS", "8"))
+ SCAN_INTERVAL_SEC = float(os.getenv("SCANNER_INTERVAL_SEC", "12"))
+ SYMBOL_DELAY_SEC = float(os.getenv("SCANNER_SYMBOL_DELAY_SEC", "0.35"))
+ AUDIT_FILE = os.path.join(ROOT, os.getenv("SCANNER_AUDIT_FILE", "scanner_omega_audit.jsonl"))
+->>>>>>> refs/remotes/origin/main
+ 
+ kernel = LiveKernel(venue=VENUE, log_fn=lambda m: log.info(m))
+ kernel.load_exchange_info(WIDE_SYMBOLS)
+ trail_engine = DynamicTrailingStopEngine(kernel, log_fn=lambda m: log.info(m))
+ partial_engine = PartialProfitEngine(kernel, log_fn=lambda m: log.info(m))
+ order_breaker = CircuitBreaker(fail_threshold=4, cooldown_sec=180)
+-<<<<<<< HEAD
+ audit = CryptographicAuditLedger(os.path.join(ROOT, "scanner_audit_ledger.jsonl"))
+ 
+ _lock = threading.Lock()
+@@ -446,7 +436,6 @@ def main():
+ 
+ if __name__ == "__main__":
+     main()
+-=======
+ audit = CryptographicAuditLedger(AUDIT_FILE)
+ _open_meta: Dict[str, Dict[str, Any]] = {}
+ 
+@@ -539,4 +528,3 @@ def main_loop() -> None:
+ 
+ if __name__ == "__main__":
+     main_loop()
+->>>>>>> refs/remotes/origin/main
+diff --git a/extreme_scanner_omega.py b/extreme_scanner_omega.py
+index 5aea209..7dd0f25 100755
+--- a/extreme_scanner_omega.py
++++ b/extreme_scanner_omega.py
+@@ -1,6 +1,5 @@
+ #!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+-<<<<<<< HEAD
+ """
+ HONEYCOMB EXTREME SCANNER OMEGA
+ LIVE tactical reversal engine.
+@@ -1770,11 +1769,9 @@ def main() -> None:
+ 
+ if __name__ == "__main__":
+     main()
+-=======
+ """Compatibility alias — historical filename extreme_scanner_omega.py."""
+ from extreme_scanner_engine import *  # noqa: F401,F403
+ from extreme_scanner_engine import main_loop
+ 
+ if __name__ == "__main__":
+     main_loop()
+->>>>>>> refs/remotes/origin/main
+diff --git a/helix_sovereign_pro.py b/helix_sovereign_pro.py
+index 3658f7b..8f48a30 100755
+--- a/helix_sovereign_pro.py
++++ b/helix_sovereign_pro.py
+@@ -43,8 +43,6 @@ def _auto_calc_qty(local_vars, self_obj, symbol):
+ import json
+ import os
+ import sys
+-<<<<<<< HEAD
+-=======
+ try:
+     if hasattr(sys.stdout, "reconfigure"):
+         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+@@ -52,7 +50,6 @@ try:
+         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+ except Exception:
+     pass
+->>>>>>> refs/remotes/origin/main
+ 
+ ROOT = os.path.dirname(os.path.abspath(__file__))
+ if ROOT not in sys.path:
+@@ -264,10 +261,10 @@ AI_MIN_CONF = int(ENV.get("AI_CONFIDENCE_THRESHOLD") or "60")
+ FEE_RATE = float(ENV.get("FEE_RATE") or "0.0004")
+ 
+ FREE_MODEL_FALLBACKS = [
+-    "google/gemma-2-9b-it:free",
+-    "meta-llama/llama-3.1-8b-instruct:free",
++    "google/gemma-4-31b-it:free",
++    "nvidia/nemotron-3.5-lightning:free",
+     "qwen/qwen-2.5-72b-instruct:free",
+-    "mistralai/mistral-7b-instruct:free",
++    "minimax/minimax-m2.7:free",
+     "deepseek/deepseek-r1:free",
+     "meta-llama/llama-3.3-70b-instruct:free",
+ ]
+@@ -276,25 +273,25 @@ AGENTS = [
+     {
+         "id": "fin_alpha",
+         "role": "financial",
+-        "model": ENV.get("OR_MODEL_FIN1") or "google/gemma-2-9b-it:free",
++        "model": ENV.get("OR_MODEL_FIN1") or "nvidia/nemotron-3.5-lightning:free",
+         "task": "momentum_risk",
+     },
+     {
+         "id": "fin_beta",
+         "role": "financial",
+-        "model": ENV.get("OR_MODEL_FIN2") or "meta-llama/llama-3.1-8b-instruct:free",
++        "model": ENV.get("OR_MODEL_FIN2") or "google/gemma-4-31b-it:free",
+         "task": "mean_reversion_structure",
+     },
+     {
+         "id": "gen_coord",
+         "role": "generative",
+-        "model": ENV.get("OR_MODEL_GEN1") or "qwen/qwen-2.5-72b-instruct:free",
++        "model": ENV.get("OR_MODEL_GEN1") or "minimax/minimax-m2.7:free",
+         "task": "coordination_narrative",
+     },
+     {
+         "id": "gen_risk",
+         "role": "generative",
+-        "model": ENV.get("OR_MODEL_GEN2") or "mistralai/mistral-7b-instruct:free",
++        "model": ENV.get("OR_MODEL_GEN2") or "openrouter/free",
+         "task": "risk_story_and_veto",
+     },
+ ]
+diff --git a/live/__init__.py b/live/__init__.py
+index b92f9af..4431d01 100644
+--- a/live/__init__.py
++++ b/live/__init__.py
+@@ -1,11 +1,9 @@
+-<<<<<<< HEAD
+ from .kernel import (
+     LiveKernel, TokenBucket, SingleFlight, CryptographicAuditLedger, CircuitBreaker,
+     DynamicTrailingStopEngine, PartialProfitEngine, PurePythonWebSocketClient, load_env,
+     sma, ema, wma, rsi, atr, macd, bollinger_bands, stochastic, vwap, supertrend, adx,
+     cci, obv, roc, williams_r, mfi,
+ )
+-=======
+ # -*- coding: utf-8 -*-
+ """Honeycomb Live Package — α-Coupling Production Surface.
+ 
+@@ -80,4 +78,3 @@ __all__ = [
+     "_ge",
+     "_le",
+ ]
+->>>>>>> refs/remotes/origin/main
+diff --git a/live/kernel.py b/live/kernel.py
+index 5a6b8c9..df8b3da 100644
+--- a/live/kernel.py
++++ b/live/kernel.py
+@@ -1,3 +1,6 @@
++import os
++# HONEYCOMB_LOCK_DIR_INIT_20260910
++os.makedirs(os.path.expanduser('\~/.honeycomb'), exist_ok=True)
+ #!/data/data/com.termux/files/usr/bin/python3
+ # -*- coding: utf-8 -*-
+ """Honeycomb Live Kernel — dual-venue HMAC. No ghost fills. Exchange protect. Fill ledger."""
+@@ -72,9 +75,10 @@ class TokenBucket:
+ 
+ class SingleFlight:
+     def __init__(self, path=None):
+-        self.path = path or "/tmp/honeycomb_sf.lock"
++        self.path = path or os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock")
+         self.fd = None
+     def acquire(self, timeout=8.0):
++        os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+         self.fd = open(self.path, "w")
+         start = time.time()
+         while True:
+@@ -111,7 +115,7 @@ class LiveKernel:
+         self.secret = raw_sec.encode("utf-8")
+         self.recv = int(self.env.get("RECV_WINDOW", "10000"))
+         self.bucket = TokenBucket()
+-        self.flock = SingleFlight()
++        self.flock = SingleFlight(self.env.get("HONEYCOMB_LOCK_PATH") or os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock"))
+         self._off = 0
+         self._filters: Dict[str, Dict] = {}
+         self._stale_until = 0.0
+@@ -440,12 +444,24 @@ def rsi(values, period=14):
+     if al == 0: return 100.0
+     return 100.0 - (100.0 / (1.0 + ag / al))
+ 
+-def atr(closes, period=14):
+-    if len(closes) < period + 1: return None
+-    trs = [abs(closes[i] - closes[i - 1]) for i in range(1, len(closes))]
++def atr(closes=None, period=14, high=None, low=None, close=None, **_):
++    series = close if close is not None else closes
++    if series is None:
++        return None
++    if high is not None and low is not None and len(series) >= period + 1:
++        trs = []
++        prev = series[0]
++        for i in range(1, len(series)):
++            h = high[i] if i < len(high) else series[i]
++            l = low[i] if i < len(low) else series[i]
++            trs.append(max(h - l, abs(h - prev), abs(l - prev)))
++            prev = series[i]
++        return sum(trs[-period:]) / period
++    if len(series) < period + 1:
++        return None
++    trs = [abs(series[i] - series[i - 1]) for i in range(1, len(series))]
+     return sum(trs[-period:]) / period
+ 
+-<<<<<<< HEAD
+ # =====================================================================
+ # EK — live/__init__.py'nin beklediği ama eski kernel.py yedeğinde
+ # eksik olan parça. Yukarıdaki hiçbir satıra dokunulmadı; bu blok
+@@ -609,7 +625,6 @@ def supertrend(highs, lows, closes, period=10, mult=3.0):
+     if len(closes) < period + 2:
+         return None, None
+     trs = _true_ranges(highs, lows, closes)
+-=======
+ 
+ # =====================================================================
+ # α-COUPLING APPEND — nothing above deleted. Missing live/__init__ surface.
+@@ -723,12 +738,10 @@ def supertrend(highs, lows, closes, period=10, mult=3.0):
+     trs = []
+     for i in range(1, len(closes)):
+         trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
+->>>>>>> refs/remotes/origin/main
+     atr_v = sum(trs[-period:]) / period
+     hl2 = (highs[-1] + lows[-1]) / 2.0
+     upper = hl2 + mult * atr_v
+     lower = hl2 - mult * atr_v
+-<<<<<<< HEAD
+     prev_close = closes[-2]
+     direction = 1 if closes[-1] > upper else (-1 if closes[-1] < lower else (1 if prev_close > (upper + lower) / 2 else -1))
+     value = lower if direction == 1 else upper
+@@ -736,25 +749,6 @@ def supertrend(highs, lows, closes, period=10, mult=3.0):
+ 
+ 
+ # ------------------------------------------------------- CIRCUIT BREAKER ---
+-class CircuitBreaker:
+-    """
+-    Ardışık hata sayacı. N ardışık hata olursa devreyi 'açar' (trip),
+-    cooldown süresi boyunca yeni emir/istek göndermeyi engeller, süre
+-    dolunca kendiliğinden 'yarı-açık' (half-open) duruma geçip bir
+-    deneme hakkı tanır. Thread-safe.
+-    """
+-    def __init__(self, fail_threshold=5, cooldown_sec=120, half_open_trial=True):
+-        self.fail_threshold = fail_threshold
+-        self.cooldown_sec = cooldown_sec
+-        self.half_open_trial = half_open_trial
+-        self._fails = 0
+-        self._state = "CLOSED"  # CLOSED (normal) -> OPEN (kilitli) -> HALF_OPEN (deneme)
+-        self._opened_at = 0.0
+-=======
+-    direction = 1 if closes[-1] > upper else (-1 if closes[-1] < lower else 0)
+-    value = lower if direction >= 0 else upper
+-    return value, direction
+-
+ def supertrend_dir(highs, lows, closes, period=10, mult=3.0):
+     _v, d = supertrend(highs, lows, closes, period, mult)
+     return d
+@@ -872,12 +866,10 @@ class CircuitBreaker:
+         self.fails = 0
+         self.state = "CLOSED"
+         self.opened_at = 0.0
+->>>>>>> refs/remotes/origin/main
+         self._lock = threading.Lock()
+ 
+     def record_success(self):
+         with self._lock:
+-<<<<<<< HEAD
+             self._fails = 0
+             self._state = "CLOSED"
+ 
+@@ -914,104 +906,13 @@ class CircuitBreaker:
+ 
+ 
+ # ------------------------------------------------- CRYPTOGRAPHIC AUDIT LOG -
+-class CryptographicAuditLedger:
+-    """
+-    Hash-zincirli (blockchain tarzı), sadece-ekleme (append-only) işlem
+-    defteri. Her kayıt bir öncekinin hash'ini içerir; herhangi bir kayıt
+-    sonradan değiştirilirse verify_chain() bunu tespit eder. Amaç: "bu
+-    loglar gerçekten değiştirilmedi mi" sorusuna kanıtlanabilir bir cevap
+-    vermek — sıradan bir metin log dosyasının veremeyeceği bir garanti.
+-    JSONL formatında diske yazılır, her satır bağımsız bir JSON kaydıdır.
+-    """
+-    GENESIS_HASH = "0" * 64
+-=======
+-            self.fails = 0
+-            self.state = "CLOSED"
+-
+-    def record_failure(self):
+-        with self._lock:
+-            self.fails += 1
+-            if self.fails >= self.fail_threshold:
+-                self.state = "OPEN"
+-                self.opened_at = time.time()
+-
+-    def allow(self):
+-        with self._lock:
+-            if self.state == "CLOSED":
+-                return True
+-            elapsed = time.time() - self.opened_at
+-            if elapsed >= self.cooldown_sec:
+-                if self.half_open_trial:
+-                    self.state = "HALF_OPEN"
+-                    return True
+-                self.state = "CLOSED"
+-                self.fails = 0
+-                return True
+-            return False
+-
+-    def status(self):
+-        with self._lock:
+-            return self.state
+-
+-    def time_until_reset(self):
+-        with self._lock:
+-            if self.state != "OPEN":
+-                return 0.0
+-            return max(0.0, self.cooldown_sec - (time.time() - self.opened_at))
+-
+-
+ class CryptographicAuditLedger:
+     """Append-only hash-chained JSONL. Tamper-evident."""
+     GENESIS = "0" * 64
+->>>>>>> refs/remotes/origin/main
+ 
+     def __init__(self, path):
+         self.path = path
+         self._lock = threading.Lock()
+-<<<<<<< HEAD
+-        if not os.path.exists(self.path):
+-            open(self.path, "a").close()
+-
+-    def _last_hash(self) -> str:
+-        last = self.GENESIS_HASH
+-        if os.path.exists(self.path):
+-            with open(self.path, "r", encoding="utf-8") as f:
+-                for line in f:
+-                    line = line.strip()
+-                    if line:
+-                        try:
+-                            last = json.loads(line)["hash"]
+-                        except Exception:
+-                            pass
+-        return last
+-
+-    def append(self, event: Dict[str, Any]) -> Dict[str, Any]:
+-        with self._lock:
+-            prev_hash = self._last_hash()
+-            record = {
+-                "ts": time.time(),
+-                "prev_hash": prev_hash,
+-                "data": event,
+-            }
+-            payload = json.dumps(record, sort_keys=True, ensure_ascii=False).encode("utf-8")
+-            record["hash"] = hashlib.sha256(prev_hash.encode("utf-8") + payload).hexdigest()
+-            with open(self.path, "a", encoding="utf-8") as f:
+-                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+-            return record
+-
+-    def verify_chain(self) -> Tuple[bool, Optional[int]]:
+-        """Tüm zinciri yeniden hesaplayıp doğrular. (True, None) = bozulmamış.
+-        (False, satır_no) = o satırdan itibaren zincir/hash tutarsız — kayıt
+-        sonradan değiştirilmiş veya silinmiş demektir."""
+-        prev_hash = self.GENESIS_HASH
+-        if not os.path.exists(self.path):
+-            return True, None
+-        with open(self.path, "r", encoding="utf-8") as f:
+-            for i, line in enumerate(f, start=1):
+-=======
+-        d = os.path.dirname(os.path.abspath(path))
+-        if d:
+-            os.makedirs(d, exist_ok=True)
+         if not os.path.exists(self.path):
+             open(self.path, "a").close()
+ 
+@@ -1046,7 +947,6 @@ class CryptographicAuditLedger:
+             return True, None
+         with open(self.path, "r", encoding="utf-8") as f:
+             for i, line in enumerate(f, 1):
+->>>>>>> refs/remotes/origin/main
+                 line = line.strip()
+                 if not line:
+                     continue
+@@ -1054,7 +954,6 @@ class CryptographicAuditLedger:
+                     rec = json.loads(line)
+                 except Exception:
+                     return False, i
+-<<<<<<< HEAD
+                 if rec.get("prev_hash") != prev_hash:
+                     return False, i
+                 claimed_hash = rec.get("hash")
+@@ -1070,45 +969,6 @@ class CryptographicAuditLedger:
+ 
+ # --------------------------------------------- DYNAMIC TRAILING STOP ENGINE
+ # --------------------------------------------------- PARTIAL PROFIT ENGINE -
+-class PartialProfitEngine:
+-    """
+-    Kademeli kısmi kâr alma: pozisyon TP'ye doğru ilerledikçe kalan
+-    miktarın bir kısmını GERÇEK PİYASA EMRİYLE kapatıp kârı realize
+-    eder, geri kalanı TP/SL korumasıyla çalışmaya devam eder. Mevcut
+-    kernel.close_market()/place_protect() metodları kullanılır (hiçbir
+-    emir/imza mantığı burada TEKRAR YAZILMADI).
+-
+-    ÖNEMLİ: kernel.close_market() kendi içinde cancel_all() çağırıyor,
+-    bu da kalan pozisyonun TP/SL korumasını da siliyor — bu yüzden her
+-    kısmi kapatmadan sonra place_protect() ile koruma kalan miktar için
+-    YENİDEN kuruluyor (closePosition=true tipi emirler zaten miktar
+-    belirtmez, kalan ne kadarsa onu kapatır).
+-
+-    Varsayılan: TP mesafesinin %50'sinde kalanın %35'i, %80'inde yine
+-    kalanın %35'i realize edilir — pozisyonun tamamı tek bir TP
+-    seviyesine bağlı kalmaz, "az kârda erken kapat, potansiyeli tamamen
+-    kaçırma" dengesini kurar.
+-    """
+-    DEFAULT_STAGES = [(0.50, 0.35), (0.80, 0.35)]  # (ilerleme, kalanın kapatılacak yüzdesi)
+-
+-    def __init__(self, kernel, stages=None, log_fn=None):
+-        self.kernel = kernel
+-        self.stages = stages or self.DEFAULT_STAGES
+-        self.log = log_fn or (lambda m: None)
+-        self._pos: Dict[str, Dict[str, Any]] = {}
+-=======
+-                if rec.get("prev_hash") != prev:
+-                    return False, i
+-                claimed = rec.get("hash")
+-                recomputed = dict(rec)
+-                recomputed.pop("hash", None)
+-                payload = json.dumps(recomputed, sort_keys=True, ensure_ascii=False).encode("utf-8")
+-                if hashlib.sha256(payload).hexdigest() != claimed:
+-                    return False, i
+-                prev = claimed
+-        return True, None
+-
+-
+ class PartialProfitEngine:
+     DEFAULT_STAGES = [(0.50, 0.35), (0.80, 0.35)]
+ 
+@@ -1117,27 +977,22 @@ class PartialProfitEngine:
+         self.stages = stages or list(self.DEFAULT_STAGES)
+         self.log = log_fn or (lambda m: None)
+         self._pos = {}
+->>>>>>> refs/remotes/origin/main
+         self._lock = threading.Lock()
+ 
+     def register(self, symbol, side, entry, tp, sl, qty, pos_side=None):
+         with self._lock:
+             self._pos[symbol] = {
+                 "side": side, "entry": entry, "tp": tp, "sl": sl,
+-<<<<<<< HEAD
+                 "qty_remaining": qty, "stage": 0, "pos_side": pos_side,
+                 "realized_net": 0.0,
+-=======
+                 "qty": qty, "qty_remaining": qty, "stage": 0,
+                 "pos_side": pos_side, "realized_net": 0.0,
+->>>>>>> refs/remotes/origin/main
+             }
+ 
+     def forget(self, symbol):
+         with self._lock:
+             return self._pos.pop(symbol, None)
+ 
+-<<<<<<< HEAD
+     def get(self, symbol) -> Optional[Dict[str, Any]]:
+         with self._lock:
+             return dict(self._pos[symbol]) if symbol in self._pos else None
+@@ -1180,61 +1035,6 @@ class PartialProfitEngine:
+             return None
+ 
+ 
+-class DynamicTrailingStopEngine:
+-    """
+-    Kademeli (staged) dinamik kâr-kovalayan stop-loss. LiveKernel
+-    örneğinin MEVCUT cancel_all()/place_protect() metodlarını kullanır —
+-    kernel.py'nin emir/imza mantığına dokunmaz, sadece dışarıdan çağırır.
+-
+-    Kullanım:
+-        trail = DynamicTrailingStopEngine(kernel)
+-        trail.register("BTCUSDT", "LONG", entry=65000, tp=66500, sl=64200)
+-        ...  # her döngüde:
+-        trail.update("BTCUSDT", current_price)
+-    """
+-    DEFAULT_STAGES = [(0.35, 0.05), (0.60, 0.25), (0.85, 0.55)]  # (ilerleme, kilit_orani)
+-
+-    def __init__(self, kernel, stages=None, log_fn=None):
+-        self.kernel = kernel
+-        self.stages = stages or self.DEFAULT_STAGES
+-        self.log = log_fn or (lambda m: None)
+-        self._pos: Dict[str, Dict[str, Any]] = {}
+-=======
+-    def get(self, symbol):
+-        with self._lock:
+-            return dict(self._pos[symbol]) if symbol in self._pos else None
+-
+-    def update(self, symbol, current_price):
+-        with self._lock:
+-            pos = self._pos.get(symbol)
+-            if not pos or pos.get("qty_remaining", 0) <= 0 or pos["stage"] >= len(self.stages):
+-                return None
+-            entry = float(pos["entry"])
+-            dist = abs(float(pos["tp"]) - entry)
+-            if dist <= 0:
+-                return None
+-            progress = (current_price - entry) / dist if pos["side"] == "LONG" else (entry - current_price) / dist
+-            thresh, frac = self.stages[pos["stage"]]
+-            if progress < thresh:
+-                return None
+-            close_qty = pos["qty_remaining"] * frac
+-            try:
+-                fill = self.kernel.close_market(symbol, pos["side"], close_qty, pos.get("pos_side"))
+-                net = _finite_num(fill.get("rp")) - _finite_num(fill.get("commission"))
+-                pos["qty_remaining"] = max(0.0, pos["qty_remaining"] - close_qty)
+-                pos["stage"] += 1
+-                pos["realized_net"] += net
+-                remaining = pos["qty_remaining"]
+-                stage_done = pos["stage"]
+-                if remaining > 0:
+-                    self.kernel.place_protect(symbol, pos["side"], entry, pos["tp"], pos["sl"], pos.get("pos_side"))
+-                self.log("KISMİ KAR %s %s progress=%.0f%% closed=%.6f" % (pos["side"], symbol, progress * 100.0, close_qty))
+-                return {"qty_closed": close_qty, "net": net, "remaining": remaining, "stage": stage_done}
+-            except Exception as e:
+-                self.log("KISMİ KAR HATA %s: %s" % (symbol, e))
+-                return None
+-
+-
+ class DynamicTrailingStopEngine:
+     DEFAULT_STAGES = [(0.35, 0.05), (0.60, 0.25), (0.85, 0.55)]
+ 
+@@ -1243,7 +1043,6 @@ class DynamicTrailingStopEngine:
+         self.stages = stages or list(self.DEFAULT_STAGES)
+         self.log = log_fn or (lambda m: None)
+         self._pos = {}
+->>>>>>> refs/remotes/origin/main
+         self._lock = threading.Lock()
+ 
+     def register(self, symbol, side, entry, tp, sl):
+@@ -1252,7 +1051,6 @@ class DynamicTrailingStopEngine:
+ 
+     def forget(self, symbol):
+         with self._lock:
+-<<<<<<< HEAD
+             self._pos.pop(symbol, None)
+ 
+     def update(self, symbol, current_price) -> Optional[float]:
+@@ -1506,7 +1304,6 @@ def _add_order_methods():
+         LiveKernel.create_market_order = create_market_order
+ 
+ _add_order_methods()
+-=======
+             return self._pos.pop(symbol, None)
+ 
+     def update(self, symbol, current_price):
+@@ -1536,4 +1333,3 @@ _add_order_methods()
+             except Exception as e:
+                 self.log("TRAIL HATA %s: %s" % (symbol, e))
+                 return None
+->>>>>>> refs/remotes/origin/main
+diff --git a/live/kernel_hardened_sign.py b/live/kernel_hardened_sign.py
+index eafb12b..8658f3d 100644
+--- a/live/kernel_hardened_sign.py
++++ b/live/kernel_hardened_sign.py
+@@ -1,6 +1,5 @@
+ #!/data/data/com.termux/files/usr/bin/python3
+ # -*- coding: utf-8 -*-
+-<<<<<<< HEAD
+ """α-HONEYCOMB LiveKernel — HARDENED SIGNATURE (Termux-safe)"""
+ from __future__ import annotations
+ import hashlib, hmac, json, os, time, urllib.error, urllib.parse, urllib.request
+@@ -9,7 +8,6 @@ from typing import Any, Dict, Optional
+ def hardened_sign(secret: bytes, params: Dict[str, Any]) -> str:
+     if not secret:
+         raise RuntimeError("SECRET EMPTY — imza üretilemez.")
+-=======
+ """
+ α-HONEYCOMB LiveKernel — HARDENED SIGNATURE MODULE (Termux-safe)
+ ===============================================================
+@@ -39,13 +37,11 @@ def hardened_sign(secret: bytes, params: Dict[str, Any]) -> str:
+     """
+     if not secret:
+         raise RuntimeError("SECRET EMPTY — imza üretilemez. BINANCE_SECRET_KEY kontrol et.")
+->>>>>>> refs/remotes/origin/main
+     clean = {str(k): str(v) for k, v in params.items() if v is not None}
+     qs = urllib.parse.urlencode(sorted(clean.items()), doseq=True)
+     sig = hmac.new(secret, qs.encode("utf-8"), hashlib.sha256).hexdigest()
+     return qs + "&signature=" + sig
+ 
+-<<<<<<< HEAD
+ def hardened_http(self, method, path, params=None, signed=False, weight=1, is_order=False, retries=3):
+     if time.time() < getattr(self, "_stale_until", 0.0):
+         raise RuntimeError("stale-halt active")
+@@ -55,7 +51,6 @@ def hardened_http(self, method, path, params=None, signed=False, weight=1, is_or
+     if signed:
+         if not self.secret:
+             raise RuntimeError("API SECRET boş")
+-=======
+ 
+ def hardened_http(
+     self,
+@@ -78,17 +73,14 @@ def hardened_http(
+     if signed:
+         if not self.secret:
+             raise RuntimeError("API SECRET boş — signed istek atılamaz")
+->>>>>>> refs/remotes/origin/main
+         params["timestamp"] = int(time.time() * 1000) + getattr(self, "_off", 0)
+         params["recvWindow"] = getattr(self, "recv", 10000)
+         body = hardened_sign(self.secret, params)
+     else:
+-<<<<<<< HEAD
+         body = urllib.parse.urlencode({str(k): str(v) for k, v in params.items() if v is not None}, doseq=True)
+     url = self.v["rest"] + path + (("?" + body) if method.upper() == "GET" and body else "")
+     data = body.encode("utf-8") if method.upper() != "GET" else None
+     headers = {"X-MBX-APIKEY": self.key, "Content-Type": "application/x-www-form-urlencoded"}
+-=======
+         body = urllib.parse.urlencode(
+             {str(k): str(v) for k, v in params.items() if v is not None}, doseq=True
+         )
+@@ -100,7 +92,6 @@ def hardened_http(
+         "Content-Type": "application/x-www-form-urlencoded",
+     }
+ 
+->>>>>>> refs/remotes/origin/main
+     last_err = None
+     for attempt in range(retries):
+         try:
+@@ -110,13 +101,11 @@ def hardened_http(
+                 return json.loads(raw) if raw else {}
+         except urllib.error.HTTPError as e:
+             raw = e.read().decode() if e.fp else str(e)
+-<<<<<<< HEAD
+             try: err = json.loads(raw)
+             except: err = {"msg": raw}
+             code = err.get("code")
+             if code in (-1021, -1022):
+                 if hasattr(self, "sync_time"): self.sync_time()
+-=======
+             try:
+                 err = json.loads(raw)
+             except Exception:
+@@ -126,7 +115,6 @@ def hardened_http(
+                 if hasattr(self, "sync_time"):
+                     self.sync_time()
+                 last_err = RuntimeError("time/sig %s" % err)
+->>>>>>> refs/remotes/origin/main
+                 time.sleep(0.15 * (attempt + 1))
+                 if signed:
+                     params["timestamp"] = int(time.time() * 1000) + getattr(self, "_off", 0)
+@@ -135,7 +123,6 @@ def hardened_http(
+                     data = body.encode("utf-8") if method.upper() != "GET" else None
+                 continue
+             if code == -2015:
+-<<<<<<< HEAD
+                 raise RuntimeError("BINANCE -2015: Invalid API-key / IP / permissions. LIVE_ARMED kapat.")
+             raise RuntimeError("HTTP %s: %s" % (e.code, err))
+         except Exception as e:
+@@ -146,7 +133,6 @@ def hardened_http(
+ 
+ def apply_hardened_sign(kernel_instance):
+     kernel_instance._sign = lambda p: hardened_sign(kernel_instance.secret, p)
+-=======
+                 raise RuntimeError(
+                     "BINANCE -2015: Invalid API-key, IP or permissions. "
+                     "LIVE_ARMED kapatıldı. Key/IP whitelist kontrol et."
+@@ -162,6 +148,5 @@ def apply_hardened_sign(kernel_instance):
+ def apply_hardened_sign(kernel_instance):
+     """Mevcut LiveKernel instance'ına hardened imza uygular."""
+     kernel_instance._sign = lambda params: hardened_sign(kernel_instance.secret, params)
+->>>>>>> refs/remotes/origin/main
+     kernel_instance._http = lambda *a, **kw: hardened_http(kernel_instance, *a, **kw)
+     return kernel_instance
+diff --git a/orchestrator/registry.json b/orchestrator/registry.json
+index 3156231..a35868b 100644
+--- a/orchestrator/registry.json
++++ b/orchestrator/registry.json
+@@ -27,7 +27,7 @@
+     {
+       "path": "helix_sovereign_pro.py",
+       "score": 6,
+-      "sha256": "8953cb48e565d05cb46d34591406f37d1315f3c2af1aa4867fe3f692d0f466ec"
++      "sha256": "3e9f8ef6cb30fed063fdd3114f513e45a525d333936242d41f9c3e585b58e8b9"
+     },
+     {
+       "path": "install_part1.sh",
+@@ -65,24 +65,39 @@
+       "sha256": "fffbcab79cb7e4ef75298a7758e733395519a303f308a0bb896abbeef9b18d5f"
+     },
+     {
+-      "path": "engine_live2.py",
+-      "score": 5,
+-      "sha256": "d44a4b8a9b4474039037141fc1260dcc562c62d7f2529830dcd52879c7b828e6"
++      "path": "backups/full_upgrade_20260913_172408/helix_sovereign_pro.py",
++      "score": 6,
++      "sha256": "df77fd55e20c5b003fb10e9808ecac5b4fe35b91cb8b69baf63ac072057de376"
+     },
+     {
+-      "path": "install_sovereign_parliament.sh",
++      "path": "backups/full_integrity_20260913_173354/helix_sovereign_pro.py",
++      "score": 6,
++      "sha256": "df77fd55e20c5b003fb10e9808ecac5b4fe35b91cb8b69baf63ac072057de376"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/helix_sovereign_pro.py",
++      "score": 6,
++      "sha256": "3c33fbfbb25fad71ca73f2536ca69ab589e28a427656e8d3299a40525cc32489"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/helix_sovereign_pro.py",
++      "score": 6,
++      "sha256": "3c33fbfbb25fad71ca73f2536ca69ab589e28a427656e8d3299a40525cc32489"
++    },
++    {
++      "path": "engine_live2.py",
+       "score": 5,
+-      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
++      "sha256": "d44a4b8a9b4474039037141fc1260dcc562c62d7f2529830dcd52879c7b828e6"
+     },
+     {
+       "path": "alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
++      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+     },
+     {
+-      "path": "sovereign_parliament_engine.py",
++      "path": "install_sovereign_parliament.sh",
+       "score": 5,
+-      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
++      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
+     },
+     {
+       "path": "install5.sh",
+@@ -100,14 +115,14 @@
+       "sha256": "98fda8a3b15cea4b33abf66e84cef422239974767a18ebd13f9724373359de62"
+     },
+     {
+-      "path": "live/install_sovereign_parliament.sh",
++      "path": "scripts/termux_execution_hardening.sh",
+       "score": 5,
+-      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
++      "sha256": "9b08c1d9934d6d64a6b0e503388512945622e2d5310029898afada57576d6d9a"
+     },
+     {
+-      "path": "live/alpha_core.py",
++      "path": "live/install_sovereign_parliament.sh",
+       "score": 5,
+-      "sha256": "41da620a3b011ac900e8308d160f24678bcd74cf0a30437f2cacce3634b3b2cb"
++      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
+     },
+     {
+       "path": "live/install_part2.sh",
+@@ -127,7 +142,12 @@
+     {
+       "path": "accounts/sovereign_parliament_engine.py",
+       "score": 5,
+-      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
++      "sha256": "f314e848d497e3bdec5fa6e4d2f398e28937294dc101fbd51ab1231adb40a9b4"
++    },
++    {
++      "path": "accounts/install_part2.sh",
++      "score": 5,
++      "sha256": "ad8298f01aea05d07afa84abe554d0096fc8049b8e7ae49fbb4bfb7045f6b55f"
+     },
+     {
+       "path": "accounts/USDT-1/alpha_core.py",
+@@ -137,97 +157,67 @@
+     {
+       "path": "accounts/USDT-1/sovereign_parliament_engine.py",
+       "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
+     },
+     {
+       "path": "accounts/USDT-2/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-2/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/USDT-3/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-3/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/USDT-4/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-4/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/USDT-5/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-5/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-1/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/COIN-1/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-2/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/COIN-2/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-3/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+-      "path": "accounts/COIN-3/sovereign_parliament_engine.py",
++      "path": "accounts/COIN-4/alpha_core.py",
+       "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+-      "path": "accounts/COIN-4/alpha_core.py",
++      "path": "accounts/COIN-5/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+-      "path": "accounts/COIN-4/sovereign_parliament_engine.py",
++      "path": "backups/full_upgrade_20260913_172408/alpha_core.py",
+       "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+     },
+     {
+-      "path": "accounts/COIN-5/alpha_core.py",
++      "path": "backups/full_upgrade_20260913_175753/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
++      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+     },
+     {
+-      "path": "accounts/COIN-5/sovereign_parliament_engine.py",
++      "path": "backups/full_upgrade_20260913_180236/alpha_core.py",
+       "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+     },
+     {
+       "path": "nexus_futures_engine.ts",
+@@ -277,23 +267,93 @@
+     {
+       "path": "quantum_nexus_v3_monolithic.py",
+       "score": 4,
+-      "sha256": "8879f791ece1d7577842b6edfa543d8b900b641b43da97965e14d3d2bc25f418"
++      "sha256": "888206e467d7a2ce3186214fc3760ef2c470a8333a0f4bdb5cc1d3b53f8ad093"
+     },
+     {
+       "path": "sovereign_live.py",
+       "score": 4,
+-      "sha256": "5f70d8b0c6d5857cafac49c380df89697533c4d0fc0e3dea850e068ba560cacd"
++      "sha256": "ea57298c965c0e7f0775cecc3fc0b7cf3a76f7733e25a5bc8d87ea7a47026a7e"
+     },
+     {
+       "path": "install_part3.sh",
+       "score": 4,
+       "sha256": "3f8649a6e2fe80d5ece3ba0938fa7111a23699b17a88316f80312f5c1936efd3"
+     },
++    {
++      "path": "install_sovaring_parlamet.py",
++      "score": 4,
++      "sha256": "6f00dbc7a5651511d530402d7433db631c1c719aeb8de3e571e952baee228618"
++    },
++    {
++      "path": "extreme_scanner_engine.py",
++      "score": 4,
++      "sha256": "3321e42eb05a1af585f5387803fbf2655d41d97279aace38e4d5a6b0455dabb1"
++    },
++    {
++      "path": "install_sovaring_parlamet.sh",
++      "score": 4,
++      "sha256": "5d4520580f664251caf764f6df9fd4687a18bc9fac11de54c2af54718a4a1938"
++    },
++    {
++      "path": "scripts/termux_full_repo_upgrade.sh",
++      "score": 4,
++      "sha256": "7546f86e9f9e2a8f68ff71ade301a0a1b388769c0b5b27a09e7485333273ec38"
++    },
++    {
++      "path": "live/kernel.py",
++      "score": 4,
++      "sha256": "1b2e6f1e48bdf208cc4ba54baac4b79e2e1c92e4dd55f7bcb038c8cdd2c12aab"
++    },
+     {
+       "path": "live/sovereign_parliament_engine.py",
+       "score": 4,
+       "sha256": "1129fa659db2f4dab9f1cb10095f8046443186c1b9c6ac3956be48273d7a5e30"
+     },
++    {
++      "path": "accounts/USDT-2/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/USDT-3/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/USDT-4/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/USDT-5/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-1/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-2/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-3/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-4/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-5/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
+     {
+       "path": "~/backup_sovereign_20260828/helix_sovereign_pro.py",
+       "score": 4,
+@@ -309,6 +369,46 @@
+       "score": 4,
+       "sha256": "dd9711993bf9ad228824f57ea71f85fe06faa4c2b9ffec5f07adca2783bea161"
+     },
++    {
++      "path": "backups/final_live_repair_20260911_191534/kernel.py",
++      "score": 4,
++      "sha256": "b862c54a39c8e39ee4c31def9cba8adb49826a54e5c75cc7d2106424bf6851a7"
++    },
++    {
++      "path": "backups/recovery_20260911_191802/kernel.py",
++      "score": 4,
++      "sha256": "b862c54a39c8e39ee4c31def9cba8adb49826a54e5c75cc7d2106424bf6851a7"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_172408/engine_alpha2.py",
++      "score": 4,
++      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/engine_alpha2.py",
++      "score": 4,
++      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/engine_alpha2.py",
++      "score": 4,
++      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/live/kernel.py",
++      "score": 4,
++      "sha256": "212bb14963aa5748f783a41e452295e02962bb42ad91fbada7e5e2d4a630b310"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/live/kernel.py",
++      "score": 4,
++      "sha256": "212bb14963aa5748f783a41e452295e02962bb42ad91fbada7e5e2d4a630b310"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_172408/live/kernel.py",
++      "score": 4,
++      "sha256": "212bb14963aa5748f783a41e452295e02962bb42ad91fbada7e5e2d4a630b310"
++    },
+     {
+       "path": "engine.py",
+       "score": 3,
+@@ -337,7 +437,7 @@
+     {
+       "path": "verify.ts",
+       "score": 3,
+-      "sha256": "96f076cd600846cf8d316476366756162b04f8c67bc981ac30ff8c3df8fd7730"
++      "sha256": "62606b4b4a986953e77a419b82ca6ec343682b01efa5ddb192101de3815e56eb"
+     },
+     {
+       "path": "verify3.ts",
+@@ -374,11 +474,91 @@
+       "score": 3,
+       "sha256": "43bd27b7f83177a9dd88e010887033aea8d8fed70ccc589a4a17790c214d9827"
+     },
++    {
++      "path": "sovereign_parliament_engine.py",
++      "score": 3,
++      "sha256": "b9c1ea22c295928dd87a088d8ba56bb954deb9ab0a12b7087876d55342f0e784"
++    },
++    {
++      "path": "fix_kernel.sh",
++      "score": 3,
++      "sha256": "0d2a844d032afaba029f634e23eb29d3cdcc3c454d09b35d82f7f75e59822f5a"
++    },
++    {
++      "path": "profit_max_engine.py",
++      "score": 3,
++      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
++    },
++    {
++      "path": "FINAL_LIVE_HOTFIX.py",
++      "score": 3,
++      "sha256": "f1f830f7b44537ad94f026b79ab42da131d1f84480d1833412240e96f5e72af6"
++    },
++    {
++      "path": "fix_all.sh",
++      "score": 3,
++      "sha256": "aaf4a59c54540be09224ee3af4257bab2f0a031d6db598fe5ca97924337c9f42"
++    },
++    {
++      "path": "lobster_extreme_momentum_engine.py",
++      "score": 3,
++      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
++    },
++    {
++      "path": "tests/test_parliament_contract.py",
++      "score": 3,
++      "sha256": "d18889697651e38cf5e8aae19c194cc5c63aff7b020130a4f94893e9b00caea8"
++    },
+     {
+       "path": "live/quantum_helix_parliament.py",
+       "score": 3,
+       "sha256": "4ebd373408d2cfacbf1ed70b505d111338f2efb834e7d2c93baff90bcd296bfa"
+     },
++    {
++      "path": "backups/full_upgrade_20260913_172408/master_alpha.py",
++      "score": 3,
++      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_172408/profit_max_engine.py",
++      "score": 3,
++      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_172408/lobster_extreme_momentum_engine.py",
++      "score": 3,
++      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/master_alpha.py",
++      "score": 3,
++      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/profit_max_engine.py",
++      "score": 3,
++      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/lobster_extreme_momentum_engine.py",
++      "score": 3,
++      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/master_alpha.py",
++      "score": 3,
++      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/profit_max_engine.py",
++      "score": 3,
++      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/lobster_extreme_momentum_engine.py",
++      "score": 3,
++      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
++    },
+     {
+       "path": "engine_live.py",
+       "score": 2,
+@@ -402,7 +582,22 @@
+     {
+       "path": "ai_parliament.py",
+       "score": 2,
+-      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
++    },
++    {
++      "path": "extreme_scanner_omega.py",
++      "score": 2,
++      "sha256": "f3cf149bad25a92fbd885664e5a9f9b3b6d49d82c4eac577c8f3e7e6ef13c831"
++    },
++    {
++      "path": "aggressive_live_engine.py",
++      "score": 2,
++      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
++    },
++    {
++      "path": "honeycomb_execution_guard.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+     },
+     {
+       "path": "runtime/start_testnet.sh",
+@@ -420,9 +615,19 @@
+       "sha256": "7d72b1af791870f9d042dee6675653bec624cad2f31a4f4d2fc762430dc055ef"
+     },
+     {
+-      "path": "live/kernel.py",
++      "path": "tests/test_execution_guard.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a0a17f14af601b4c2c190fd225b564ff256c7f482be1a82b3f4fa8d605247309"
++    },
++    {
++      "path": "tests/test_omega_guards.py",
++      "score": 2,
++      "sha256": "7d9ccfde5eb1c39cc3767a31505a6145387bde258b61d8f3461ddc9b53ccf08b"
++    },
++    {
++      "path": "live/__init__.py",
++      "score": 2,
++      "sha256": "c12d1bdc063d21884461f8a098dc2ac2294384561ac3983f57bc88ed438461ce"
+     },
+     {
+       "path": "live/live_kernel.py",
+@@ -452,52 +657,52 @@
+     {
+       "path": "accounts/USDT-1/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
+     },
+     {
+       "path": "accounts/USDT-2/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/USDT-3/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/USDT-4/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/USDT-5/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-1/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-2/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-3/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-4/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-5/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/live/kernel.py",
+@@ -507,47 +712,47 @@
+     {
+       "path": "accounts/COIN-5/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-4/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-3/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-2/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-1/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-5/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-4/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-3/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-2/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-1/live/kernel.py",
+@@ -560,9 +765,74 @@
+       "sha256": "216dcf57630eed99e40f3a361ae339569c0bf748efd676540f8ff08699047d92"
+     },
+     {
+-      "path": "live/live/kernel.py",
++      "path": "backups/final_live_repair_20260911_191534/honeycomb_execution_guard.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/live_gate_20260911_192103/honeycomb_execution_guard.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/live_gate_20260911_192509/honeycomb_execution_guard.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/live_gate_20260911_211401/honeycomb_execution_guard.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/live_gate_20260912_001923/honeycomb_execution_guard.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/network_restore_20260910_204437/honeycomb_execution_guard.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/recovery_20260911_191802/honeycomb_execution_guard.origin.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/recovery_20260911_191802/honeycomb_execution_guard.py",
++      "score": 2,
++      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_172408/alpha_brain.py",
++      "score": 2,
++      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_172408/aggressive_live_engine.py",
++      "score": 2,
++      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/alpha_brain.py",
++      "score": 2,
++      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_175753/aggressive_live_engine.py",
++      "score": 2,
++      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/alpha_brain.py",
++      "score": 2,
++      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
++    },
++    {
++      "path": "backups/full_upgrade_20260913_180236/aggressive_live_engine.py",
++      "score": 2,
++      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/quantum_nexus_v3.db-shm b/quantum_nexus_v3.db-shm
+deleted file mode 100644
+index fe9ac28..0000000
+Binary files a/quantum_nexus_v3.db-shm and /dev/null differ
+diff --git a/quantum_nexus_v3.db-wal b/quantum_nexus_v3.db-wal
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/quantum_nexus_v3_monolithic.py b/quantum_nexus_v3_monolithic.py
+index 46f570f..91678e8 100644
+--- a/quantum_nexus_v3_monolithic.py
++++ b/quantum_nexus_v3_monolithic.py
+@@ -59,7 +59,7 @@ OLLAMA_MODEL = ENV.get("OLLAMA_MODEL", "llama3.1")
+ GROQ_KEY     = ENV.get("GROQ_API_KEY", "")
+ GROQ_MODEL   = ENV.get("GROQ_MODEL", "llama-3.1-70b-versatile")
+ OR_KEY       = ENV.get("OPENROUTER_API_KEY", "")
+-OR_MODEL     = ENV.get("OPENROUTER_MODEL", "meta-llama/llama-3.1-70b-instruct:free")
++OR_MODEL     = ENV.get("OPENROUTER_MODEL", "openrouter/free")
+ GEMINI_KEY   = ENV.get("GEMINI_API_KEY", "")
+ GEMINI_MODEL = ENV.get("GEMINI_MODEL", "gemini-1.5-flash")
+ 
+diff --git a/sovereign_live.py b/sovereign_live.py
+index 9844f6e..1d84d3d 100755
+--- a/sovereign_live.py
++++ b/sovereign_live.py
+@@ -73,10 +73,10 @@ AI_MIN_CONF = int(ENV.get("AI_CONFIDENCE_THRESHOLD") or "60")
+ FEE_RATE = float(ENV.get("FEE_RATE") or "0.0004")
+ 
+ FREE_MODEL_FALLBACKS = [
+-    "google/gemma-2-9b-it:free",
+-    "meta-llama/llama-3.1-8b-instruct:free",
++    "google/gemma-4-31b-it:free",
++    "nvidia/nemotron-3.5-lightning:free",
+     "qwen/qwen-2.5-72b-instruct:free",
+-    "mistralai/mistral-7b-instruct:free",
++    "minimax/minimax-m2.7:free",
+     "deepseek/deepseek-r1:free",
+     "meta-llama/llama-3.3-70b-instruct:free",
+ ]
+@@ -85,25 +85,25 @@ AGENTS = [
+     {
+         "id": "fin_alpha",
+         "role": "financial",
+-        "model": ENV.get("OR_MODEL_FIN1") or "google/gemma-2-9b-it:free",
++        "model": ENV.get("OR_MODEL_FIN1") or "nvidia/nemotron-3.5-lightning:free",
+         "task": "momentum_risk",
+     },
+     {
+         "id": "fin_beta",
+         "role": "financial",
+-        "model": ENV.get("OR_MODEL_FIN2") or "meta-llama/llama-3.1-8b-instruct:free",
++        "model": ENV.get("OR_MODEL_FIN2") or "google/gemma-4-31b-it:free",
+         "task": "mean_reversion_structure",
+     },
+     {
+         "id": "gen_coord",
+         "role": "generative",
+-        "model": ENV.get("OR_MODEL_GEN1") or "qwen/qwen-2.5-72b-instruct:free",
++        "model": ENV.get("OR_MODEL_GEN1") or "minimax/minimax-m2.7:free",
+         "task": "coordination_narrative",
+     },
+     {
+         "id": "gen_risk",
+         "role": "generative",
+-        "model": ENV.get("OR_MODEL_GEN2") or "mistralai/mistral-7b-instruct:free",
++        "model": ENV.get("OR_MODEL_GEN2") or "openrouter/free",
+         "task": "risk_story_and_veto",
+     },
+ ]
+diff --git a/sovereign_parliament_engine.py b/sovereign_parliament_engine.py
+index 38f17c4..683374a 100644
+--- a/sovereign_parliament_engine.py
++++ b/sovereign_parliament_engine.py
+@@ -1,51 +1,5 @@
+ #!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+-<<<<<<< HEAD
+-"""
+-SOVEREIGN PARLIAMENT ENGINE
+-============================
+-Çekirdek omurga DOKUNULMADAN kullanılır: live/kernel.py -> LiveKernel
+-(HMAC imza, token-bucket rate limit, single-flight kilit, slipaj reddi,
+-exchange filtreleri, gerçek fill/komisyon çözümü — bunların hiçbiri
+-burada tekrar yazılmadı, olduğu gibi import edilip kullanılıyor).
+-
+-Bu motor üstüne ekler:
+-  - alpha_core: 15+ indikatör + 6 zaman dilimi (1m..4h) teknik skor,
+-    rejim motoru, expectancy-guard, drawdown state machine, korelasyon
+-    kalkanı (mevcut master_alpha.py mantığı, genişletilmiş).
+-  - ai_parliament: >=10 ajanlı, OpenRouter'daki GÜNCEL ücretsiz
+-    modelleri runtime'da keşfeden + Gemini/Grok/Claude native
+-    API'leriyle ek oy veren, dinamik ağırlıklı AI konseyi.
+-  - Teknik skor + AI skoru -> dinamik nihai güven skoru.
+-  - Güven skoruna göre DİNAMİK kaldıraç, DİNAMİK TP/SL (ATR bazlı),
+-    DİNAMİK risk büyüklüğü (anti-martingale).
+-  - Fonlama oranı (funding rate) ve gerçek komisyon/slipaj muhasebesi
+-    her işlemde ayrı ayrı loglanır.
+-  - EXECUTION_MODE / LIVE_ARMED kapısı: bu, projenizin KENDİ .env
+-    şablonlarında (env_example, env__1__example) zaten tanımlı olan
+-    güvenlik deseni — burada YENİDEN İCAT EDİLMEDİ, sadece uygulandı.
+-    LIVE_ARMED=0 iken motor GERÇEK piyasa verisiyle GERÇEK kararlar
+-    üretmeye devam eder (mock/simülasyon YOK); sadece emir gönderme
+-    adımını atlayıp "WOULD SEND" olarak loglar. LIVE_ARMED=1 + 
+-    EXECUTION_MODE=LIVE olduğunda emirler gerçekten borsaya gider.
+-  - Bridge HTTP API (varsayılan :8100) — mevcut ui_control_plane.py
+-    dosyanızdaki UI_PROXY_ROUTES ile birebir uyumlu: /summary,
+-    /positions, /journal, /status, /health. UI tarafında hiçbir
+-    değişiklik gerekmez.
+-"""
+-from __future__ import annotations
+-
+-import json
+-import logging
+-import os
+-import sys
+-import threading
+-import time
+-import urllib.error
+-import urllib.request
+-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+-from typing import Any, Dict, List, Tuple
+-=======
+ """Parliament engine shim — uses alpha_core.get_technical_decision.
+ 
+ Existing Helix Sovereign Pro remains untouched. This file only fills the
+@@ -56,542 +10,11 @@ from __future__ import annotations
+ import os
+ import sys
+ import time
+->>>>>>> refs/remotes/origin/main
+ 
+ ROOT = os.path.dirname(os.path.abspath(__file__))
+ if ROOT not in sys.path:
+     sys.path.insert(0, ROOT)
+ 
+-<<<<<<< HEAD
+-from live.kernel import LiveKernel  # noqa: E402  -- çekirdek omurga, değiştirilmedi
+-import alpha_core  # noqa: E402
+-import ai_parliament  # noqa: E402
+-
+-try:
+-    from dotenv import load_dotenv
+-    load_dotenv()
+-except Exception:
+-    pass
+-
+-# --------------------------------------------------------------- LOGGING ---
+-logging.basicConfig(
+-    level=logging.INFO,
+-    format="%(asctime)s [%(levelname)s] [PARLIAMENT] %(message)s",
+-    datefmt="%H:%M:%S",
+-)
+-log = logging.getLogger("sovereign_parliament")
+-
+-# ------------------------------------------------------------------ ENV ----
+-EXECUTION_MODE = os.getenv("EXECUTION_MODE", "PAPER").upper()   # PAPER | TEST | LIVE
+-LIVE_ARMED = os.getenv("LIVE_ARMED", "0") == "1"
+-IS_LIVE = EXECUTION_MODE == "LIVE" and LIVE_ARMED
+-
+-SYMBOLS = [s.strip().upper() for s in os.getenv("LIVE_SYMBOLS", "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT").split(",") if s.strip()]
+-MAX_POSITIONS = int(os.getenv("MAX_POSITIONS", "3"))
+-SCAN_SEC = int(os.getenv("SCAN_INTERVAL_SEC", "45"))
+-BASE_RISK_PCT = float(os.getenv("LIVE_RISK", os.getenv("RISK_PCT", "0.05")))
+-LEV_MIN = int(float(os.getenv("LEV_MIN", "5")))
+-LEV_MAX = int(float(os.getenv("MAX_LEVERAGE", "20")))
+-MAX_NOTIONAL = float(os.getenv("MAX_POSITION_SIZE_USDT", "200"))
+-FEE_RATE = float(os.getenv("FEE_RATE", "0.0004"))
+-TECH_WEIGHT = float(os.getenv("TECH_WEIGHT", "0.45"))
+-AI_WEIGHT = float(os.getenv("AI_WEIGHT", "0.55"))
+-MIN_FINAL_CONF = float(os.getenv("MIN_FINAL_CONF", "60"))
+-
+-BRIDGE_HOST = os.getenv("BRIDGE_HOST", "127.0.0.1")
+-BRIDGE_PORT = int(os.getenv("HONEYCOMB_BRIDGE_PORT", "8100"))
+-
+-kernel = LiveKernel(venue="usdt", log_fn=lambda m: log.info(m))
+-kernel.load_exchange_info(SYMBOLS)
+-
+-_journal: List[Dict[str, Any]] = []
+-_open_meta: Dict[str, Dict[str, Any]] = {}
+-_lock = threading.Lock()
+-_last_votes: Dict[str, List[ai_parliament.Vote]] = {}
+-_decision_log: List[Dict[str, Any]] = []  # panel için: her sembol taramasının insan-okunur özeti
+-
+-
+-def _log_decision(symbol: str, opened: bool, reason: str, extra: Dict[str, Any]) -> None:
+-    with _lock:
+-        _decision_log.insert(0, {"ts": int(time.time()), "symbol": symbol, "opened": opened,
+-                                  "reason": reason, **extra})
+-        if len(_decision_log) > 150:
+-            _decision_log.pop()
+-
+-
+-# ========================================================== GERÇEK EQUITY ==
+-def get_wallet_equity() -> float:
+-    """
+-    kernel.balance_usdt() KASITLI olarak availableBalance (boş/kullanılabilir
+-    marj) döndürür — pozisyon boyutlandırma için doğru olan budur.
+-    Ama drawdown/tepe takibi için hesabın GERÇEK cüzdan bakiyesi (balance)
+-    gerekir; availableBalance başka pozisyonların/botların marj kullanımına
+-    göre dakikalar içinde büyük oynar ve sahte drawdown alarmı üretir.
+-    Bu yüzden burada aynı /fapi/v2/balance endpoint'i kernel üzerinden
+-    (kernel._http, imzalı) çağrılıp "balance" alanı okunuyor — kernel.py'a
+-    hiçbir değişiklik yapılmadı, sadece mevcut imzalı istek altyapısı
+-    farklı bir alan için kullanılıyor.
+-    """
+-    try:
+-        data = kernel._http("GET", kernel.v["balance"], {}, signed=True, weight=5)
+-        for a in data:
+-            if a.get("asset") == "USDT":
+-                return float(a.get("balance") or a.get("crossWalletBalance") or a.get("availableBalance") or 0)
+-    except Exception as e:
+-        log.warning("wallet equity alınamadı, availableBalance'a düşülüyor: %s", e)
+-        return kernel.balance_usdt()
+-    return kernel.balance_usdt()
+-
+-
+-# ============================================================== FONLAMA ====
+-def get_funding_rate(symbol: str) -> float:
+-    """Binance premiumIndex — public endpoint, imza gerekmez."""
+-    try:
+-        url = f"{kernel.v['rest']}{kernel.v['premium']}?symbol={symbol}"
+-        req = urllib.request.Request(url, headers={"User-Agent": "sovereign-parliament/1.0"})
+-        with urllib.request.urlopen(req, timeout=6) as r:
+-            data = json.loads(r.read().decode())
+-        return float(data.get("lastFundingRate", 0.0))
+-    except Exception as e:
+-        log.warning("funding rate alınamadı %s: %s", symbol, e)
+-        return 0.0
+-
+-
+-# ========================================================= SKOR BİRLEŞTİRME
+-def combine_scores(tech: Dict[str, Any], ai: ai_parliament.ParliamentResult) -> Dict[str, Any]:
+-    """
+-    Teknik skor (-100..100) ve AI skoru (-100..100) ağırlıklı birleştirilir.
+-    AI konseyi güvenilir çoğunluğa (MIN_QUORUM) ulaşamadıysa AI ağırlığı
+-    otomatik olarak teknik tarafa kaydırılır (asla sahte AI görüşüyle
+-    doldurulmaz).
+-    """
+-    tw, aw = TECH_WEIGHT, AI_WEIGHT
+-    if not ai.reliable:
+-        tw, aw = 1.0, 0.0
+-        log.warning("AI parlamentosu quorum'a ulaşamadı (oy=%d) — bu turda sadece teknik skor kullanılacak.", ai.quorum)
+-    final_score = tech["tech_score"] * tw + ai.ai_score * aw
+-    final_conf = abs(final_score)
+-    side = "LONG" if final_score > 0 else ("SHORT" if final_score < 0 else None)
+-    return {"final_score": final_score, "final_conf": final_conf, "side": side, "tw": tw, "aw": aw}
+-
+-
+-def dynamic_leverage(final_conf: float, regime: str) -> int:
+-    span = LEV_MAX - LEV_MIN
+-    lev = LEV_MIN + span * max(0.0, min(1.0, (final_conf - MIN_FINAL_CONF) / (100.0 - MIN_FINAL_CONF + 1e-9)))
+-    if regime == "HIGHVOL":
+-        lev *= 0.7
+-    return max(LEV_MIN, min(LEV_MAX, int(round(lev))))
+-
+-
+-# =============================================================== ANA DÖNGÜ =
+-def open_positions_list() -> List[Tuple[str, str]]:
+-    out = []
+-    with _lock:
+-        for sym, meta in _open_meta.items():
+-            out.append((sym, meta["side"]))
+-    return out
+-
+-
+-def scan_symbol(symbol: str) -> None:
+-    with _lock:
+-        if symbol in _open_meta:
+-            return
+-        if len(_open_meta) >= MAX_POSITIONS:
+-            return
+-
+-    equity = get_wallet_equity()
+-    tech = alpha_core.get_technical_decision(symbol, equity, open_positions_list())
+-    if not tech["allow"]:
+-        defense = tech.get("defense", 0)
+-        if defense >= 2:
+-            kalan_dk = alpha_core.get_defense_remaining_sec() // 60
+-            sebep = (f"Koruma Modu (Sert Kilit) aktif — beklenti negatif ya da cüzdan tepe "
+-                     f"değerinden düştü. Kilit ~{kalan_dk} dk sonra kendiliğinden açılacak.")
+-        elif tech["regime"] == "DEATH":
+-            sebep = f"Piyasa çok durgun (ATR%={tech['atr_pct']:.3f}) — hareket masrafı karşılamıyor."
+-        elif tech.get("reason") == "Korelasyon kalkanı aktif":
+-            sebep = "Aynı gruptaki başka bir sembolde zaten aynı yönde pozisyon var."
+-        else:
+-            yon_metni = "yön belirsiz" if tech["side"] is None else f'{tech["side"]} yönü zayıf'
+-            esik = 54 if tech["regime"] == "RANGE" else 57
+-            sebep = f"Teknik güven eşiği geçmedi ({yon_metni}, güven={tech['confidence']:.0f}, gereken>={esik})."
+-        log.info("AÇILMADI %s -> SEBEP: %s [rejim=%s skor=%.1f]", symbol, sebep, tech["regime"], tech["tech_score"])
+-        _log_decision(symbol, False, sebep, {"regime": tech["regime"], "tech_score": round(tech["tech_score"], 1),
+-                                              "confidence": round(tech["confidence"], 1)})
+-        return
+-
+-    snapshot = {
+-        "price": None,
+-        "regime": tech["regime"],
+-        "atr_pct": tech["atr_pct"],
+-        "tech_score": tech["tech_score"],
+-        "indicators": tech["indicators"],
+-        "tf_scores": tech["tf_details"],
+-        "open_positions": len(_open_meta),
+-    }
+-    try:
+-        bid, ask, mid = kernel.book(symbol)
+-        snapshot["price"] = mid
+-    except Exception as e:
+-        log.warning("book alınamadı %s: %s", symbol, e)
+-        return
+-
+-    ai_result = ai_parliament.run_parliament(symbol, snapshot)
+-    combo = combine_scores(tech, ai_result)
+-    _last_votes[symbol] = ai_result.votes
+-
+-    log.info(
+-        "KARAR %s | teknik=%.1f ai=%.1f(quorum=%d/güvenilir=%s) final=%.1f yön=%s | rejim=%s",
+-        symbol, tech["tech_score"], ai_result.ai_score, ai_result.quorum, ai_result.reliable,
+-        combo["final_score"], combo["side"], tech["regime"],
+-    )
+-    for v in ai_result.votes:
+-        log.info("  oy[%s|%s] yön=%s güven=%.0f ağırlık=%.2f gerekçe=%s%s",
+-                  v.agent_id, v.model, v.direction, v.confidence, v.weight, v.reason,
+-                  (" HATA=" + v.error) if v.error else "")
+-
+-    if combo["side"] is None or combo["final_conf"] < MIN_FINAL_CONF:
+-        sebep = f"Teknik+AI birleşik güveni yetersiz ({combo['final_conf']:.0f} < {MIN_FINAL_CONF:.0f})."
+-        log.info("AÇILMADI %s -> SEBEP: %s [teknik=%.1f ai=%.1f]", symbol, sebep, tech["tech_score"], ai_result.ai_score)
+-        _log_decision(symbol, False, sebep, {"regime": tech["regime"], "tech_score": round(tech["tech_score"], 1),
+-                                              "ai_score": round(ai_result.ai_score, 1),
+-                                              "final_conf": round(combo["final_conf"], 1)})
+-        return
+-
+-    if alpha_core.correlation_blocked(symbol, combo["side"], open_positions_list()):
+-        sebep = "Korelasyon kalkanı: aynı gruptan başka sembolde aynı yönde pozisyon zaten açık."
+-        log.info("AÇILMADI %s -> SEBEP: %s", symbol, sebep)
+-        _log_decision(symbol, False, sebep, {"regime": tech["regime"]})
+-        return
+-
+-    lev = dynamic_leverage(combo["final_conf"], tech["regime"])
+-    risk_pct = BASE_RISK_PCT * tech["risk_mult"]
+-    tp_pct = tech["tp_atr_mult"] * tech["atr_pct"]
+-    sl_pct = tech["sl_atr_mult"] * tech["atr_pct"]
+-    funding = get_funding_rate(symbol)
+-    # Fonlama pozisyon yönünün aleyhineyse (long iken pozitif funding gibi)
+-    # güveni ve dolayısıyla boyutu hafifçe düşür — ekstra maliyet kalemi.
+-    funding_penalty = 1.0
+-    if (combo["side"] == "LONG" and funding > 0.0003) or (combo["side"] == "SHORT" and funding < -0.0003):
+-        funding_penalty = 0.8
+-        risk_pct *= funding_penalty
+-
+-    log.info(
+-        "EMİR HAZIRLA %s %s | lev=%dx risk=%.3f%% tp=%.3f%% sl=%.3f%% funding=%.5f mode=%s live_armed=%s",
+-        combo["side"], symbol, lev, risk_pct * 100, tp_pct, sl_pct, funding, EXECUTION_MODE, LIVE_ARMED,
+-    )
+-
+-    if not IS_LIVE:
+-        sebep = "LIVE_ARMED kapalı — karar üretildi ama gerçek emir GÖNDERİLMEDİ (aşağıya bakın)."
+-        log.warning("GÖNDERİLMEDİ %s %s -> SEBEP: %s lev=%dx risk=%.3f%%", combo["side"], symbol, sebep, lev, risk_pct * 100)
+-        _log_decision(symbol, False, sebep, {"regime": tech["regime"], "side": combo["side"],
+-                                              "confidence": round(combo["final_conf"], 1), "leverage": lev})
+-        return
+-
+-    try:
+-        res = kernel.open_market(symbol, combo["side"], risk_pct, lev, tp_pct, sl_pct, max_notional=MAX_NOTIONAL)
+-    except Exception as e:
+-        sebep = f"Borsa emri reddetti/başarısız oldu: {e}"
+-        log.error("AÇILAMADI %s -> SEBEP: %s", symbol, sebep)
+-        _log_decision(symbol, False, sebep, {"regime": tech["regime"], "side": combo["side"]})
+-        return
+-
+-    open_fee = res["entry"] * res["qty"] * FEE_RATE
+-    with _lock:
+-        _open_meta[symbol] = {
+-            "side": combo["side"], "entry": res["entry"], "qty": res["qty"],
+-            "tp": res["tp"], "sl": res["sl"], "oid": res["oid"],
+-            "lev": lev, "open_fee": open_fee, "funding_at_open": funding,
+-            "ts": time.time(), "tech_score": tech["tech_score"], "ai_score": ai_result.ai_score,
+-            "confidence": combo["final_conf"], "regime": tech["regime"], "trail_stage": 0,
+-        }
+-    log.info("AÇILDI %s %s entry=%.6f qty=%s lev=%dx TP=%.6f SL=%.6f", combo["side"], symbol,
+-              res["entry"], res["qty"], lev, res["tp"], res["sl"])
+-    _log_decision(symbol, True, f"Pozisyon açıldı: {combo['side']} @ {res['entry']:.6f}, kaldıraç {lev}x",
+-                  {"regime": tech["regime"], "side": combo["side"], "entry": res["entry"],
+-                   "leverage": lev, "confidence": round(combo["final_conf"], 1)})
+-
+-
+-def check_closed_positions() -> None:
+-    """Borsada kapanmış pozisyonları tespit edip PnL/masraf muhasebesini kapatır."""
+-    with _lock:
+-        symbols = list(_open_meta.keys())
+-    for symbol in symbols:
+-        with _lock:
+-            meta = _open_meta.get(symbol)
+-        if not meta:
+-            continue
+-        try:
+-            real_amt = kernel.position_amt(symbol, meta["side"])
+-        except Exception as e:
+-            log.warning("pozisyon kontrol hatası %s: %s", symbol, e)
+-            continue
+-        if real_amt > 0:
+-            continue  # hâlâ açık
+-
+-        try:
+-            bid, ask, mid = kernel.book(symbol)
+-            exit_px = mid
+-        except Exception:
+-            exit_px = meta["entry"]
+-
+-        close_notional = exit_px * meta["qty"]
+-        close_fee = close_notional * FEE_RATE
+-        if meta["side"] == "LONG":
+-            raw = (exit_px - meta["entry"]) * meta["qty"]
+-        else:
+-            raw = (meta["entry"] - exit_px) * meta["qty"]
+-        total_fees = meta["open_fee"] + close_fee
+-        net = raw - close_fee
+-        hold_sec = time.time() - meta["ts"]
+-        rec = {
+-            "symbol": symbol, "side": meta["side"], "entry": meta["entry"], "exit": exit_px,
+-            "qty": meta["qty"], "leverage": meta["lev"], "raw_pnl": round(raw, 6),
+-            "open_fee": round(meta["open_fee"], 6), "close_fee": round(close_fee, 6),
+-            "total_fees": round(total_fees, 6), "net_pnl": round(net, 6),
+-            "hold_sec": round(hold_sec, 1), "regime": meta["regime"],
+-            "confidence": meta["confidence"], "closed_ts": int(time.time()),
+-        }
+-        with _lock:
+-            _journal.insert(0, rec)
+-            if len(_journal) > 300:
+-                _journal.pop()
+-            _open_meta.pop(symbol, None)
+-
+-        alpha_core.on_trade_closed(symbol, meta["side"], net, meta["confidence"], meta["regime"])
+-        votes = _last_votes.get(symbol, [])
+-        was_profitable = {meta["side"]: net > 0, ("SHORT" if meta["side"] == "LONG" else "LONG"): net <= 0}
+-        ai_parliament.settle_round(votes, was_profitable)
+-
+-        log.info(
+-            "KAPANDI %s %s | entry=%.6f exit=%.6f net=%.6f (ham=%.6f masraf=%.6f) hold=%.0fs",
+-            meta["side"], symbol, meta["entry"], exit_px, net, raw, total_fees, hold_sec,
+-        )
+-
+-
+-TRAIL_STAGE1_PROGRESS = float(os.getenv("TRAIL_STAGE1_PROGRESS", "0.45"))  # TP mesafesinin %45'i alındığında
+-TRAIL_STAGE1_LOCK = float(os.getenv("TRAIL_STAGE1_LOCK", "0.10"))          # SL'i giriş+%10'a çek (kısmi kâr kilidi)
+-TRAIL_STAGE2_PROGRESS = float(os.getenv("TRAIL_STAGE2_PROGRESS", "0.75"))
+-TRAIL_STAGE2_LOCK = float(os.getenv("TRAIL_STAGE2_LOCK", "0.45"))
+-
+-
+-def manage_trailing_stops() -> None:
+-    """
+-    DİNAMİK STOP-LOSS: pozisyon kâra geçtikçe SL'i kademeli olarak giriş
+-    fiyatının üzerine (LONG için) / altına (SHORT için) çekerek kârı
+-    kovalar. kernel.py'a dokunulmadı — sadece onun mevcut
+-    cancel_all()/place_protect() metodları dışarıdan kullanılıyor.
+-    İki kademeli, sınırlı (spam emir göndermeyen) bir mekanizma:
+-      Aşama 1: TP mesafesinin %45'i alındıysa SL -> giriş + %10 (TP mesafesinin)
+-      Aşama 2: TP mesafesinin %75'i alındıysa SL -> giriş + %45
+-    Bu "sonsuz otomatik kod üretimi" değil; sınırlı, öngörülebilir,
+-    loglanan bir kural seti — gerçek parayla çalışan bir sistemde
+-    öngörülemez otomatik kendi-kendini-değiştiren emir mantığı
+-    çalıştırmak sorumsuzluk olur.
+-    """
+-    with _lock:
+-        items = list(_open_meta.items())
+-    for symbol, meta in items:
+-        try:
+-            bid, ask, mid = kernel.book(symbol)
+-        except Exception:
+-            continue
+-        entry, side, tp = meta["entry"], meta["side"], meta["tp"]
+-        tp_dist = abs(tp - entry)
+-        if tp_dist <= 0:
+-            continue
+-        progress = (mid - entry) / tp_dist if side == "LONG" else (entry - mid) / tp_dist
+-
+-        stage = meta.get("trail_stage", 0)
+-        target_stage, lock_frac = None, None
+-        if progress >= TRAIL_STAGE2_PROGRESS and stage < 2:
+-            target_stage, lock_frac = 2, TRAIL_STAGE2_LOCK
+-        elif progress >= TRAIL_STAGE1_PROGRESS and stage < 1:
+-            target_stage, lock_frac = 1, TRAIL_STAGE1_LOCK
+-        if target_stage is None:
+-            continue
+-
+-        new_sl = entry + lock_frac * tp_dist if side == "LONG" else entry - lock_frac * tp_dist
+-        try:
+-            kernel.cancel_all(symbol)
+-            kernel.place_protect(symbol, side, entry, tp, new_sl)
+-            with _lock:
+-                if symbol in _open_meta:
+-                    _open_meta[symbol]["sl"] = new_sl
+-                    _open_meta[symbol]["trail_stage"] = target_stage
+-            log.info(
+-                "TRAILING %s %s | ilerleme=%.0f%% -> SL güncellendi %.6f (kademe %d, kâr kilidi=%.0f%% of TP mesafesi)",
+-                side, symbol, progress * 100, new_sl, target_stage, lock_frac * 100,
+-            )
+-        except Exception as e:
+-            log.warning("trailing SL güncellenemedi %s: %s", symbol, e)
+-
+-
+-def main_loop() -> None:
+-    log.info(
+-        "ONLINE | mode=%s live_armed=%s symbols=%s max_pos=%d scan=%ds tech_w=%.2f ai_w=%.2f",
+-        EXECUTION_MODE, LIVE_ARMED, SYMBOLS, MAX_POSITIONS, SCAN_SEC, TECH_WEIGHT, AI_WEIGHT,
+-    )
+-    if not IS_LIVE:
+-        log.warning(
+-            "CANLI EMİR KAPALI (EXECUTION_MODE=%s, LIVE_ARMED=%s). Motor GERÇEK piyasa verisiyle "
+-            "GERÇEK kararlar üretmeye devam ediyor, sadece borsaya emir göndermiyor. "
+-            "Gerçekten canlıya almak için .env içinde EXECUTION_MODE=LIVE ve LIVE_ARMED=1 yapın.",
+-            EXECUTION_MODE, LIVE_ARMED,
+-        )
+-    while True:
+-        try:
+-            check_closed_positions()
+-            if IS_LIVE:
+-                manage_trailing_stops()
+-            for symbol in SYMBOLS:
+-                scan_symbol(symbol)
+-                time.sleep(1.2)  # ajan/istek yükünü sembol başına yay
+-            time.sleep(SCAN_SEC)
+-        except KeyboardInterrupt:
+-            log.info("Durduruldu.")
+-            break
+-        except Exception as e:
+-            log.error("DÖNGÜ HATASI: %s", e)
+-            time.sleep(10)
+-
+-
+-# ========================================================== BRIDGE HTTP API
+-def _render_dashboard() -> str:
+-    with _lock:
+-        journal = list(_journal[:40])
+-        positions = [{"symbol": s, **m} for s, m in _open_meta.items()]
+-        decisions = list(_decision_log[:60])
+-    total_net = sum(r["net_pnl"] for r in journal)
+-    wins = len([r for r in journal if r["net_pnl"] > 0])
+-    total = len(journal)
+-    winrate = (wins / total * 100) if total else 0.0
+-
+-    def esc(x: Any) -> str:
+-        return str(x).replace("<", "&lt;").replace(">", "&gt;")
+-
+-    pos_rows = "".join(
+-        f"<tr><td>{esc(p['symbol'])}</td><td class='{'long' if p['side']=='LONG' else 'short'}'>{p['side']}</td>"
+-        f"<td>{p['entry']:.6f}</td><td>{p['lev']}x</td><td>{esc(p['regime'])}</td>"
+-        f"<td>{p['confidence']:.0f}</td></tr>" for p in positions
+-    ) or "<tr><td colspan='6' class='muted'>Açık pozisyon yok</td></tr>"
+-
+-    j_rows = "".join(
+-        f"<tr><td>{esc(r['symbol'])}</td><td class='{'long' if r['side']=='LONG' else 'short'}'>{r['side']}</td>"
+-        f"<td class='{'pnlpos' if r['net_pnl']>=0 else 'pnlneg'}'>{r['net_pnl']:+.4f}</td>"
+-        f"<td>{r['total_fees']:.4f}</td><td>{r['hold_sec']:.0f}s</td><td>{esc(r['regime'])}</td></tr>"
+-        for r in journal
+-    ) or "<tr><td colspan='6' class='muted'>Henüz kapanan işlem yok</td></tr>"
+-
+-    d_rows = "".join(
+-        f"<tr><td>{time.strftime('%H:%M:%S', time.localtime(d['ts']))}</td><td>{esc(d['symbol'])}</td>"
+-        f"<td class='{'long' if d.get('opened') else 'muted'}'>{'AÇILDI' if d.get('opened') else 'açılmadı'}</td>"
+-        f"<td>{esc(d.get('reason',''))}</td></tr>" for d in decisions
+-    ) or "<tr><td colspan='4' class='muted'>Henüz karar yok</td></tr>"
+-
+-    return f"""<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1">
+-<title>Sovereign Parliament — Panel</title>
+-<meta http-equiv="refresh" content="8">
+-<style>
+-body{{background:#0b0f14;color:#d7e0e8;font-family:system-ui,sans-serif;margin:0;padding:16px}}
+-h1{{font-size:18px;color:#7fd1ff;margin:0 0 4px}}
+-.sub{{color:#7a8a99;font-size:13px;margin-bottom:16px}}
+-.cards{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}}
+-.card{{background:#121820;border:1px solid #223;border-radius:10px;padding:12px 16px;min-width:130px}}
+-.card .v{{font-size:20px;font-weight:700}}
+-.card .l{{font-size:11px;color:#7a8a99;text-transform:uppercase}}
+-table{{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px}}
+-th{{text-align:left;color:#7a8a99;font-weight:500;border-bottom:1px solid #223;padding:6px}}
+-td{{padding:6px;border-bottom:1px solid #182028}}
+-.long{{color:#5ee6a0}} .short{{color:#ff7b7b}} .muted{{color:#5a6b78}}
+-.pnlpos{{color:#5ee6a0;font-weight:600}} .pnlneg{{color:#ff7b7b;font-weight:600}}
+-h2{{font-size:14px;color:#9fb3c2;margin:0 0 8px}}
+-</style></head><body>
+-<h1>SOVEREIGN PARLIAMENT — Canlı Panel</h1>
+-<div class="sub">mod={esc(EXECUTION_MODE)} | live_armed={LIVE_ARMED} | 8sn'de bir otomatik yenilenir</div>
+-<div class="cards">
+-  <div class="card"><div class="v {'pnlpos' if total_net>=0 else 'pnlneg'}">{total_net:+.4f}</div><div class="l">Net K/Z (USDT)</div></div>
+-  <div class="card"><div class="v">{winrate:.0f}%</div><div class="l">Kazanma Oranı</div></div>
+-  <div class="card"><div class="v">{len(positions)}/{MAX_POSITIONS}</div><div class="l">Açık Pozisyon</div></div>
+-  <div class="card"><div class="v">{alpha_core.get_risk_multiplier():.2f}x</div><div class="l">Risk Çarpanı</div></div>
+-  <div class="card"><div class="v">{alpha_core.get_defense_level()}</div><div class="l">Koruma Seviyesi</div></div>
+-</div>
+-<h2>Açık Pozisyonlar</h2>
+-<table><tr><th>Sembol</th><th>Yön</th><th>Giriş</th><th>Kaldıraç</th><th>Rejim</th><th>Güven</th></tr>{pos_rows}</table>
+-<h2>Son Kapanan İşlemler</h2>
+-<table><tr><th>Sembol</th><th>Yön</th><th>Net K/Z</th><th>Masraf</th><th>Süre</th><th>Rejim</th></tr>{j_rows}</table>
+-<h2>Son Kararlar (neden açıldı / açılmadı)</h2>
+-<table><tr><th>Saat</th><th>Sembol</th><th>Durum</th><th>Sebep</th></tr>{d_rows}</table>
+-</body></html>"""
+-
+-
+-class BridgeHandler(BaseHTTPRequestHandler):
+-    def _send(self, status: int, payload: Any) -> None:
+-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+-        self.send_response(status)
+-        self.send_header("Content-Type", "application/json; charset=utf-8")
+-        self.send_header("Cache-Control", "no-store")
+-        self.send_header("Access-Control-Allow-Origin", "*")
+-        self.end_headers()
+-        self.wfile.write(body)
+-
+-    def _send_html(self, html: str) -> None:
+-        body = html.encode("utf-8")
+-        self.send_response(200)
+-        self.send_header("Content-Type", "text/html; charset=utf-8")
+-        self.send_header("Cache-Control", "no-store")
+-        self.end_headers()
+-        self.wfile.write(body)
+-
+-    def do_GET(self) -> None:
+-        path = self.path.split("?")[0]
+-        if path in ("/", "/panel"):
+-            self._send_html(_render_dashboard())
+-        elif path == "/health":
+-            self._send(200, {"ok": True, "ts": int(time.time())})
+-        elif path == "/status":
+-            self._send(200, {
+-                "mode": EXECUTION_MODE, "live_armed": LIVE_ARMED, "symbols": SYMBOLS,
+-                "open_positions": len(_open_meta), "max_positions": MAX_POSITIONS,
+-            })
+-        elif path == "/positions":
+-            with _lock:
+-                self._send(200, [{"symbol": s, **m} for s, m in _open_meta.items()])
+-        elif path == "/journal":
+-            with _lock:
+-                self._send(200, _journal[:100])
+-        elif path == "/summary":
+-            with _lock:
+-                total_net = sum(r["net_pnl"] for r in _journal)
+-                wins = len([r for r in _journal if r["net_pnl"] > 0])
+-                total = len(_journal)
+-            self._send(200, {
+-                "mode": EXECUTION_MODE, "live_armed": LIVE_ARMED,
+-                "open_positions": len(_open_meta), "closed_trades": total,
+-                "win_rate": round(wins / total, 4) if total else None,
+-                "total_net_pnl": round(total_net, 6),
+-                "risk_mult": alpha_core.get_risk_multiplier(),
+-                "defense_level": alpha_core.get_defense_level(),
+-            })
+-        else:
+-            self._send(404, {"error": "NOT_FOUND"})
+-
+-    def log_message(self, *_args: Any) -> None:
+-        return
+-
+-
+-def start_bridge_server() -> None:
+-    server = ThreadingHTTPServer((BRIDGE_HOST, BRIDGE_PORT), BridgeHandler)
+-    log.info("BRIDGE API http://%s:%d (ui_control_plane.py BRIDGE_URL ile uyumlu)", BRIDGE_HOST, BRIDGE_PORT)
+-    server.serve_forever()
+-
+-
+-def main() -> None:
+-    t = threading.Thread(target=start_bridge_server, daemon=True)
+-    t.start()
+-    main_loop()
+-=======
+ try:
+     if hasattr(sys.stdout, "reconfigure"):
+         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+@@ -649,7 +72,6 @@ def main() -> None:
+         else:
+             breaker.record_success()
+             time.sleep(cycle_sleep)
+->>>>>>> refs/remotes/origin/main
+ 
+ 
+ if __name__ == "__main__":

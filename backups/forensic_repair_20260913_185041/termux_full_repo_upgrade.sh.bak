@@ -1,0 +1,264 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+
+ROOT="$HOME/honeycomb-execution-core"
+cd "$ROOT"
+
+STAMP="$(date +%Y%m%d_%H%M%S)"
+BACKUP="backups/full_upgrade_${STAMP}"
+REPORT="reports/full_upgrade_${STAMP}.txt"
+
+mkdir -p "$BACKUP" reports
+
+echo "===== HONEYCOMB FULL REPAIR ${STAMP} =====" | tee "$REPORT"
+
+git status --short | tee -a "$REPORT"
+
+echo "[1] Kritik dosyalar yedekleniyor..."
+for f in \
+  live/kernel.py \
+  helix_sovereign_pro.py \
+  alpha_core.py \
+  alpha_brain.py \
+  master_alpha.py \
+  engine_alpha2.py \
+  profit_economics.py \
+  profit_max_engine.py \
+  aggressive_live_engine.py \
+  aggressive_profit_optimizer.py \
+  lobster_extreme_momentum_engine.py \
+  live/protection_bridge.py \
+  sitecustomize.py
+do
+  if [ -f "$f" ]; then
+    mkdir -p "$BACKUP/$(dirname "$f")"
+    cp -p "$f" "$BACKUP/$f"
+  fi
+done
+
+echo "[2] Mevcut non-destructive integrity repair..."
+python3 scripts/repo_integrity_profit_repair.py | tee -a "$REPORT"
+
+echo "[3] Kernel ATR uyumluluğu..."
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+p = Path("live/kernel.py")
+if p.exists():
+    s = p.read_text(encoding="utf-8", errors="surrogateescape")
+
+    old = '''def atr(closes, period=14):
+    if len(closes) < period + 1: return None
+    trs = [abs(closes[i] - closes[i - 1]) for i in range(1, len(closes))]
+    return sum(trs[-period:]) / period'''
+
+    new = '''def atr(closes=None, period=14, high=None, low=None, close=None, **_):
+    series = close if close is not None else closes
+    if series is None:
+        return None
+
+    try:
+        if high is not None and low is not None:
+            if len(series) < period + 1:
+                return None
+            trs = []
+            prev = float(series[0])
+            for i in range(1, len(series)):
+                h = float(high[i])
+                l = float(low[i])
+                trs.append(max(
+                    h - l,
+                    abs(h - prev),
+                    abs(l - prev),
+                ))
+                prev = float(series[i])
+            return sum(trs[-period:]) / period
+
+        if len(series) < period + 1:
+            return None
+
+        vals = [float(x) for x in series]
+        trs = [
+            abs(vals[i] - vals[i - 1])
+            for i in range(1, len(vals))
+        ]
+        return sum(trs[-period:]) / period
+    except (TypeError, ValueError, IndexError):
+        return None'''
+
+    if old in s:
+        shutil = __import__("shutil")
+        b = Path("backups") / f"atr_kernel_{Path(p).stat().st_mtime_ns}"
+        b.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(p, b / "kernel.py")
+        s = s.replace(old, new)
+        p.write_text(s, encoding="utf-8")
+        print("ATR adapter: UPDATED")
+    else:
+        print("ATR adapter: existing signature preserved")
+PY
+
+echo "[4] 5% margin + 40-75x politika..."
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+files = [
+    Path(".env"),
+    Path(".env.example"),
+]
+
+for p in files:
+    if not p.exists():
+        continue
+
+    s = p.read_text(encoding="utf-8", errors="surrogateescape")
+
+    values = {
+        "MARGIN_PCT": "0.05",
+        "CAPITAL_USE_PCT": "0.05",
+        "PROFIT_MARGIN_FRACTION": "0.05",
+        "MIN_LEVERAGE": "40",
+        "LEV_MIN": "40",
+        "MAX_LEVERAGE": "75",
+    }
+
+    for k, v in values.items():
+        pattern = rf"^{re.escape(k)}=.*$"
+        line = f"{k}={v}"
+        if re.search(pattern, s, re.M):
+            s = re.sub(pattern, line, s, flags=re.M)
+        else:
+            s += f"\n{line}"
+
+    p.write_text(s, encoding="utf-8")
+    print("updated", p)
+PY
+
+echo "[5] Bozuk ATR çağrıları taranıyor..."
+grep -RIn \
+  --exclude='*.bak*' \
+  --exclude-dir=.git \
+  -E 'atr[[:space:]]*\([^)]*(high[[:space:]]*=|low[[:space:]]*=|close[[:space:]]*=)' \
+  . | tee -a "$REPORT" || true
+
+echo "[6] Merge marker taraması..."
+if grep -RIn \
+  --exclude='*.bak*' \
+  --exclude-dir=.git \
+  -E '^(<<<<<<<|=======|>>>>>>>)' \
+  . > "/tmp/honeycomb_markers_${STAMP}.txt"
+then
+  cat "/tmp/honeycomb_markers_${STAMP}.txt" | tee -a "$REPORT"
+  echo "ERROR: çözülmemiş merge marker bulundu."
+  echo "BACKUP=$BACKUP"
+  exit 20
+else
+  echo "MERGE_MARKERS=0" | tee -a "$REPORT"
+fi
+
+echo "[7] Python syntax..."
+python3 -m compileall -q \
+  live \
+  scripts \
+  alpha_core.py \
+  alpha_brain.py \
+  master_alpha.py \
+  engine_alpha2.py \
+  helix_sovereign_pro.py \
+  aggressive_live_engine.py \
+  aggressive_profit_optimizer.py \
+  lobster_extreme_momentum_engine.py \
+  profit_economics.py \
+  profit_max_engine.py
+
+echo "PYTHON_SYNTAX=OK" | tee -a "$REPORT"
+
+echo "[8] Git whitespace/punctuation integrity..."
+git diff --check | tee -a "$REPORT"
+
+echo "[9] ATR runtime testi..."
+python3 - <<'PY'
+from live.kernel import atr
+
+c = [100.0 + i for i in range(20)]
+h = [x + 1.0 for x in c]
+l = [x - 1.0 for x in c]
+
+a1 = atr(c, 14)
+a2 = atr(high=h, low=l, close=c, period=14)
+
+assert a1 is not None
+assert a2 is not None
+assert a2 > 0
+
+print("ATR_CLOSE=OK")
+print("ATR_HLC=OK")
+PY
+
+echo "[10] Adaptive runtime testi..."
+python3 - <<'PY'
+from adaptive_profit_runtime import (
+    RuntimeConfig,
+    dynamic_leverage,
+    choose_execution,
+    margin_notional,
+    PnLTracker,
+)
+
+cfg = RuntimeConfig.from_env()
+
+assert cfg.margin_fraction == 0.05
+assert cfg.min_leverage == 40
+assert cfg.max_leverage == 75
+
+lev = dynamic_leverage(
+    confidence=85,
+    atr_pct=0.5,
+    spread_bps=1.0,
+    available_leverage=75,
+    cfg=cfg,
+)
+
+assert 40 <= lev <= 75
+
+econ = choose_execution(
+    expected_move_bps=20,
+    spread_bps=1,
+    funding_bps=0.2,
+    cfg=cfg,
+)
+
+size = margin_notional(
+    equity=100.0,
+    price=100.0,
+    leverage=lev,
+    cfg=cfg,
+)
+
+tracker = PnLTracker()
+tracker.open_trade("TEST", "LONG", 100.0, 1.0)
+tracker.mark("TEST", 101.0)
+closed = tracker.close("TEST", 102.0, fee=0.05, funding=-0.01)
+
+assert closed is not None
+assert closed["net"] > 0
+
+print("MARGIN=5%")
+print("LEVERAGE=%s" % lev)
+print("EXECUTION=%s" % econ["style"])
+print("NOTIONAL=%.8f" % size["notional"])
+print("NET_PNL=%.8f" % closed["net"])
+print("ADAPTIVE_RUNTIME=OK")
+PY
+
+echo "[11] Git diff..."
+git status --short | tee -a "$REPORT"
+
+echo
+echo "===== TAMAMLANDI ====="
+echo "BACKUP=$BACKUP"
+echo "REPORT=$REPORT"
+echo "Yeni emir GÖNDERİLMEDİ."
+echo "LIVE çalıştırmadan önce rapor ve git diff kontrol edilmelidir."

@@ -1,0 +1,11 @@
+A  aggressive_live_engine.py
+A  aggressive_profit_optimizer.py
+ M live/__init__.py
+ M live/desk_state.json
+ M live/kernel.py
+A  lobster_extreme_momentum_engine.py
+ M orchestrator/registry.json
+ D quantum_nexus_v3.db-shm
+ D quantum_nexus_v3.db-wal
+A  run_aggressive_live.sh
+A  run_lobster_live.sh

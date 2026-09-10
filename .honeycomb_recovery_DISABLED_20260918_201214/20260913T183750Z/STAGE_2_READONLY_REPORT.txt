@@ -1,0 +1,1169 @@
+==============================================================================
+HONEYCOMB — RECONCILIATION STAGE 2 READ-ONLY
+==============================================================================
+UTC: 2026-09-13T18:46:23.387057+00:00
+ROOT: /data/data/com.termux/files/home/honeycomb-execution-core
+NO SOURCE FILES WILL BE MODIFIED
+
+=== COMMITS ===
+LOCAL HEAD
+b2e6c61ee1d93a90a6903eb892bdfd8a4758a3c6
+GITHUB MAIN
+c8e1d0546f20aa5e7865e8293df036cbdcf93f87
+MERGE BASE
+5488b68b11bece74a75cba7c2402d6611513c0d8
+
+=== LOCAL WORKTREE STATUS ===
+ M .gitignore
+ M .honeycomb_runtime/binance_guard.json
+ M alpha_core.py
+ M extreme_scanner_engine.py
+ M extreme_scanner_omega.py
+ M helix_sovereign_pro.py
+ M live/__init__.py
+ M live/kernel.py
+ M live/kernel_hardened_sign.py
+ M orchestrator/registry.json
+ D quantum_nexus_v3.db-shm
+ D quantum_nexus_v3.db-wal
+ M quantum_nexus_v3_monolithic.py
+ M sovereign_live.py
+ M sovereign_parliament_engine.py
+
+
+=== LOCAL vs GITHUB — NAME/STATUS ===
+M	.env.example
+M	.gitignore
+D	.gitignore.backup.20260910_045036
+D	.honeycomb_runtime/binance_guard.json
+D	.honeycomb_runtime/binance_guard.lock
+D	.honeycomb_runtime/binance_market_ws.lock
+D	.honeycomb_runtime/pre_final_local_changes.diff
+D	.honeycomb_runtime/pre_final_status.txt
+D	0
+D	ATLAS_QUANTUM_CORE.py
+D	accounts/COIN-1/ai_parliament.py
+D	accounts/COIN-1/alpha_core.py
+D	accounts/COIN-1/audit_ledger.jsonl
+D	accounts/COIN-1/live/__init__.py
+D	accounts/COIN-1/live/kernel.py
+D	accounts/COIN-1/sovereign_parliament_engine.py
+D	accounts/COIN-2/ai_parliament.py
+D	accounts/COIN-2/alpha_core.py
+D	accounts/COIN-2/audit_ledger.jsonl
+D	accounts/COIN-2/live/__init__.py
+D	accounts/COIN-2/live/kernel.py
+D	accounts/COIN-2/sovereign_parliament_engine.py
+D	accounts/COIN-3/ai_parliament.py
+D	accounts/COIN-3/alpha_core.py
+D	accounts/COIN-3/audit_ledger.jsonl
+D	accounts/COIN-3/live/__init__.py
+D	accounts/COIN-3/live/kernel.py
+D	accounts/COIN-3/sovereign_parliament_engine.py
+D	accounts/COIN-4/ai_parliament.py
+D	accounts/COIN-4/alpha_core.py
+D	accounts/COIN-4/audit_ledger.jsonl
+D	accounts/COIN-4/live/__init__.py
+D	accounts/COIN-4/live/kernel.py
+D	accounts/COIN-4/sovereign_parliament_engine.py
+D	accounts/COIN-5/ai_parliament.py
+D	accounts/COIN-5/alpha_core.py
+D	accounts/COIN-5/audit_ledger.jsonl
+D	accounts/COIN-5/live/__init__.py
+D	accounts/COIN-5/live/kernel.py
+D	accounts/COIN-5/sovereign_parliament_engine.py
+D	accounts/USDT-1/ai_parliament.py
+D	accounts/USDT-1/alpha_core.py
+D	accounts/USDT-1/audit_ledger.jsonl
+D	accounts/USDT-1/live/__init__.py
+D	accounts/USDT-1/live/kernel.py
+D	accounts/USDT-1/sovereign_parliament_engine.py
+D	accounts/USDT-2/ai_parliament.py
+D	accounts/USDT-2/alpha_core.py
+D	accounts/USDT-2/audit_ledger.jsonl
+D	accounts/USDT-2/live/__init__.py
+D	accounts/USDT-2/live/kernel.py
+D	accounts/USDT-2/sovereign_parliament_engine.py
+D	accounts/USDT-3/ai_parliament.py
+D	accounts/USDT-3/alpha_core.py
+D	accounts/USDT-3/audit_ledger.jsonl
+D	accounts/USDT-3/live/__init__.py
+D	accounts/USDT-3/live/kernel.py
+D	accounts/USDT-3/sovereign_parliament_engine.py
+D	accounts/USDT-4/ai_parliament.py
+D	accounts/USDT-4/alpha_core.py
+D	accounts/USDT-4/audit_ledger.jsonl
+D	accounts/USDT-4/live/__init__.py
+D	accounts/USDT-4/live/kernel.py
+D	accounts/USDT-4/sovereign_parliament_engine.py
+D	accounts/USDT-5/ai_parliament.py
+D	accounts/USDT-5/alpha_core.py
+D	accounts/USDT-5/audit_ledger.jsonl
+D	accounts/USDT-5/live/__init__.py
+D	accounts/USDT-5/live/kernel.py
+D	accounts/USDT-5/sovereign_parliament_engine.py
+D	accounts/ai_parliament.py
+D	accounts/alpha_core.py
+D	accounts/audit_ledger.jsonl
+D	accounts/install5.sh
+D	accounts/install6.sh
+D	accounts/install_part2.sh
+D	accounts/live/__init__.py
+D	accounts/live/kernel.py
+D	accounts/manage.sh
+D	accounts/sovereign_parliament_engine.py
+D	accounts/start_all.sh
+D	accounts/status_all.sh
+D	accounts/stop_all.sh
+A	adaptive_profit_runtime.py
+D	ai_parliament.py
+M	ai_sovereign_engine.py
+M	alpha_core.py
+D	alpha_core.py.pre_final_hotfix.20260910_153035
+D	audit_ledger.jsonl
+D	backups/final_live_repair_20260911_191534/binance_endpoint_failover.py
+D	backups/final_live_repair_20260911_191534/honeycomb_execution_guard.py
+D	backups/final_live_repair_20260911_191534/kernel.py
+D	backups/final_live_repair_20260911_191534/protection_bridge.py
+D	backups/final_live_repair_20260911_191534/sitecustomize.py
+D	backups/kernel.py.before-network-20260910_173612
+D	backups/live_gate_20260911_192103/binance_endpoint_failover.py
+D	backups/live_gate_20260911_192103/honeycomb_execution_guard.py
+D	backups/live_gate_20260911_192103/protection_bridge.py
+D	backups/live_gate_20260911_192103/sitecustomize.py
+D	backups/live_gate_20260911_192509/binance_endpoint_failover.py
+D	backups/live_gate_20260911_192509/honeycomb_execution_guard.py
+D	backups/live_gate_20260911_192509/protection_bridge.py
+D	backups/live_gate_20260911_192509/sitecustomize.py
+D	backups/live_gate_20260911_211401/binance_endpoint_failover.py
+D	backups/live_gate_20260911_211401/honeycomb_execution_guard.py
+D	backups/live_gate_20260911_211401/protection_bridge.py
+D	backups/live_gate_20260911_211401/sitecustomize.py
+D	backups/live_gate_20260912_001923/binance_endpoint_failover.py
+D	backups/live_gate_20260912_001923/honeycomb_execution_guard.py
+D	backups/live_gate_20260912_001923/protection_bridge.py
+D	backups/live_gate_20260912_001923/sitecustomize.py
+D	backups/network_restore_20260910_204437/binance_endpoint_failover.py
+D	backups/network_restore_20260910_204437/honeycomb_execution_guard.py
+D	backups/network_restore_20260910_204437/sitecustomize.py
+D	backups/recovery_20260911_191802/binance_endpoint_failover.origin.py
+D	backups/recovery_20260911_191802/binance_endpoint_failover.py
+D	backups/recovery_20260911_191802/honeycomb_execution_guard.origin.py
+D	backups/recovery_20260911_191802/honeycomb_execution_guard.py
+D	backups/recovery_20260911_191802/kernel.py
+D	backups/recovery_20260911_191802/protection_bridge.origin.py
+D	backups/recovery_20260911_191802/protection_bridge.py
+D	backups/recovery_20260911_191802/sitecustomize.py
+M	dashboard/index.html
+A	docs/PROFIT_MAXIMIZATION_REVIEW_2026-09-12.md
+M	extreme_scanner_engine.py
+M	extreme_scanner_omega.py
+D	fix_all.sh
+D	fix_kernel.sh
+D	fix_omega_scanner.sh
+M	helix_sovereign_pro.py
+D	helix_sovereign_pro.py.bak
+D	helix_sovereign_pro.py.bak.20260901_084818
+D	helix_sovereign_pro.py.bak.20260901_085055
+D	helix_sovereign_pro.py.bak.20260910_082548
+D	helix_sovereign_pro.py.bak.ATR.20260901_085317
+D	helix_sovereign_pro.py.bak.ATR.20260910_082759
+D	helix_sovereign_pro.py.bozuk-1788199527
+D	install5.sh
+D	install6.sh
+D	install_par2.sh
+D	install_part.sh
+D	install_part1.sh
+D	install_part2.sh
+D	install_part3.sh
+D	install_sovaring_parlamet.py
+D	install_sovaring_parlamet.sh
+D	install_sovereign_parliament.sh
+D	install_sovereign_parliament2.sh
+D	live/.github/workflows/quantum-nexus-industrial-core.yml
+D	"live/\\~/.honeycomb_runtime/audit_ledger.jsonl"
+M	live/__init__.py
+D	live/__init__.py.bak
+D	live/__init__.py.bak.1788898484
+D	live/__init__.py.bak.1788978646
+D	live/ai_parliament.py
+D	live/alpha_core.py
+D	live/audit_ledger.jsonl
+D	live/desk_state.json
+D	live/engine_scalp_tn2.py
+D	live/init.py
+D	live/install_part1.sh
+D	live/install_part2.sh
+D	live/install_sovereign_parliament.sh
+D	live/install_sovereign_parliament2.sh
+M	live/kernel.py
+D	live/kernel.py.bak
+D	live/kernel.py.bak.1788879071
+D	live/kernel.py.bak.1788879242
+D	live/kernel.py.bak.1788879251
+D	live/kernel.py.bak.1788879937
+D	live/kernel.py.bak.1788880078
+D	live/kernel.py.bak.1788881727
+D	live/kernel.py.bak.1788881836
+D	live/kernel.py.bak.1788881932
+D	live/kernel.py.bak.1788881945
+D	live/kernel.py.bak.1788883461
+D	live/kernel.py.bak.1789039163
+D	live/kernel.py.broken.1789013299
+D	live/kernel.py.broken.1789013342
+D	live/kernel.py.broken.1789014310
+D	live/kernel.py.broken.1789039345
+D	live/kernel.py.pre_final_hotfix.20260910_153035
+D	live/kernel.py.pre_network_final.20260910_204459
+D	live/kernel.py.pre_network_repair.20260910_173616
+D	live/kernel.py.pre_network_repair.20260911_002632
+M	live/kernel_hardened_sign.py
+D	live/live_kernel.py
+D	live/quantum_helix_parliament.py
+D	live/sovereign_parliament_engine.py
+D	lobster_extreme_momentum_engine.py.pre_final_hotfix.20260910_153035
+D	manage.sh
+D	omega_api_patch.py
+M	orchestrator/control_plane.py
+M	orchestrator/registry.json
+M	profit_economics.py
+M	quantum_nexus_v3_monolithic.py
+M	reports/quality-gate.json
+M	run_aggressive_live.sh
+A	run_full_profit_repair.sh
+M	run_lobster_live.sh
+A	run_repo_integrity_repair.sh
+D	scanner_audit_ledger.jsonl
+D	scanner_omega_audit.jsonl
+A	scripts/full_repo_integrity_profit_upgrade.sh
+D	scripts/online.sh
+A	scripts/repo_integrity_profit_repair.py
+D	scripts/start_control_plane.sh
+D	scripts/start_live.sh
+D	scripts/start_testnet.sh
+D	scripts/sync_all.sh
+D	scripts/testnet_auth_probe.py
+D	scripts/verify_control_plane.sh
+D	sovereign_live.py
+M	sovereign_parliament_engine.py
+D	~/.honeycomb_sf.lock
+D	~/honeycomb-execution-core/ai_sovereign_engine.py
+
+
+=== LOCAL vs GITHUB — STAT ===
+ .env.example                                       |   11 +-
+ .gitignore                                         |   42 +-
+ .gitignore.backup.20260910_045036                  |   30 -
+ .honeycomb_runtime/binance_guard.json              |    1 -
+ .honeycomb_runtime/binance_guard.lock              |    0
+ .honeycomb_runtime/binance_market_ws.lock          |    0
+ .honeycomb_runtime/pre_final_local_changes.diff    |  584 -------
+ .honeycomb_runtime/pre_final_status.txt            |   11 -
+ 0                                                  |    0
+ ATLAS_QUANTUM_CORE.py                              |  246 ---
+ accounts/COIN-1/ai_parliament.py                   |  419 -----
+ accounts/COIN-1/alpha_core.py                      |  583 -------
+ accounts/COIN-1/audit_ledger.jsonl                 |    0
+ accounts/COIN-1/live/__init__.py                   |   26 -
+ accounts/COIN-1/live/kernel.py                     |  926 ----------
+ accounts/COIN-1/sovereign_parliament_engine.py     |  579 -------
+ accounts/COIN-2/ai_parliament.py                   |  419 -----
+ accounts/COIN-2/alpha_core.py                      |  583 -------
+ accounts/COIN-2/audit_ledger.jsonl                 |    0
+ accounts/COIN-2/live/__init__.py                   |   26 -
+ accounts/COIN-2/live/kernel.py                     |  926 ----------
+ accounts/COIN-2/sovereign_parliament_engine.py     |  579 -------
+ accounts/COIN-3/ai_parliament.py                   |  419 -----
+ accounts/COIN-3/alpha_core.py                      |  583 -------
+ accounts/COIN-3/audit_ledger.jsonl                 |    0
+ accounts/COIN-3/live/__init__.py                   |   26 -
+ accounts/COIN-3/live/kernel.py                     |  926 ----------
+ accounts/COIN-3/sovereign_parliament_engine.py     |  579 -------
+ accounts/COIN-4/ai_parliament.py                   |  419 -----
+ accounts/COIN-4/alpha_core.py                      |  583 -------
+ accounts/COIN-4/audit_ledger.jsonl                 |    0
+ accounts/COIN-4/live/__init__.py                   |   26 -
+ accounts/COIN-4/live/kernel.py                     |  926 ----------
+ accounts/COIN-4/sovereign_parliament_engine.py     |  579 -------
+ accounts/COIN-5/ai_parliament.py                   |  419 -----
+ accounts/COIN-5/alpha_core.py                      |  583 -------
+ accounts/COIN-5/audit_ledger.jsonl                 |    0
+ accounts/COIN-5/live/__init__.py                   |   26 -
+ accounts/COIN-5/live/kernel.py                     |  926 ----------
+ accounts/COIN-5/sovereign_parliament_engine.py     |  579 -------
+ accounts/USDT-1/ai_parliament.py                   |  564 -------
+ accounts/USDT-1/alpha_core.py                      |  706 --------
+ accounts/USDT-1/audit_ledger.jsonl                 |    0
+ accounts/USDT-1/live/__init__.py                   |    6 -
+ accounts/USDT-1/live/kernel.py                     | 1009 -----------
+ accounts/USDT-1/sovereign_parliament_engine.py     |  849 ----------
+ accounts/USDT-2/ai_parliament.py                   |  419 -----
+ accounts/USDT-2/alpha_core.py                      |  583 -------
+ accounts/USDT-2/audit_ledger.jsonl                 |    0
+ accounts/USDT-2/live/__init__.py                   |   26 -
+ accounts/USDT-2/live/kernel.py                     |  926 ----------
+ accounts/USDT-2/sovereign_parliament_engine.py     |  579 -------
+ accounts/USDT-3/ai_parliament.py                   |  419 -----
+ accounts/USDT-3/alpha_core.py                      |  583 -------
+ accounts/USDT-3/audit_ledger.jsonl                 |    0
+ accounts/USDT-3/live/__init__.py                   |   26 -
+ accounts/USDT-3/live/kernel.py                     |  926 ----------
+ accounts/USDT-3/sovereign_parliament_engine.py     |  579 -------
+ accounts/USDT-4/ai_parliament.py                   |  419 -----
+ accounts/USDT-4/alpha_core.py                      |  583 -------
+ accounts/USDT-4/audit_ledger.jsonl                 |    0
+ accounts/USDT-4/live/__init__.py                   |   26 -
+ accounts/USDT-4/live/kernel.py                     |  926 ----------
+ accounts/USDT-4/sovereign_parliament_engine.py     |  579 -------
+ accounts/USDT-5/ai_parliament.py                   |  419 -----
+ accounts/USDT-5/alpha_core.py                      |  583 -------
+ accounts/USDT-5/audit_ledger.jsonl                 |    0
+ accounts/USDT-5/live/__init__.py                   |   26 -
+ accounts/USDT-5/live/kernel.py                     |  926 ----------
+ accounts/USDT-5/sovereign_parliament_engine.py     |  579 -------
+ accounts/ai_parliament.py                          |  564 -------
+ accounts/alpha_core.py                             |  706 --------
+ accounts/audit_ledger.jsonl                        |    0
+ accounts/install5.sh                               | 1728 -------------------
+ accounts/install6.sh                               | 1440 ----------------
+ accounts/install_part2.sh                          | 1441 ----------------
+ accounts/live/__init__.py                          |    6 -
+ accounts/live/kernel.py                            | 1009 -----------
+ accounts/manage.sh                                 |   72 -
+ accounts/sovereign_parliament_engine.py            |  850 ----------
+ accounts/start_all.sh                              |   11 -
+ accounts/status_all.sh                             |    9 -
+ accounts/stop_all.sh                               |   11 -
+ adaptive_profit_runtime.py                         |  142 ++
+ ai_parliament.py                                   |  419 -----
+ ai_sovereign_engine.py                             |  700 +++++---
+ alpha_core.py                                      |  501 ------
+ alpha_core.py.pre_final_hotfix.20260910_153035     |  583 -------
+ audit_ledger.jsonl                                 |    8 -
+ .../binance_endpoint_failover.py                   |  126 --
+ .../honeycomb_execution_guard.py                   |  438 -----
+ .../final_live_repair_20260911_191534/kernel.py    | 1117 ------------
+ .../protection_bridge.py                           |  140 --
+ .../sitecustomize.py                               |   15 -
+ backups/kernel.py.before-network-20260910_173612   | 1082 ------------
+ .../binance_endpoint_failover.py                   |  126 --
+ .../honeycomb_execution_guard.py                   |  438 -----
+ .../live_gate_20260911_192103/protection_bridge.py |  137 --
+ backups/live_gate_20260911_192103/sitecustomize.py |   15 -
+ .../binance_endpoint_failover.py                   |  126 --
+ .../honeycomb_execution_guard.py                   |  438 -----
+ .../live_gate_20260911_192509/protection_bridge.py |  137 --
+ backups/live_gate_20260911_192509/sitecustomize.py |   15 -
+ .../binance_endpoint_failover.py                   |  126 --
+ .../honeycomb_execution_guard.py                   |  438 -----
+ .../live_gate_20260911_211401/protection_bridge.py |  137 --
+ backups/live_gate_20260911_211401/sitecustomize.py |   15 -
+ .../binance_endpoint_failover.py                   |  126 --
+ .../honeycomb_execution_guard.py                   |  438 -----
+ .../live_gate_20260912_001923/protection_bridge.py |  137 --
+ backups/live_gate_20260912_001923/sitecustomize.py |   15 -
+ .../binance_endpoint_failover.py                   |  126 --
+ .../honeycomb_execution_guard.py                   |  438 -----
+ .../sitecustomize.py                               |   15 -
+ .../binance_endpoint_failover.origin.py            |  126 --
+ .../binance_endpoint_failover.py                   |  126 --
+ .../honeycomb_execution_guard.origin.py            |  438 -----
+ .../honeycomb_execution_guard.py                   |  438 -----
+ backups/recovery_20260911_191802/kernel.py         | 1117 ------------
+ .../protection_bridge.origin.py                    |  137 --
+ .../recovery_20260911_191802/protection_bridge.py  |  140 --
+ backups/recovery_20260911_191802/sitecustomize.py  |   15 -
+ dashboard/index.html                               |  224 +--
+ docs/PROFIT_MAXIMIZATION_REVIEW_2026-09-12.md      |   68 +
+ extreme_scanner_engine.py                          |  385 -----
+ extreme_scanner_omega.py                           | 1772 --------------------
+ fix_all.sh                                         |  127 --
+ fix_kernel.sh                                      |  102 --
+ fix_omega_scanner.sh                               |   69 -
+ helix_sovereign_pro.py                             |  577 ++-----
+ helix_sovereign_pro.py.bak                         |  996 -----------
+ helix_sovereign_pro.py.bak.20260901_084818         |  675 --------
+ helix_sovereign_pro.py.bak.20260901_085055         |  675 --------
+ helix_sovereign_pro.py.bak.20260910_082548         | 1047 ------------
+ helix_sovereign_pro.py.bak.ATR.20260901_085317     |  673 --------
+ helix_sovereign_pro.py.bak.ATR.20260910_082759     | 1047 ------------
+ helix_sovereign_pro.py.bozuk-1788199527            |  744 --------
+ install5.sh                                        | 1380 ---------------
+ install6.sh                                        | 1440 ----------------
+ install_par2.sh                                    | 1325 ---------------
+ install_part.sh                                    | 1728 -------------------
+ install_part1.sh                                   | 1728 -------------------
+ install_part2.sh                                   |   73 -
+ install_part3.sh                                   |  121 --
+ install_sovaring_parlamet.py                       |  573 -------
+ install_sovaring_parlamet.sh                       |  573 -------
+ install_sovereign_parliament.sh                    | 1300 --------------
+ install_sovereign_parliament2.sh                   | 1610 ------------------
+ .../workflows/quantum-nexus-industrial-core.yml    |  158 --
+ "live/\\~/.honeycomb_runtime/audit_ledger.jsonl"   |    1 -
+ live/__init__.py                                   |    9 -
+ live/__init__.py.bak                               |   19 -
+ live/__init__.py.bak.1788898484                    |   28 -
+ live/__init__.py.bak.1788978646                    |   13 -
+ live/ai_parliament.py                              |  419 -----
+ live/alpha_core.py                                 |  422 -----
+ live/audit_ledger.jsonl                            |    0
+ live/desk_state.json                               |    7 -
+ live/engine_scalp_tn2.py                           |  264 ---
+ live/init.py                                       |   28 -
+ live/install_part1.sh                              | 1607 ------------------
+ live/install_part2.sh                              | 1175 -------------
+ live/install_sovereign_parliament.sh               | 1300 --------------
+ live/install_sovereign_parliament2.sh              | 1610 ------------------
+ live/kernel.py                                     |  681 +-------
+ live/kernel.py.bak                                 | 1077 ------------
+ live/kernel.py.bak.1788879071                      | 1009 -----------
+ live/kernel.py.bak.1788879242                      | 1009 -----------
+ live/kernel.py.bak.1788879251                      | 1009 -----------
+ live/kernel.py.bak.1788879937                      | 1009 -----------
+ live/kernel.py.bak.1788880078                      | 1052 ------------
+ live/kernel.py.bak.1788881727                      | 1052 ------------
+ live/kernel.py.bak.1788881836                      | 1052 ------------
+ live/kernel.py.bak.1788881932                      | 1052 ------------
+ live/kernel.py.bak.1788881945                      | 1052 ------------
+ live/kernel.py.bak.1788883461                      | 1052 ------------
+ live/kernel.py.bak.1789039163                      | 1070 ------------
+ live/kernel.py.broken.1789013299                   | 1111 ------------
+ live/kernel.py.broken.1789013342                   | 1052 ------------
+ live/kernel.py.broken.1789014310                   | 1052 ------------
+ live/kernel.py.broken.1789039345                   | 1071 ------------
+ live/kernel.py.pre_final_hotfix.20260910_153035    | 1071 ------------
+ live/kernel.py.pre_network_final.20260910_204459   | 1104 ------------
+ live/kernel.py.pre_network_repair.20260910_173616  | 1082 ------------
+ live/kernel.py.pre_network_repair.20260911_002632  | 1117 ------------
+ live/kernel_hardened_sign.py                       |   51 -
+ live/live_kernel.py                                |  685 --------
+ live/quantum_helix_parliament.py                   |  170 --
+ live/sovereign_parliament_engine.py                |  707 --------
+ ...ntum_engine.py.pre_final_hotfix.20260910_153035 |  340 ----
+ manage.sh                                          |   72 -
+ omega_api_patch.py                                 |   51 -
+ orchestrator/control_plane.py                      |  661 ++------
+ orchestrator/registry.json                         |  487 +-----
+ profit_economics.py                                |   76 +-
+ quantum_nexus_v3_monolithic.py                     |   25 +-
+ reports/quality-gate.json                          | 1193 ++-----------
+ run_aggressive_live.sh                             |    4 +
+ run_full_profit_repair.sh                          |   25 +
+ run_lobster_live.sh                                |    6 +-
+ run_repo_integrity_repair.sh                       |   17 +
+ scanner_audit_ledger.jsonl                         |    0
+ scanner_omega_audit.jsonl                          |    0
+ scripts/full_repo_integrity_profit_upgrade.sh      |  123 ++
+ scripts/online.sh                                  |   43 -
+ scripts/repo_integrity_profit_repair.py            |  127 ++
+ scripts/start_control_plane.sh                     |   36 -
+ scripts/start_live.sh                              |   76 -
+ scripts/start_testnet.sh                           |   58 -
+ scripts/sync_all.sh                                |   77 -
+ scripts/testnet_auth_probe.py                      |  164 --
+ scripts/verify_control_plane.sh                    |   72 -
+ sovereign_live.py                                  |  839 ---------
+ sovereign_parliament_engine.py                     |  578 -------
+ ~/.honeycomb_sf.lock                               |    0
+ ~/honeycomb-execution-core/ai_sovereign_engine.py  |  533 ------
+ 216 files changed, 1463 insertions(+), 101715 deletions(-)
+
+
+=== COMMON ANCESTOR -> LOCAL ===
+M	.gitignore
+A	.gitignore.backup.20260910_045036
+A	.honeycomb_runtime/binance_guard.json
+A	.honeycomb_runtime/binance_guard.lock
+A	.honeycomb_runtime/binance_market_ws.lock
+A	.honeycomb_runtime/pre_final_local_changes.diff
+A	.honeycomb_runtime/pre_final_status.txt
+A	0
+A	ATLAS_QUANTUM_CORE.py
+A	accounts/COIN-1/ai_parliament.py
+A	accounts/COIN-1/alpha_core.py
+A	accounts/COIN-1/audit_ledger.jsonl
+A	accounts/COIN-1/live/__init__.py
+A	accounts/COIN-1/live/kernel.py
+A	accounts/COIN-1/sovereign_parliament_engine.py
+A	accounts/COIN-2/ai_parliament.py
+A	accounts/COIN-2/alpha_core.py
+A	accounts/COIN-2/audit_ledger.jsonl
+A	accounts/COIN-2/live/__init__.py
+A	accounts/COIN-2/live/kernel.py
+A	accounts/COIN-2/sovereign_parliament_engine.py
+A	accounts/COIN-3/ai_parliament.py
+A	accounts/COIN-3/alpha_core.py
+A	accounts/COIN-3/audit_ledger.jsonl
+A	accounts/COIN-3/live/__init__.py
+A	accounts/COIN-3/live/kernel.py
+A	accounts/COIN-3/sovereign_parliament_engine.py
+A	accounts/COIN-4/ai_parliament.py
+A	accounts/COIN-4/alpha_core.py
+A	accounts/COIN-4/audit_ledger.jsonl
+A	accounts/COIN-4/live/__init__.py
+A	accounts/COIN-4/live/kernel.py
+A	accounts/COIN-4/sovereign_parliament_engine.py
+A	accounts/COIN-5/ai_parliament.py
+A	accounts/COIN-5/alpha_core.py
+A	accounts/COIN-5/audit_ledger.jsonl
+A	accounts/COIN-5/live/__init__.py
+A	accounts/COIN-5/live/kernel.py
+A	accounts/COIN-5/sovereign_parliament_engine.py
+A	accounts/USDT-1/ai_parliament.py
+A	accounts/USDT-1/alpha_core.py
+A	accounts/USDT-1/audit_ledger.jsonl
+A	accounts/USDT-1/live/__init__.py
+A	accounts/USDT-1/live/kernel.py
+A	accounts/USDT-1/sovereign_parliament_engine.py
+A	accounts/USDT-2/ai_parliament.py
+A	accounts/USDT-2/alpha_core.py
+A	accounts/USDT-2/audit_ledger.jsonl
+A	accounts/USDT-2/live/__init__.py
+A	accounts/USDT-2/live/kernel.py
+A	accounts/USDT-2/sovereign_parliament_engine.py
+A	accounts/USDT-3/ai_parliament.py
+A	accounts/USDT-3/alpha_core.py
+A	accounts/USDT-3/audit_ledger.jsonl
+A	accounts/USDT-3/live/__init__.py
+A	accounts/USDT-3/live/kernel.py
+A	accounts/USDT-3/sovereign_parliament_engine.py
+A	accounts/USDT-4/ai_parliament.py
+A	accounts/USDT-4/alpha_core.py
+A	accounts/USDT-4/audit_ledger.jsonl
+A	accounts/USDT-4/live/__init__.py
+A	accounts/USDT-4/live/kernel.py
+A	accounts/USDT-4/sovereign_parliament_engine.py
+A	accounts/USDT-5/ai_parliament.py
+A	accounts/USDT-5/alpha_core.py
+A	accounts/USDT-5/audit_ledger.jsonl
+A	accounts/USDT-5/live/__init__.py
+A	accounts/USDT-5/live/kernel.py
+A	accounts/USDT-5/sovereign_parliament_engine.py
+A	accounts/ai_parliament.py
+A	accounts/alpha_core.py
+A	accounts/audit_ledger.jsonl
+A	accounts/install5.sh
+A	accounts/install6.sh
+A	accounts/install_part2.sh
+A	accounts/live/__init__.py
+A	accounts/live/kernel.py
+A	accounts/manage.sh
+A	accounts/sovereign_parliament_engine.py
+A	accounts/start_all.sh
+A	accounts/status_all.sh
+A	accounts/stop_all.sh
+A	ai_parliament.py
+M	ai_sovereign_engine.py
+M	alpha_core.py
+A	alpha_core.py.pre_final_hotfix.20260910_153035
+A	audit_ledger.jsonl
+A	backups/final_live_repair_20260911_191534/binance_endpoint_failover.py
+A	backups/final_live_repair_20260911_191534/honeycomb_execution_guard.py
+A	backups/final_live_repair_20260911_191534/kernel.py
+A	backups/final_live_repair_20260911_191534/protection_bridge.py
+A	backups/final_live_repair_20260911_191534/sitecustomize.py
+A	backups/kernel.py.before-network-20260910_173612
+A	backups/live_gate_20260911_192103/binance_endpoint_failover.py
+A	backups/live_gate_20260911_192103/honeycomb_execution_guard.py
+A	backups/live_gate_20260911_192103/protection_bridge.py
+A	backups/live_gate_20260911_192103/sitecustomize.py
+A	backups/live_gate_20260911_192509/binance_endpoint_failover.py
+A	backups/live_gate_20260911_192509/honeycomb_execution_guard.py
+A	backups/live_gate_20260911_192509/protection_bridge.py
+A	backups/live_gate_20260911_192509/sitecustomize.py
+A	backups/live_gate_20260911_211401/binance_endpoint_failover.py
+A	backups/live_gate_20260911_211401/honeycomb_execution_guard.py
+A	backups/live_gate_20260911_211401/protection_bridge.py
+A	backups/live_gate_20260911_211401/sitecustomize.py
+A	backups/live_gate_20260912_001923/binance_endpoint_failover.py
+A	backups/live_gate_20260912_001923/honeycomb_execution_guard.py
+A	backups/live_gate_20260912_001923/protection_bridge.py
+A	backups/live_gate_20260912_001923/sitecustomize.py
+A	backups/network_restore_20260910_204437/binance_endpoint_failover.py
+A	backups/network_restore_20260910_204437/honeycomb_execution_guard.py
+A	backups/network_restore_20260910_204437/sitecustomize.py
+A	backups/recovery_20260911_191802/binance_endpoint_failover.origin.py
+A	backups/recovery_20260911_191802/binance_endpoint_failover.py
+A	backups/recovery_20260911_191802/honeycomb_execution_guard.origin.py
+A	backups/recovery_20260911_191802/honeycomb_execution_guard.py
+A	backups/recovery_20260911_191802/kernel.py
+A	backups/recovery_20260911_191802/protection_bridge.origin.py
+A	backups/recovery_20260911_191802/protection_bridge.py
+A	backups/recovery_20260911_191802/sitecustomize.py
+M	dashboard/index.html
+M	extreme_scanner_engine.py
+M	extreme_scanner_omega.py
+A	fix_all.sh
+A	fix_kernel.sh
+A	fix_omega_scanner.sh
+M	helix_sovereign_pro.py
+A	helix_sovereign_pro.py.bak
+A	helix_sovereign_pro.py.bak.20260901_084818
+A	helix_sovereign_pro.py.bak.20260901_085055
+A	helix_sovereign_pro.py.bak.20260910_082548
+A	helix_sovereign_pro.py.bak.ATR.20260901_085317
+A	helix_sovereign_pro.py.bak.ATR.20260910_082759
+A	helix_sovereign_pro.py.bozuk-1788199527
+A	install5.sh
+A	install6.sh
+A	install_par2.sh
+A	install_part.sh
+A	install_part1.sh
+A	install_part2.sh
+A	install_part3.sh
+A	install_sovaring_parlamet.py
+A	install_sovaring_parlamet.sh
+A	install_sovereign_parliament.sh
+A	install_sovereign_parliament2.sh
+A	live/.github/workflows/quantum-nexus-industrial-core.yml
+A	"live/\\~/.honeycomb_runtime/audit_ledger.jsonl"
+M	live/__init__.py
+A	live/__init__.py.bak
+A	live/__init__.py.bak.1788898484
+A	live/__init__.py.bak.1788978646
+A	live/ai_parliament.py
+A	live/alpha_core.py
+A	live/audit_ledger.jsonl
+A	live/desk_state.json
+A	live/engine_scalp_tn2.py
+A	live/init.py
+A	live/install_part1.sh
+A	live/install_part2.sh
+A	live/install_sovereign_parliament.sh
+A	live/install_sovereign_parliament2.sh
+M	live/kernel.py
+A	live/kernel.py.bak
+A	live/kernel.py.bak.1788879071
+A	live/kernel.py.bak.1788879242
+A	live/kernel.py.bak.1788879251
+A	live/kernel.py.bak.1788879937
+A	live/kernel.py.bak.1788880078
+A	live/kernel.py.bak.1788881727
+A	live/kernel.py.bak.1788881836
+A	live/kernel.py.bak.1788881932
+A	live/kernel.py.bak.1788881945
+A	live/kernel.py.bak.1788883461
+A	live/kernel.py.bak.1789039163
+A	live/kernel.py.broken.1789013299
+A	live/kernel.py.broken.1789013342
+A	live/kernel.py.broken.1789014310
+A	live/kernel.py.broken.1789039345
+A	live/kernel.py.pre_final_hotfix.20260910_153035
+A	live/kernel.py.pre_network_final.20260910_204459
+A	live/kernel.py.pre_network_repair.20260910_173616
+A	live/kernel.py.pre_network_repair.20260911_002632
+M	live/kernel_hardened_sign.py
+A	live/live_kernel.py
+A	live/quantum_helix_parliament.py
+A	live/sovereign_parliament_engine.py
+A	lobster_extreme_momentum_engine.py.pre_final_hotfix.20260910_153035
+A	manage.sh
+A	omega_api_patch.py
+M	orchestrator/control_plane.py
+M	orchestrator/registry.json
+M	quantum_nexus_v3_monolithic.py
+M	reports/quality-gate.json
+A	scanner_audit_ledger.jsonl
+A	scanner_omega_audit.jsonl
+A	scripts/online.sh
+A	scripts/start_control_plane.sh
+A	scripts/start_live.sh
+A	scripts/start_testnet.sh
+A	scripts/sync_all.sh
+A	scripts/testnet_auth_probe.py
+A	scripts/verify_control_plane.sh
+A	sovereign_live.py
+M	sovereign_parliament_engine.py
+A	~/.honeycomb_sf.lock
+A	~/honeycomb-execution-core/ai_sovereign_engine.py
+
+
+=== COMMON ANCESTOR -> GITHUB ===
+M	.env.example
+A	adaptive_profit_runtime.py
+A	docs/PROFIT_MAXIMIZATION_REVIEW_2026-09-12.md
+M	profit_economics.py
+M	run_aggressive_live.sh
+A	run_full_profit_repair.sh
+M	run_lobster_live.sh
+A	run_repo_integrity_repair.sh
+A	scripts/full_repo_integrity_profit_upgrade.sh
+A	scripts/repo_integrity_profit_repair.py
+
+
+=== KEY FILE THREE-WAY STATUS ===
+
+--- alpha_core.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=11d3c2d62c494cdb2cf43a8b79241e9dcd52356508606ccd4e7b297fe6f7e95e
+HEAD_SHA256=a6a9f128f617c2d742504a62464d29b9124412d6
+GITHUB_BLOB_SHA256=c1675c97e1cdba3364790f6eedfb73de820fdc2b
+BASE_BLOB_SHA256=c1675c97e1cdba3364790f6eedfb73de820fdc2b
+
+--- extreme_scanner_engine.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=ab643a7199ac6397f5b5532f53a67f94d08009c3bfc546146a79bcc30c0ee413
+HEAD_SHA256=5f1c5ffd6e14cd2db5fba47d00260482cde1e181
+GITHUB_BLOB_SHA256=2e11feee256d0b46ab7a3489a04a6c0d9b343da8
+BASE_BLOB_SHA256=2e11feee256d0b46ab7a3489a04a6c0d9b343da8
+
+--- extreme_scanner_omega.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=3f9efdfb2ca3a981a8dc487989b7b9719fab40278baa974bfabca1a1be4fbe03
+HEAD_SHA256=5aea2092678f07fc246b7d10082e04cc8a4de4a6
+GITHUB_BLOB_SHA256=8f0ba172e5ed12e66abc6212bf7a843c4343466d
+BASE_BLOB_SHA256=8f0ba172e5ed12e66abc6212bf7a843c4343466d
+
+--- helix_sovereign_pro.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=3e9f8ef6cb30fed063fdd3114f513e45a525d333936242d41f9c3e585b58e8b9
+HEAD_SHA256=3658f7b7cc3955ea55db8f69c89ebcbcffcd39e3
+GITHUB_BLOB_SHA256=b8347cc6bdf762279b79472794573934bfba250b
+BASE_BLOB_SHA256=b8347cc6bdf762279b79472794573934bfba250b
+
+--- live/__init__.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=7b2ca2eb09b52c9f6a3cfbe45c5dd0ac6a60a4750b8ea1cb006564d12b62acf2
+HEAD_SHA256=b92f9af310de4405bc604664d6d9bffd3e7b287a
+GITHUB_BLOB_SHA256=bfbe696986616c77c772c3904c18297055d0738c
+BASE_BLOB_SHA256=bfbe696986616c77c772c3904c18297055d0738c
+
+--- live/kernel.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=812871e07ddd21e31bf92ade00df419ad00a99c72a4a880469a9b860f09f40fb
+HEAD_SHA256=5a6b8c9498739547dadea0d11bfa73b466dd1be5
+GITHUB_BLOB_SHA256=2c5106525f53877fb04d42b730c60a2ea290c2a9
+BASE_BLOB_SHA256=2c5106525f53877fb04d42b730c60a2ea290c2a9
+
+--- live/kernel_hardened_sign.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=0ebe81a02eee6fe30968ac118d528572e43b6a47df9081b1642ade7695585ebb
+HEAD_SHA256=eafb12b7ee9ba2b4a567a80437133ce3cce1eb1c
+GITHUB_BLOB_SHA256=3ff12a7040d65c20944ec6ead740bb9d5c6258cf
+BASE_BLOB_SHA256=3ff12a7040d65c20944ec6ead740bb9d5c6258cf
+
+--- orchestrator/registry.json ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=c943918b2b05aa49fa1d7bef132ab0af71a711d18e1230c8ac0fc53ddeeff21e
+HEAD_SHA256=315623164bc8333077a77e18834a40547c457d09
+GITHUB_BLOB_SHA256=78ae902a660c0df24247b421b2e6c49dcf4fbf8a
+BASE_BLOB_SHA256=78ae902a660c0df24247b421b2e6c49dcf4fbf8a
+
+--- quantum_nexus_v3_monolithic.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=888206e467d7a2ce3186214fc3760ef2c470a8333a0f4bdb5cc1d3b53f8ad093
+HEAD_SHA256=46f570f6fe1c0d75138c68030dab796fb79f7388
+GITHUB_BLOB_SHA256=2d4f39fadf6fbb43a7f616beb39103b52ddf1352
+BASE_BLOB_SHA256=2d4f39fadf6fbb43a7f616beb39103b52ddf1352
+
+--- sovereign_live.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=False
+merge_base_exists=False
+working_tree_sha256=ea57298c965c0e7f0775cecc3fc0b7cf3a76f7733e25a5bc8d87ea7a47026a7e
+HEAD_SHA256=9844f6e155aec8504dd83441757ad2356f00454f
+
+--- sovereign_parliament_engine.py ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=b9c1ea22c295928dd87a088d8ba56bb954deb9ab0a12b7087876d55342f0e784
+HEAD_SHA256=38f17c4e8613cebf6c6fb376c61b05dfc1f8b416
+GITHUB_BLOB_SHA256=683374a5d1ebb0174ff9c97c614412f3551e5e0d
+BASE_BLOB_SHA256=683374a5d1ebb0174ff9c97c614412f3551e5e0d
+
+--- .gitignore ---
+working_tree_exists=True
+local_HEAD_exists=True
+github_main_exists=True
+merge_base_exists=True
+working_tree_sha256=d209ddcb8125a9e7c4e4de2eced6b62897666aba91845dc7bb246ae308df10b1
+HEAD_SHA256=fe19a9eb7372e5a7bf636268162effad6c107fc7
+GITHUB_BLOB_SHA256=07c00f566f515c3ee80b2fc0986d4f9041515c01
+BASE_BLOB_SHA256=07c00f566f515c3ee80b2fc0986d4f9041515c01
+
+=== CONFLICT MARKER CHECK — WORKTREE SOURCE ONLY ===
+engine_live2.py <<<<<<<=0 =======126 >>>>>>>=0
+nexus_futures_engine.ts <<<<<<<=0 =======18 >>>>>>>=0
+sovereign_app.js <<<<<<<=0 =======14 >>>>>>>=0
+engine_alpha.py <<<<<<<=0 =======36 >>>>>>>=0
+alpha_brain.py <<<<<<<=0 =======16 >>>>>>>=0
+master_alpha.py <<<<<<<=0 =======54 >>>>>>>=0
+alpha_core.py <<<<<<<=0 =======50 >>>>>>>=0
+repair_and_testnet_order.sh <<<<<<<=0 =======188 >>>>>>>=0
+nexus_full_sync.sh <<<<<<<=0 =======49 >>>>>>>=0
+nexus_engine_audit.sh <<<<<<<=0 =======12 >>>>>>>=0
+quantum_nexus_v3_monolithic.py <<<<<<<=0 =======308 >>>>>>>=0
+helix_sovereign_pro.py <<<<<<<=0 =======34 >>>>>>>=0
+install_part1.sh <<<<<<<=0 =======85 >>>>>>>=0
+install_sovereign_parliament.sh <<<<<<<=0 =======92 >>>>>>>=0
+ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+install_sovereign_parliament2.sh <<<<<<<=0 =======109 >>>>>>>=0
+ATLAS_QUANTUM_CORE.py <<<<<<<=0 =======22 >>>>>>>=0
+install_part.sh <<<<<<<=0 =======85 >>>>>>>=0
+install5.sh <<<<<<<=0 =======57 >>>>>>>=0
+install_sovaring_parlamet.py <<<<<<<=0 =======41 >>>>>>>=0
+extreme_scanner_omega.py <<<<<<<=0 =======152 >>>>>>>=0
+extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+fix_kernel.sh <<<<<<<=0 =======16 >>>>>>>=0
+repair_all_syntax_safe.py <<<<<<<=2 =======2 >>>>>>>=2
+repair_syntax_v2_safe.py <<<<<<<=1 =======17 >>>>>>>=1
+clean_active_conflict_markers.py <<<<<<<=6 =======99 >>>>>>>=6
+install_par2.sh <<<<<<<=0 =======57 >>>>>>>=0
+install6.sh <<<<<<<=0 =======57 >>>>>>>=0
+install_sovaring_parlamet.sh <<<<<<<=0 =======41 >>>>>>>=0
+fix_all.sh <<<<<<<=0 =======16 >>>>>>>=0
+clean_all_conflict_markers.py <<<<<<<=6 =======9 >>>>>>>=6
+backups/final_live_repair_20260911_191534/kernel.py <<<<<<<=0 =======34 >>>>>>>=0
+backups/recovery_20260911_191802/kernel.py <<<<<<<=0 =======34 >>>>>>>=0
+backups/full_upgrade_20260913_172408/helix_sovereign_pro.py <<<<<<<=0 =======34 >>>>>>>=0
+backups/full_upgrade_20260913_172408/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/full_upgrade_20260913_172408/alpha_brain.py <<<<<<<=0 =======16 >>>>>>>=0
+backups/full_upgrade_20260913_172408/master_alpha.py <<<<<<<=0 =======54 >>>>>>>=0
+backups/full_upgrade_20260913_172408/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/full_integrity_20260913_173354/helix_sovereign_pro.py <<<<<<<=0 =======34 >>>>>>>=0
+backups/full_upgrade_20260913_175753/helix_sovereign_pro.py <<<<<<<=0 =======34 >>>>>>>=0
+backups/full_upgrade_20260913_175753/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/full_upgrade_20260913_175753/alpha_brain.py <<<<<<<=0 =======16 >>>>>>>=0
+backups/full_upgrade_20260913_175753/master_alpha.py <<<<<<<=0 =======54 >>>>>>>=0
+backups/full_upgrade_20260913_175753/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/full_upgrade_20260913_180236/helix_sovereign_pro.py <<<<<<<=0 =======34 >>>>>>>=0
+backups/full_upgrade_20260913_180236/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/full_upgrade_20260913_180236/alpha_brain.py <<<<<<<=0 =======16 >>>>>>>=0
+backups/full_upgrade_20260913_180236/master_alpha.py <<<<<<<=0 =======54 >>>>>>>=0
+backups/full_upgrade_20260913_180236/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/auto_repair_20260913_192713/engine_live2.py <<<<<<<=0 =======126 >>>>>>>=0
+backups/auto_repair_20260913_192713/nexus_futures_engine.ts <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/sovereign_app.js <<<<<<<=0 =======14 >>>>>>>=0
+backups/auto_repair_20260913_192713/engine_alpha.py <<<<<<<=0 =======36 >>>>>>>=0
+backups/auto_repair_20260913_192713/alpha_brain.py <<<<<<<=0 =======16 >>>>>>>=0
+backups/auto_repair_20260913_192713/master_alpha.py <<<<<<<=0 =======54 >>>>>>>=0
+backups/auto_repair_20260913_192713/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/repair_and_testnet_order.sh <<<<<<<=0 =======188 >>>>>>>=0
+backups/auto_repair_20260913_192713/nexus_full_sync.sh <<<<<<<=0 =======49 >>>>>>>=0
+backups/auto_repair_20260913_192713/nexus_engine_audit.sh <<<<<<<=0 =======12 >>>>>>>=0
+backups/auto_repair_20260913_192713/quantum_nexus_v3_monolithic.py <<<<<<<=0 =======308 >>>>>>>=0
+backups/auto_repair_20260913_192713/helix_sovereign_pro.py <<<<<<<=0 =======34 >>>>>>>=0
+backups/auto_repair_20260913_192713/install_part1.sh <<<<<<<=0 =======85 >>>>>>>=0
+backups/auto_repair_20260913_192713/install_sovereign_parliament.sh <<<<<<<=0 =======92 >>>>>>>=0
+backups/auto_repair_20260913_192713/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/install_sovereign_parliament2.sh <<<<<<<=0 =======109 >>>>>>>=0
+backups/auto_repair_20260913_192713/ATLAS_QUANTUM_CORE.py <<<<<<<=0 =======22 >>>>>>>=0
+backups/auto_repair_20260913_192713/install_part.sh <<<<<<<=0 =======85 >>>>>>>=0
+backups/auto_repair_20260913_192713/install5.sh <<<<<<<=0 =======57 >>>>>>>=0
+backups/auto_repair_20260913_192713/install_sovaring_parlamet.py <<<<<<<=0 =======41 >>>>>>>=0
+backups/auto_repair_20260913_192713/extreme_scanner_omega.py <<<<<<<=0 =======152 >>>>>>>=0
+backups/auto_repair_20260913_192713/extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+backups/auto_repair_20260913_192713/fix_kernel.sh <<<<<<<=0 =======16 >>>>>>>=0
+backups/auto_repair_20260913_192713/repair_all_syntax_safe.py <<<<<<<=2 =======2 >>>>>>>=2
+backups/auto_repair_20260913_192713/install_par2.sh <<<<<<<=0 =======57 >>>>>>>=0
+backups/auto_repair_20260913_192713/install6.sh <<<<<<<=0 =======57 >>>>>>>=0
+backups/auto_repair_20260913_192713/install_sovaring_parlamet.sh <<<<<<<=0 =======41 >>>>>>>=0
+backups/auto_repair_20260913_192713/fix_all.sh <<<<<<<=0 =======16 >>>>>>>=0
+backups/auto_repair_20260913_192713/scripts/honeycomb_live_gate.py <<<<<<<=0 =======8 >>>>>>>=0
+backups/auto_repair_20260913_192713/scripts/termux_full_repo_upgrade.sh <<<<<<<=1 =======1 >>>>>>>=1
+backups/auto_repair_20260913_192713/scripts/full_repo_integrity_profit_upgrade.sh <<<<<<<=3 =======2 >>>>>>>=2
+backups/auto_repair_20260913_192713/scripts/repo_conflict_forensic_repair.py <<<<<<<=2 =======2 >>>>>>>=2
+backups/auto_repair_20260913_192713/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/install_sovereign_parliament.sh <<<<<<<=0 =======92 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/alpha_core.py <<<<<<<=0 =======108 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/install_sovereign_parliament2.sh <<<<<<<=0 =======109 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/install_part1.sh <<<<<<<=0 =======77 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/install_part2.sh <<<<<<<=0 =======50 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/quantum_helix_parliament.py <<<<<<<=0 =======22 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+backups/auto_repair_20260913_192713/live/test_signature_academic.py <<<<<<<=0 =======8 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/install5.sh <<<<<<<=0 =======85 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/install6.sh <<<<<<<=0 =======57 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/alpha_core.py <<<<<<<=0 =======67 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/sovereign_parliament_engine.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/install_part2.sh <<<<<<<=0 =======57 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-1/alpha_core.py <<<<<<<=0 =======67 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-1/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-1/sovereign_parliament_engine.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-1/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-2/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-2/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-2/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-2/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-3/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-3/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-3/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-3/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-4/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-4/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-4/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-4/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-5/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-5/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-5/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/USDT-5/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-1/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-1/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-1/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-1/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-2/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-2/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-2/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-2/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-3/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-3/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-3/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-3/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-4/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-4/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-4/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-4/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-5/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-5/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-5/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/COIN-5/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/accounts/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+backups/auto_repair_20260913_192713/~/backup_sovereign_20260828/helix_sovereign_ultra.py <<<<<<<=0 =======110 >>>>>>>=0
+backups/repair_patch_20260913_193234/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/repair_patch_20260913_193234/extreme_scanner_omega.py <<<<<<<=0 =======152 >>>>>>>=0
+backups/repair_patch_20260913_193234/extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+backups/repair_patch_20260913_193234/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+backups/syntax_v2_20260913_193833/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+backups/syntax_v2_20260913_193833/extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+backups/syntax_v2_20260913_193833/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+backups/conflict_marker_cleanup_20260913_194606/alpha_core.py <<<<<<<=11 =======59 >>>>>>>=11
+backups/conflict_marker_cleanup_20260913_194606/extreme_scanner_omega.py <<<<<<<=1 =======152 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/extreme_scanner_engine.py <<<<<<<=4 =======8 >>>>>>>=4
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/helix_sovereign_pro.py <<<<<<<=1 =======35 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/alpha_core.py <<<<<<<=11 =======70 >>>>>>>=11
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/live/kernel.py <<<<<<<=8 =======60 >>>>>>>=8
+backups/conflict_marker_cleanup_20260913_194606/backups/full_integrity_20260913_173354/helix_sovereign_pro.py <<<<<<<=1 =======35 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/alpha_core.py <<<<<<<=11 =======70 >>>>>>>=11
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/live/kernel.py <<<<<<<=8 =======60 >>>>>>>=8
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/alpha_core.py <<<<<<<=11 =======70 >>>>>>>=11
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/live/kernel.py <<<<<<<=8 =======60 >>>>>>>=8
+backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/alpha_core.py <<<<<<<=11 =======70 >>>>>>>=11
+backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_omega.py <<<<<<<=1 =======153 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_engine.py <<<<<<<=4 =======12 >>>>>>>=4
+backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/__init__.py <<<<<<<=1 =======1 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel.py <<<<<<<=8 =======60 >>>>>>>=8
+backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py <<<<<<<=5 =======14 >>>>>>>=5
+backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/alpha_core.py <<<<<<<=11 =======70 >>>>>>>=11
+backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_omega.py <<<<<<<=1 =======153 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_engine.py <<<<<<<=4 =======12 >>>>>>>=4
+backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/__init__.py <<<<<<<=1 =======1 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel.py <<<<<<<=8 =======60 >>>>>>>=8
+backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py <<<<<<<=5 =======14 >>>>>>>=5
+backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/alpha_core.py <<<<<<<=11 =======59 >>>>>>>=11
+backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py <<<<<<<=4 =======8 >>>>>>>=4
+backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel.py <<<<<<<=8 =======52 >>>>>>>=8
+backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py <<<<<<<=5 =======9 >>>>>>>=5
+backups/conflict_marker_cleanup_20260913_194606/live/__init__.py <<<<<<<=1 =======0 >>>>>>>=1
+backups/conflict_marker_cleanup_20260913_194606/live/kernel.py <<<<<<<=8 =======52 >>>>>>>=8
+backups/conflict_marker_cleanup_20260913_194606/live/kernel_hardened_sign.py <<<<<<<=5 =======9 >>>>>>>=5
+backups/active_marker_cleanup_20260913_194827/clean_all_conflict_markers.py <<<<<<<=10 =======10 >>>>>>>=10
+backups/repair_20260913_203533/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+scripts/honeycomb_live_gate.py <<<<<<<=0 =======8 >>>>>>>=0
+scripts/termux_full_repo_upgrade.sh <<<<<<<=1 =======1 >>>>>>>=1
+scripts/full_repo_integrity_profit_upgrade.sh <<<<<<<=3 =======2 >>>>>>>=2
+scripts/repo_conflict_forensic_repair.py <<<<<<<=2 =======2 >>>>>>>=2
+live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+live/install_sovereign_parliament.sh <<<<<<<=0 =======92 >>>>>>>=0
+live/alpha_core.py <<<<<<<=0 =======108 >>>>>>>=0
+live/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+live/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+live/install_sovereign_parliament2.sh <<<<<<<=0 =======109 >>>>>>>=0
+live/install_part1.sh <<<<<<<=0 =======77 >>>>>>>=0
+live/install_part2.sh <<<<<<<=0 =======50 >>>>>>>=0
+live/quantum_helix_parliament.py <<<<<<<=0 =======22 >>>>>>>=0
+live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+live/test_signature_academic.py <<<<<<<=0 =======8 >>>>>>>=0
+~/backup_sovereign_20260828/helix_sovereign_ultra.py <<<<<<<=0 =======110 >>>>>>>=0
+accounts/install5.sh <<<<<<<=0 =======85 >>>>>>>=0
+accounts/install6.sh <<<<<<<=0 =======57 >>>>>>>=0
+accounts/alpha_core.py <<<<<<<=0 =======67 >>>>>>>=0
+accounts/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/sovereign_parliament_engine.py <<<<<<<=0 =======52 >>>>>>>=0
+accounts/install_part2.sh <<<<<<<=0 =======57 >>>>>>>=0
+accounts/USDT-1/alpha_core.py <<<<<<<=0 =======67 >>>>>>>=0
+accounts/USDT-1/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/USDT-1/sovereign_parliament_engine.py <<<<<<<=0 =======52 >>>>>>>=0
+accounts/USDT-1/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/USDT-2/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/USDT-2/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/USDT-2/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/USDT-2/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/USDT-3/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/USDT-3/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/USDT-3/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/USDT-3/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/USDT-4/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/USDT-4/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/USDT-4/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/USDT-4/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/USDT-5/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/USDT-5/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/USDT-5/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/USDT-5/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/COIN-1/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/COIN-1/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/COIN-1/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/COIN-1/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/COIN-2/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/COIN-2/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/COIN-2/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/COIN-2/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/COIN-3/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/COIN-3/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/COIN-3/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/COIN-3/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/COIN-4/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/COIN-4/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/COIN-4/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/COIN-4/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/COIN-5/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+accounts/COIN-5/ai_parliament.py <<<<<<<=0 =======5 >>>>>>>=0
+accounts/COIN-5/sovereign_parliament_engine.py <<<<<<<=0 =======45 >>>>>>>=0
+accounts/COIN-5/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+accounts/live/kernel.py <<<<<<<=0 =======18 >>>>>>>=0
+.honeycomb_tools/repair_four_syntax.py <<<<<<<=0 =======141 >>>>>>>=0
+.honeycomb_tools/FINAL_STRUCTURAL_REPAIR_V2.py <<<<<<<=1 =======49 >>>>>>>=1
+.honeycomb_tools/FIX_ALPHA_STRUCTURAL_EXACT.py <<<<<<<=0 =======48 >>>>>>>=0
+.honeycomb_tools/RECONCILE_STAGE_2_READONLY.py <<<<<<<=4 =======4 >>>>>>>=4
+.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py <<<<<<<=0 =======59 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py <<<<<<<=0 =======50 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py <<<<<<<=0 =======8 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py <<<<<<<=0 =======52 >>>>>>>=0
+.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py <<<<<<<=0 =======9 >>>>>>>=0
+.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py <<<<<<<=0 =======50 >>>>>>>=0
+MARKER_FILES=265
+
+=== /tmp REFERENCE CHECK — SOURCE ONLY ===
+fix_testnet_stack.sh
+alpha_core.py
+install_part1.sh
+install_part.sh
+repair_kernel_network.py
+backups/full_upgrade_20260913_172408/alpha_core.py
+backups/full_upgrade_20260913_172408/live/kernel.py
+backups/full_upgrade_20260913_175753/alpha_core.py
+backups/full_upgrade_20260913_175753/live/kernel.py
+backups/full_upgrade_20260913_180236/alpha_core.py
+backups/full_upgrade_20260913_180236/live/kernel.py
+backups/auto_repair_20260913_192713/fix_testnet_stack.sh
+backups/auto_repair_20260913_192713/alpha_core.py
+backups/auto_repair_20260913_192713/install_part1.sh
+backups/auto_repair_20260913_192713/install_part.sh
+backups/auto_repair_20260913_192713/repair_kernel_network.py
+backups/auto_repair_20260913_192713/scripts/termux_runtime_fix.sh
+backups/auto_repair_20260913_192713/live/install_part1.sh
+backups/auto_repair_20260913_192713/accounts/install5.sh
+backups/auto_repair_20260913_192713/accounts/USDT-1/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/USDT-2/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/USDT-3/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/USDT-4/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/USDT-5/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/COIN-1/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/COIN-2/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/COIN-3/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/COIN-4/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/COIN-5/live/kernel.py
+backups/auto_repair_20260913_192713/accounts/live/kernel.py
+backups/repair_patch_20260913_193234/alpha_core.py
+backups/syntax_v2_20260913_193833/alpha_core.py
+backups/conflict_marker_cleanup_20260913_194606/alpha_core.py
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/alpha_core.py
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/live/kernel.py
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/alpha_core.py
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/live/kernel.py
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/alpha_core.py
+backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/live/kernel.py
+backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/alpha_core.py
+backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/alpha_core.py
+backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/alpha_core.py
+scripts/termux_runtime_fix.sh
+docs/OMEGA_FORENSIC_REPORT.md
+live/install_part1.sh
+accounts/install5.sh
+accounts/USDT-1/live/kernel.py
+accounts/USDT-2/live/kernel.py
+accounts/USDT-3/live/kernel.py
+accounts/USDT-4/live/kernel.py
+accounts/USDT-5/live/kernel.py
+accounts/COIN-1/live/kernel.py
+accounts/COIN-2/live/kernel.py
+accounts/COIN-3/live/kernel.py
+accounts/COIN-4/live/kernel.py
+accounts/COIN-5/live/kernel.py
+accounts/live/kernel.py
+.honeycomb_tools/repair_four_syntax.py
+.honeycomb_tools/FINAL_STRUCTURAL_REPAIR.py
+.honeycomb_tools/FINAL_STRUCTURAL_REPAIR_V2.py
+.honeycomb_tools/FIX_ALPHA_STRUCTURAL_EXACT.py
+.honeycomb_tools/RECONCILE_STAGE_2_READONLY.py
+.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py
+.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py
+.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py
+.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py
+.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py
+TMP_REFERENCE_FILES=67
+
+=== KEY FILE LINE COUNTS ===
+alpha_core.py: 1065
+extreme_scanner_engine.py: 530
+extreme_scanner_omega.py: 1777
+helix_sovereign_pro.py: 1054
+live/__init__.py: 80
+live/kernel.py: 1335
+live/kernel_hardened_sign.py: 152
+orchestrator/registry.json: 838
+quantum_nexus_v3_monolithic.py: 961
+sovereign_live.py: 839
+sovereign_parliament_engine.py: 78
+.gitignore: 33
+
+==============================================================================
+END STAGE 2 — READ ONLY
+==============================================================================

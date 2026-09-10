@@ -1,0 +1,1239 @@
+{
+  "system": "HONEYCOMB",
+  "component": "production_truth_gate",
+  "timestamp_ms": 1790494909788,
+  "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+  "root": "/data/data/com.termux/files/home/honeycomb-execution-core",
+  "alpha_parameter": 0.00729735256,
+  "alpha_interpretation": "external_parameter only; not independently validated as a financial law",
+  "formal_verifications": [
+    {
+      "number": 1,
+      "name": "Python kaynak sözdizimi",
+      "status": "FAIL",
+      "evidence": "AST parse ile gerçek kaynak dosyaları tarandı.",
+      "details": {
+        "python_files": 1075,
+        "syntax_failures": [
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/live/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/alpha_core.py', 86, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 86, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_engine.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_engine.py', 3, 1, '<<<<<<< HEAD\\n', 3, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_omega.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_omega.py', 3, 1, '<<<<<<< HEAD\\n', 3, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/__init__.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/__init__.py', 1, 1, '<<<<<<< HEAD\\n', 1, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel.py', 462, 1, '<<<<<<< HEAD\\n', 462, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py', 3, 1, '<<<<<<< HEAD\\n', 3, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_integrity_20260913_173354/helix_sovereign_pro.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_integrity_20260913_173354/helix_sovereign_pro.py', 46, 1, '<<<<<<< HEAD\\n', 46, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/helix_sovereign_pro.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/helix_sovereign_pro.py', 46, 1, '<<<<<<< HEAD\\n', 46, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/live/kernel.py', 448, 1, '<<<<<<< HEAD\\n', 448, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/live/kernel.py', 448, 1, '<<<<<<< HEAD\\n', 448, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/live/kernel.py', 448, 1, '<<<<<<< HEAD\\n', 448, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_engine.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_engine.py', 31, 1, '=======\\n', 31, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_omega.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_omega.py', 1773, 1, '=======\\n', 1773, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/__init__.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/__init__.py', 8, 1, '=======\\n', 8, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel.py', 626, 1, '=======\\n', 626, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py', 12, 1, '=======\\n', 12, 3))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/alpha_core.py', 84, 15, 'alpha_core.py — Honeycomb technical decision core.', 84, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py', 106, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 106, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel.py', 939, 12, '            self.fails = 0\\n', 939, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py', 89, 8, '        body = urllib.parse.urlencode(\\n', 89, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/extreme_scanner_engine.py', 106, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 106, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/live/kernel.py', 939, 12, '            self.fails = 0\\n', 939, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/conflict_marker_cleanup_20260913_194606/live/kernel_hardened_sign.py', 89, 8, '        body = urllib.parse.urlencode(\\n', 89, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_172408/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_172408/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_172408/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_172408/live/kernel.py', 920, 12, '            self.fails = 0\\n', 920, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_175753/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_175753/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_175753/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_175753/live/kernel.py', 920, 12, '            self.fails = 0\\n', 920, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_180236/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_180236/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_180236/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/full_upgrade_20260913_180236/live/kernel.py', 920, 12, '            self.fails = 0\\n', 920, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_20260913_203533/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_20260913_203533/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/live/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/live/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_runtime/live_final_20260914_023015/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_runtime/live_final_20260914_023015/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": ".honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/auto_repair_20260913_192713/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/auto_repair_20260913_192713/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": "backups/auto_repair_20260913_192713/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/auto_repair_20260913_192713/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/auto_repair_20260913_192713/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/auto_repair_20260913_192713/live/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": "backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/alpha_core.py', 86, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 86, -1))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_engine.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_engine.py', 3, 1, '<<<<<<< HEAD\\n', 3, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_omega.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/extreme_scanner_omega.py', 3, 1, '<<<<<<< HEAD\\n', 3, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/__init__.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/__init__.py', 1, 1, '<<<<<<< HEAD\\n', 1, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel.py', 462, 1, '<<<<<<< HEAD\\n', 462, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/auto_repair_20260913_192713/live/kernel_hardened_sign.py', 3, 1, '<<<<<<< HEAD\\n', 3, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_integrity_20260913_173354/helix_sovereign_pro.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_integrity_20260913_173354/helix_sovereign_pro.py', 46, 1, '<<<<<<< HEAD\\n', 46, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/helix_sovereign_pro.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/helix_sovereign_pro.py', 46, 1, '<<<<<<< HEAD\\n', 46, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_172408/live/kernel.py', 448, 1, '<<<<<<< HEAD\\n', 448, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_175753/live/kernel.py', 448, 1, '<<<<<<< HEAD\\n', 448, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/full_upgrade_20260913_180236/live/kernel.py', 448, 1, '<<<<<<< HEAD\\n', 448, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/alpha_core.py', 85, 15, 'alpha_core.py — Honeycomb technical decision core.', 85, 15))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_engine.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_engine.py', 31, 1, '=======\\n', 31, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_omega.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/extreme_scanner_omega.py', 1773, 1, '=======\\n', 1773, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/__init__.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/__init__.py', 8, 1, '=======\\n', 8, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel.py', 626, 1, '=======\\n', 626, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py",
+            "error": "SyntaxError('invalid syntax', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py', 12, 1, '=======\\n', 12, 3))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/alpha_core.py', 84, 15, 'alpha_core.py — Honeycomb technical decision core.', 84, 15))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py', 106, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 106, -1))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel.py', 939, 12, '            self.fails = 0\\n', 939, -1))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py', 89, 8, '        body = urllib.parse.urlencode(\\n', 89, -1))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/extreme_scanner_engine.py', 106, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 106, -1))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/live/kernel.py', 939, 12, '            self.fails = 0\\n', 939, -1))"
+          },
+          {
+            "file": "backups/conflict_marker_cleanup_20260913_194606/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/conflict_marker_cleanup_20260913_194606/live/kernel_hardened_sign.py', 89, 8, '        body = urllib.parse.urlencode(\\n', 89, -1))"
+          },
+          {
+            "file": "backups/full_upgrade_20260913_172408/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/full_upgrade_20260913_172408/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": "backups/full_upgrade_20260913_172408/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/full_upgrade_20260913_172408/live/kernel.py', 920, 12, '            self.fails = 0\\n', 920, -1))"
+          },
+          {
+            "file": "backups/full_upgrade_20260913_175753/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/full_upgrade_20260913_175753/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": "backups/full_upgrade_20260913_175753/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/full_upgrade_20260913_175753/live/kernel.py', 920, 12, '            self.fails = 0\\n', 920, -1))"
+          },
+          {
+            "file": "backups/full_upgrade_20260913_180236/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/full_upgrade_20260913_180236/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": "backups/full_upgrade_20260913_180236/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/full_upgrade_20260913_180236/live/kernel.py', 920, 12, '            self.fails = 0\\n', 920, -1))"
+          },
+          {
+            "file": "backups/repair_20260913_203533/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/repair_20260913_203533/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": "backups/repair_patch_20260913_193234/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/repair_patch_20260913_193234/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": "backups/repair_patch_20260913_193234/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/repair_patch_20260913_193234/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/repair_patch_20260913_193234/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/repair_patch_20260913_193234/live/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": "backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/repair_patch_20260913_193234/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260913_193833/alpha_core.py",
+            "error": "SyntaxError(\"invalid character '—' (U+2014)\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260913_193833/alpha_core.py', 83, 15, 'alpha_core.py — Honeycomb technical decision core.', 83, 15))"
+          },
+          {
+            "file": "backups/syntax_v2_20260913_193833/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260913_193833/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260913_193833/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260913_193833/live/kernel.py', 934, 12, '            self.fails = 0\\n', 934, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260913_193833/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260919_211354/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_124429/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_tools/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/alpha_exact_backups/20260913T182004Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_backups/20260913T181051Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py",
+            "error": "SyntaxError('invalid syntax. Perhaps you forgot a comma?', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/alpha_core.py', 3, 17, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 3, 40))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel.py', 1307, 12, '            return self._pos.pop(symbol, None)\\n', 1307, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/final_structural_repair_v2_backups/20260913T181449Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174427Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/alpha_core.py', 85, 0, 'Self-contained (own klines + indicators) so parliament/scanner never crash\\n', 85, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/extreme_scanner_engine.py', 101, 4, '    print(\"UYARI .env: %s\" % _e, flush=True)\\n', 101, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel.py', 937, 12, '            self.fails = 0\\n', 937, -1))"
+          },
+          {
+            "file": "backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py",
+            "error": "IndentationError('unexpected indent', ('/data/data/com.termux/files/home/honeycomb-execution-core/backups/syntax_v2_20260920_191532/.honeycomb_tools_DISABLED_20260918_201214/syntax_repair_backups/20260913T174515Z/live/kernel_hardened_sign.py', 84, 8, '        body = urllib.parse.urlencode(\\n', 84, -1))"
+          },
+          {
+            "file": "quantum_academic_core_v4.py",
+            "error": "SyntaxError(\"expected 'except' or 'finally' block\", ('/data/data/com.termux/files/home/honeycomb-execution-core/quantum_academic_core_v4.py', 459, 13, '            try:\\n', 459, 16))"
+          }
+        ]
+      }
+    },
+    {
+      "number": 2,
+      "name": "Rust/Go runtime bağımlılığı yok",
+      "status": "PASS",
+      "evidence": "Python kaynaklarında cargo/rustc/go runtime çağrıları tarandı.",
+      "details": {
+        "runtime_dependency_findings": []
+      }
+    },
+    {
+      "number": 3,
+      "name": "LIVE execution gate",
+      "status": "FAIL",
+      "evidence": "EXECUTION_MODE=LIVE ve LIVE_ARMED=1 birlikte aranıyor.",
+      "details": {
+        "EXECUTION_MODE": "LIVE",
+        "LIVE_ARMED": false,
+        "required": "EXECUTION_MODE=LIVE AND LIVE_ARMED=1"
+      }
+    },
+    {
+      "number": 4,
+      "name": "Pozitif equity gate",
+      "status": "FAIL",
+      "evidence": "Pozitif gerçek equity görülmüyorsa HARD_KILL sonucu üretilir.",
+      "details": {
+        "reason": "positive_equity_not_observed",
+        "values": {},
+        "action": "HARD_KILL"
+      }
+    },
+    {
+      "number": 5,
+      "name": "Minimum notional",
+      "status": "PASS",
+      "evidence": "Minimum işlem notional değeri gerçek konfigürasyondan okunuyor.",
+      "details": {
+        "configured_min_notional": 20.0,
+        "required_min_notional": 20.0
+      }
+    },
+    {
+      "number": 6,
+      "name": "Stop-loss / protection evidence",
+      "status": "PASS",
+      "evidence": "Kaynakta exchange-side protection kanıtı aranıyor.",
+      "details": {
+        "patterns": {
+          "\\bstop[_-]?loss\\b": true,
+          "\\bSTOP_MARKET\\b": true,
+          "\\bplace_protect\\b": true,
+          "\\bprotection_bridge\\b": true,
+          "\\bATR\\b": true,
+          "\\batr\\b": true
+        },
+        "requirement": "Every opened position must have exchange-side protection."
+      }
+    },
+    {
+      "number": 7,
+      "name": "Binance ban/suspend guard",
+      "status": "PASS",
+      "evidence": "Ban/error/suspend mekanizmasının kaynak kanıtı aranıyor.",
+      "details": {
+        "patterns": {
+          "BAN": true,
+          "ban_count": true,
+          "BINANCE_GUARD": true,
+          "-1003": true,
+          "120": true,
+          "suspend": true
+        },
+        "required_suspend_seconds": 120.0
+      }
+    },
+    {
+      "number": 8,
+      "name": "Atomic state / WAL / lock",
+      "status": "PASS",
+      "evidence": "Kilitleme ve WAL/journal kanıtı aranıyor.",
+      "details": {
+        "lock_evidence_count": 3,
+        "wal_evidence_count": 4
+      }
+    },
+    {
+      "number": 9,
+      "name": "Partial-fill protection",
+      "status": "PASS",
+      "evidence": "Partial fill + cancel/reconciliation kanıtı aranıyor.",
+      "details": {
+        "patterns": {
+          "partial[_ -]?fill": true,
+          "PARTIAL_FILL": true,
+          "filled_qty": true,
+          "executedQty": true,
+          "cancel": true,
+          "resize": true,
+          "resized": true
+        },
+        "requirement": "Partial-fill reconciliation must exist before continuation."
+      }
+    },
+    {
+      "number": 10,
+      "name": "Gerçek işlem ekonomik kanıtı",
+      "status": "FAIL",
+      "evidence": "Gerçek JSONL fill kayıtları üzerinden net return, P(win), P(loss), EV ve PF hesaplanıyor. Sentetik veri kullanılmıyor.",
+      "details": {
+        "observations": 0,
+        "minimum_required": 30,
+        "economics": {
+          "status": "INSUFFICIENT_REAL_DATA",
+          "n": 0
+        }
+      }
+    }
+  ],
+  "summary": {
+    "checks": 10,
+    "pass": 6,
+    "fail": 4,
+    "overall": "FAIL"
+  },
+  "real_observation_count": 0,
+  "economics": {
+    "status": "INSUFFICIENT_REAL_DATA",
+    "n": 0
+  },
+  "kelly": {
+    "status": "INSUFFICIENT_REAL_DATA",
+    "n": 0
+  },
+  "architecture_presence": {
+    "risk_gate": true,
+    "live_kernel": true,
+    "protection": true,
+    "triangular": true,
+    "markov": true,
+    "kelly": true,
+    "ofi": true,
+    "atr": true,
+    "supertrend": true,
+    "volume_profile": true
+  },
+  "sqlite_record_counts": {
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_runtime/aggressive_live.db": 44,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_runtime/lobster_extreme.db": 1,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/.honeycomb_runtime/market_cache.db": 12018,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-1/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-1/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-2/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-2/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-3/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-3/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-4/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-4/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-5/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/COIN-5/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-1/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-1/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-2/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-2/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-3/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-3/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-4/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-4/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-5/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/USDT-5/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/alpha_brain.db": 6,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/accounts/parliament.db": 4848,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/alpha_brain.db": 10,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/brain.db": 909,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/brain.db,quantum_nexus_v3.db,master_brain.db,alpha_brain.db,brain_master.db,journal.db,quantum_nexus_v3.db,brain_master.db": 194,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/brain_master.db": 250,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/journal.db": 99,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/alpha_brain.db": 3,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/live/parliament.db": 0,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/master_brain.db": 4,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/parliament.db": 36393,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/quantum_nexus_v3.db": 22,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/sovereign_pro.db": 2,
+    ".honeycomb_recovery_DISABLED_20260918_201214/20260913T183750Z/working_tree/sovereign_pro_v3.db": 0,
+    ".honeycomb_runtime/aggressive_live.db": 510,
+    ".honeycomb_runtime/lobster_extreme.db": 124,
+    ".honeycomb_runtime/market_cache.db": 13318,
+    ".honeycomb_runtime/metrics.db": 0,
+    ".honeycomb_runtime/profit_max.db": 150193,
+    "accounts/COIN-1/alpha_brain.db": 3,
+    "accounts/COIN-1/parliament.db": 0,
+    "accounts/COIN-2/alpha_brain.db": 3,
+    "accounts/COIN-2/parliament.db": 0,
+    "accounts/COIN-3/alpha_brain.db": 3,
+    "accounts/COIN-3/parliament.db": 0,
+    "accounts/COIN-4/alpha_brain.db": 3,
+    "accounts/COIN-4/parliament.db": 0,
+    "accounts/COIN-5/alpha_brain.db": 3,
+    "accounts/COIN-5/parliament.db": 0,
+    "accounts/USDT-1/alpha_brain.db": 3,
+    "accounts/USDT-1/parliament.db": 0,
+    "accounts/USDT-2/alpha_brain.db": 3,
+    "accounts/USDT-2/parliament.db": 0,
+    "accounts/USDT-3/alpha_brain.db": 3,
+    "accounts/USDT-3/parliament.db": 0,
+    "accounts/USDT-4/alpha_brain.db": 3,
+    "accounts/USDT-4/parliament.db": 0,
+    "accounts/USDT-5/alpha_brain.db": 3,
+    "accounts/USDT-5/parliament.db": 0,
+    "accounts/alpha_brain.db": 6,
+    "accounts/parliament.db": 4848,
+    "alpha_brain.db": 10,
+    "brain.db": 909,
+    "brain.db,quantum_nexus_v3.db,master_brain.db,alpha_brain.db,brain_master.db,journal.db,quantum_nexus_v3.db,brain_master.db": 194,
+    "brain_master.db": 250,
+    "journal.db": 99,
+    "live/alpha_brain.db": 3,
+    "live/parliament.db": 0,
+    "master_brain.db": 4,
+    "parliament.db": 37231,
+    "quantum_academic_master.db": 0,
+    "quantum_execution_core.db": 0,
+    "quantum_nexus_v3.db": 22,
+    "sovereign_pro.db": 2,
+    "sovereign_pro_v3.db": 0
+  },
+  "principle": "No measured evidence => no performance claim."
+}

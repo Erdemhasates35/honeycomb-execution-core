@@ -1,0 +1,838 @@
+{
+  "project": "honeycomb-execution-core",
+  "control_plane": {
+    "host": "127.0.0.1",
+    "port": 8787
+  },
+  "execution_ports": [
+    8000,
+    8100
+  ],
+  "modes": [
+    "TESTNET",
+    "PAPER",
+    "LIVE"
+  ],
+  "engines": [
+    {
+      "path": "bootstrap_honeycomb_control_plane.sh",
+      "score": 8,
+      "sha256": "183c122fffabc84903c275771629f21a9976fcf28747ecf16a8b6ba8f2a693e5"
+    },
+    {
+      "path": "orchestrator/control_plane.py",
+      "score": 8,
+      "sha256": "fa41b670f55012799f2ca61fbc942123bdf09f15d2499ee7897f25715b1dc49b"
+    },
+    {
+      "path": "helix_sovereign_pro.py",
+      "score": 6,
+      "sha256": "3e9f8ef6cb30fed063fdd3114f513e45a525d333936242d41f9c3e585b58e8b9"
+    },
+    {
+      "path": "install_part1.sh",
+      "score": 6,
+      "sha256": "fffbcab79cb7e4ef75298a7758e733395519a303f308a0bb896abbeef9b18d5f"
+    },
+    {
+      "path": "install_sovereign_parliament2.sh",
+      "score": 6,
+      "sha256": "d97f1699e35ae6d98bda170993abad912bde2a07ed73e0675d7594cbf0de6d30"
+    },
+    {
+      "path": "install_part.sh",
+      "score": 6,
+      "sha256": "fffbcab79cb7e4ef75298a7758e733395519a303f308a0bb896abbeef9b18d5f"
+    },
+    {
+      "path": "live/install_sovereign_parliament2.sh",
+      "score": 6,
+      "sha256": "d97f1699e35ae6d98bda170993abad912bde2a07ed73e0675d7594cbf0de6d30"
+    },
+    {
+      "path": "live/install_part1.sh",
+      "score": 6,
+      "sha256": "f70b386e13bc2fb86747c73b96b15fae260e021babd03080856e5a9f9968e74a"
+    },
+    {
+      "path": "live/engine_scalp_tn2.py",
+      "score": 6,
+      "sha256": "5d26547a9d1358f1e4c082165e218baed0216e5dd2c36c0795899dba43395b03"
+    },
+    {
+      "path": "accounts/install5.sh",
+      "score": 6,
+      "sha256": "fffbcab79cb7e4ef75298a7758e733395519a303f308a0bb896abbeef9b18d5f"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/helix_sovereign_pro.py",
+      "score": 6,
+      "sha256": "df77fd55e20c5b003fb10e9808ecac5b4fe35b91cb8b69baf63ac072057de376"
+    },
+    {
+      "path": "backups/full_integrity_20260913_173354/helix_sovereign_pro.py",
+      "score": 6,
+      "sha256": "df77fd55e20c5b003fb10e9808ecac5b4fe35b91cb8b69baf63ac072057de376"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/helix_sovereign_pro.py",
+      "score": 6,
+      "sha256": "3c33fbfbb25fad71ca73f2536ca69ab589e28a427656e8d3299a40525cc32489"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/helix_sovereign_pro.py",
+      "score": 6,
+      "sha256": "3c33fbfbb25fad71ca73f2536ca69ab589e28a427656e8d3299a40525cc32489"
+    },
+    {
+      "path": "engine_live2.py",
+      "score": 5,
+      "sha256": "d44a4b8a9b4474039037141fc1260dcc562c62d7f2529830dcd52879c7b828e6"
+    },
+    {
+      "path": "alpha_core.py",
+      "score": 5,
+      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+    },
+    {
+      "path": "install_sovereign_parliament.sh",
+      "score": 5,
+      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
+    },
+    {
+      "path": "install5.sh",
+      "score": 5,
+      "sha256": "a8da491bfc4f6f12aca8811a393af23a93d8211feb8ad226f3a67e2acb647d38"
+    },
+    {
+      "path": "install_par2.sh",
+      "score": 5,
+      "sha256": "96e39f00b81268a7a7037bc66fd99f2ab8bc8761aafbca54cc74d84bb043909a"
+    },
+    {
+      "path": "install6.sh",
+      "score": 5,
+      "sha256": "98fda8a3b15cea4b33abf66e84cef422239974767a18ebd13f9724373359de62"
+    },
+    {
+      "path": "scripts/termux_execution_hardening.sh",
+      "score": 5,
+      "sha256": "9b08c1d9934d6d64a6b0e503388512945622e2d5310029898afada57576d6d9a"
+    },
+    {
+      "path": "live/install_sovereign_parliament.sh",
+      "score": 5,
+      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
+    },
+    {
+      "path": "live/install_part2.sh",
+      "score": 5,
+      "sha256": "e90dfa40c3591a4bd29b4d7320721085f6dff5b31f15a3e177b96e1387a8164d"
+    },
+    {
+      "path": "accounts/install6.sh",
+      "score": 5,
+      "sha256": "98fda8a3b15cea4b33abf66e84cef422239974767a18ebd13f9724373359de62"
+    },
+    {
+      "path": "accounts/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "f314e848d497e3bdec5fa6e4d2f398e28937294dc101fbd51ab1231adb40a9b4"
+    },
+    {
+      "path": "accounts/install_part2.sh",
+      "score": 5,
+      "sha256": "ad8298f01aea05d07afa84abe554d0096fc8049b8e7ae49fbb4bfb7045f6b55f"
+    },
+    {
+      "path": "accounts/USDT-1/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/USDT-1/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
+    },
+    {
+      "path": "accounts/USDT-2/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/USDT-3/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/USDT-4/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/USDT-5/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/COIN-1/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/COIN-2/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/COIN-3/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/COIN-4/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "accounts/COIN-5/alpha_core.py",
+      "score": 5,
+      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/alpha_core.py",
+      "score": 5,
+      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/alpha_core.py",
+      "score": 5,
+      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/alpha_core.py",
+      "score": 5,
+      "sha256": "b7c458fc31da642632c76d491267bd1d5f52be32d604d8fbedc3be4340bde8af"
+    },
+    {
+      "path": "nexus_futures_engine.ts",
+      "score": 4,
+      "sha256": "939341564552825d20bef9218ecdfb6e43f7ef569c860b0283377eac6437b265"
+    },
+    {
+      "path": "engine_scalp_tn.py",
+      "score": 4,
+      "sha256": "4b81117cc1201e918335ce0d2fb922f226e35c330a2b9c69b1bd001e50359e4e"
+    },
+    {
+      "path": "verify2.ts",
+      "score": 4,
+      "sha256": "9c5db353624a1e7a327d11c084ae542de83400d01ab6917e40bf8822b199a7ac"
+    },
+    {
+      "path": "engine_alpha.py",
+      "score": 4,
+      "sha256": "6bd90b57a746c92137d379f11737143c20e0b4983448fa8de6349d61e876346a"
+    },
+    {
+      "path": "engine_alpha2.py",
+      "score": 4,
+      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
+    },
+    {
+      "path": "repair_and_testnet_order.sh",
+      "score": 4,
+      "sha256": "4dab4accd509532ee224416ae6e26f24efb0eae5a6111edf3a9235d30db750e8"
+    },
+    {
+      "path": "nexus_full_sync.sh",
+      "score": 4,
+      "sha256": "17d4c46264a7af4329f8d0c7e7e4af6e575362cf418bd3fb39782f753aed73db"
+    },
+    {
+      "path": "nexus_engine_audit.sh",
+      "score": 4,
+      "sha256": "0ddedd3c0a7a690cd20fe5bbbe681362de3fc13129bb759a15a532b39263a74e"
+    },
+    {
+      "path": "ai_sovereign_engine.py",
+      "score": 4,
+      "sha256": "652d44fc2a59f712d14999d8c8c0b0822442a7cbe8ee4ed3626f2a69e19e6f8d"
+    },
+    {
+      "path": "quantum_nexus_v3_monolithic.py",
+      "score": 4,
+      "sha256": "888206e467d7a2ce3186214fc3760ef2c470a8333a0f4bdb5cc1d3b53f8ad093"
+    },
+    {
+      "path": "sovereign_live.py",
+      "score": 4,
+      "sha256": "ea57298c965c0e7f0775cecc3fc0b7cf3a76f7733e25a5bc8d87ea7a47026a7e"
+    },
+    {
+      "path": "install_part3.sh",
+      "score": 4,
+      "sha256": "3f8649a6e2fe80d5ece3ba0938fa7111a23699b17a88316f80312f5c1936efd3"
+    },
+    {
+      "path": "install_sovaring_parlamet.py",
+      "score": 4,
+      "sha256": "6f00dbc7a5651511d530402d7433db631c1c719aeb8de3e571e952baee228618"
+    },
+    {
+      "path": "extreme_scanner_engine.py",
+      "score": 4,
+      "sha256": "3321e42eb05a1af585f5387803fbf2655d41d97279aace38e4d5a6b0455dabb1"
+    },
+    {
+      "path": "install_sovaring_parlamet.sh",
+      "score": 4,
+      "sha256": "5d4520580f664251caf764f6df9fd4687a18bc9fac11de54c2af54718a4a1938"
+    },
+    {
+      "path": "scripts/termux_full_repo_upgrade.sh",
+      "score": 4,
+      "sha256": "7546f86e9f9e2a8f68ff71ade301a0a1b388769c0b5b27a09e7485333273ec38"
+    },
+    {
+      "path": "live/kernel.py",
+      "score": 4,
+      "sha256": "1b2e6f1e48bdf208cc4ba54baac4b79e2e1c92e4dd55f7bcb038c8cdd2c12aab"
+    },
+    {
+      "path": "live/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "1129fa659db2f4dab9f1cb10095f8046443186c1b9c6ac3956be48273d7a5e30"
+    },
+    {
+      "path": "accounts/USDT-2/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/USDT-3/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/USDT-4/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/USDT-5/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/COIN-1/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/COIN-2/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/COIN-3/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/COIN-4/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "accounts/COIN-5/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
+    },
+    {
+      "path": "~/backup_sovereign_20260828/helix_sovereign_pro.py",
+      "score": 4,
+      "sha256": "99645bdbfb7958b54d76951f5f24a01d85df2c54fd6935aa780cb9143f54c8db"
+    },
+    {
+      "path": "~/backup_sovereign_20260828/helix_sovereign_ultra.py",
+      "score": 4,
+      "sha256": "697b6c1f7d9d7b8811ed3e3de308afc74ab1bd3b225ec4073db48e29fcf8cc50"
+    },
+    {
+      "path": "~/honeycomb-execution-core/ai_sovereign_engine.py",
+      "score": 4,
+      "sha256": "dd9711993bf9ad228824f57ea71f85fe06faa4c2b9ffec5f07adca2783bea161"
+    },
+    {
+      "path": "backups/final_live_repair_20260911_191534/kernel.py",
+      "score": 4,
+      "sha256": "b862c54a39c8e39ee4c31def9cba8adb49826a54e5c75cc7d2106424bf6851a7"
+    },
+    {
+      "path": "backups/recovery_20260911_191802/kernel.py",
+      "score": 4,
+      "sha256": "b862c54a39c8e39ee4c31def9cba8adb49826a54e5c75cc7d2106424bf6851a7"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/engine_alpha2.py",
+      "score": 4,
+      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/engine_alpha2.py",
+      "score": 4,
+      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/engine_alpha2.py",
+      "score": 4,
+      "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/live/kernel.py",
+      "score": 4,
+      "sha256": "212bb14963aa5748f783a41e452295e02962bb42ad91fbada7e5e2d4a630b310"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/live/kernel.py",
+      "score": 4,
+      "sha256": "212bb14963aa5748f783a41e452295e02962bb42ad91fbada7e5e2d4a630b310"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/live/kernel.py",
+      "score": 4,
+      "sha256": "212bb14963aa5748f783a41e452295e02962bb42ad91fbada7e5e2d4a630b310"
+    },
+    {
+      "path": "engine.py",
+      "score": 3,
+      "sha256": "2a706743609b99d3529e01c2fa63bcdfce4e0a69c5b21ebe8c18a1334281fb65"
+    },
+    {
+      "path": "engine_testnet.py",
+      "score": 3,
+      "sha256": "272f9c202ed723e659e862e804307de00bbb5d181472e9a37b90fab2e87e9753"
+    },
+    {
+      "path": "quantum_sovereign_core.py",
+      "score": 3,
+      "sha256": "1c520721a0d00bd1355a87645b0e069e8c04e9bfd110902cb4727eb10bd2f009"
+    },
+    {
+      "path": "CatEofUsdcFuturesEngine.ts",
+      "score": 3,
+      "sha256": "01bec8651cc485e0819737a645f908888db8d8a12c9cb0406aecf35e7bd7395b"
+    },
+    {
+      "path": "sovereign_app.js",
+      "score": 3,
+      "sha256": "85f8470d7f1fbbfdfe6a61e496a199a282c70fc23be223ff0777465c6ef0d687"
+    },
+    {
+      "path": "verify.ts",
+      "score": 3,
+      "sha256": "62606b4b4a986953e77a419b82ca6ec343682b01efa5ddb192101de3815e56eb"
+    },
+    {
+      "path": "verify3.ts",
+      "score": 3,
+      "sha256": "edcfe4bf7186f4c1ebfba0161aa1e3e502c660cf1237d754792c3c4fcdabce6b"
+    },
+    {
+      "path": "master_alpha.py",
+      "score": 3,
+      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
+    },
+    {
+      "path": "nexus_testnet_bridge.py",
+      "score": 3,
+      "sha256": "5f04da81ab76eef16179d626b1f1d308585ec9f0800c989eaa47a0a43afa5327"
+    },
+    {
+      "path": "fix_testnet_stack.sh",
+      "score": 3,
+      "sha256": "ea7741d2721cc28d50ff83892c9104cc98ccf7947b32c2091d5edf684ba3ad83"
+    },
+    {
+      "path": "HelixSovereignEngine.ts",
+      "score": 3,
+      "sha256": "dd21d0ffc8e343e276e2a3228b038a15846cc9b8d3cf0728619572006e073bc6"
+    },
+    {
+      "path": "aggressive_futures_bot.py",
+      "score": 3,
+      "sha256": "539fba081c743e4b8598b6bfa212644e6bd66379dfac3a6110cf9d760e588d5c"
+    },
+    {
+      "path": "nexus_execution_entry.ts",
+      "score": 3,
+      "sha256": "43bd27b7f83177a9dd88e010887033aea8d8fed70ccc589a4a17790c214d9827"
+    },
+    {
+      "path": "sovereign_parliament_engine.py",
+      "score": 3,
+      "sha256": "b9c1ea22c295928dd87a088d8ba56bb954deb9ab0a12b7087876d55342f0e784"
+    },
+    {
+      "path": "fix_kernel.sh",
+      "score": 3,
+      "sha256": "0d2a844d032afaba029f634e23eb29d3cdcc3c454d09b35d82f7f75e59822f5a"
+    },
+    {
+      "path": "profit_max_engine.py",
+      "score": 3,
+      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
+    },
+    {
+      "path": "FINAL_LIVE_HOTFIX.py",
+      "score": 3,
+      "sha256": "f1f830f7b44537ad94f026b79ab42da131d1f84480d1833412240e96f5e72af6"
+    },
+    {
+      "path": "fix_all.sh",
+      "score": 3,
+      "sha256": "aaf4a59c54540be09224ee3af4257bab2f0a031d6db598fe5ca97924337c9f42"
+    },
+    {
+      "path": "lobster_extreme_momentum_engine.py",
+      "score": 3,
+      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
+    },
+    {
+      "path": "tests/test_parliament_contract.py",
+      "score": 3,
+      "sha256": "d18889697651e38cf5e8aae19c194cc5c63aff7b020130a4f94893e9b00caea8"
+    },
+    {
+      "path": "live/quantum_helix_parliament.py",
+      "score": 3,
+      "sha256": "4ebd373408d2cfacbf1ed70b505d111338f2efb834e7d2c93baff90bcd296bfa"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/master_alpha.py",
+      "score": 3,
+      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/profit_max_engine.py",
+      "score": 3,
+      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/lobster_extreme_momentum_engine.py",
+      "score": 3,
+      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/master_alpha.py",
+      "score": 3,
+      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/profit_max_engine.py",
+      "score": 3,
+      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/lobster_extreme_momentum_engine.py",
+      "score": 3,
+      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/master_alpha.py",
+      "score": 3,
+      "sha256": "29ea4d6716b1071910e730ef310f3c121036f2cd8dfe47c3f9824d8692e7dcd6"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/profit_max_engine.py",
+      "score": 3,
+      "sha256": "e33ae2cfb56d6218f9bf32f3ab0f12136ec00a4b8c8850840ec0dbac4a9cb193"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/lobster_extreme_momentum_engine.py",
+      "score": 3,
+      "sha256": "67baf9558121f66779c4518db11718835fff0ef6a9c8f5b10fae775e15288219"
+    },
+    {
+      "path": "engine_live.py",
+      "score": 2,
+      "sha256": "afeed7e61402872ef5b1a9ed57faa422d92edb6cc4b0e856e6f8ac0589175b74"
+    },
+    {
+      "path": "BinanceFuturesEngineCatE.ts",
+      "score": 2,
+      "sha256": "c3c5a6496e5201733bf183989b28320b9f1a5465bb4be0253476e71b9d30d9e5"
+    },
+    {
+      "path": "index.ts",
+      "score": 2,
+      "sha256": "97bcd5edefa7fd6a25d91c0d995e74dd06ec948e89e95a2b4aba94f3db1cef89"
+    },
+    {
+      "path": "alpha_brain.py",
+      "score": 2,
+      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
+    },
+    {
+      "path": "ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "extreme_scanner_omega.py",
+      "score": 2,
+      "sha256": "f3cf149bad25a92fbd885664e5a9f9b3b6d49d82c4eac577c8f3e7e6ef13c831"
+    },
+    {
+      "path": "aggressive_live_engine.py",
+      "score": 2,
+      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
+    },
+    {
+      "path": "honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "runtime/start_testnet.sh",
+      "score": 2,
+      "sha256": "1c03c204b90cd2417503c6b3bf78747dfe83c137472d8d9bdf8ec941b72b6edc"
+    },
+    {
+      "path": "scripts/start_live.sh",
+      "score": 2,
+      "sha256": "81aeaf473663ff8c17f4b5dc5387234fe80fb58fc8aa7d5d656d7f27b41537e6"
+    },
+    {
+      "path": "tests/binance-venue.test.ts",
+      "score": 2,
+      "sha256": "7d72b1af791870f9d042dee6675653bec624cad2f31a4f4d2fc762430dc055ef"
+    },
+    {
+      "path": "tests/test_execution_guard.py",
+      "score": 2,
+      "sha256": "a0a17f14af601b4c2c190fd225b564ff256c7f482be1a82b3f4fa8d605247309"
+    },
+    {
+      "path": "tests/test_omega_guards.py",
+      "score": 2,
+      "sha256": "7d9ccfde5eb1c39cc3767a31505a6145387bde258b61d8f3461ddc9b53ccf08b"
+    },
+    {
+      "path": "live/__init__.py",
+      "score": 2,
+      "sha256": "c12d1bdc063d21884461f8a098dc2ac2294384561ac3983f57bc88ed438461ce"
+    },
+    {
+      "path": "live/live_kernel.py",
+      "score": 2,
+      "sha256": "01ca1e3616f01d46ab018f449f7468b4ace76874224d3a57541ecb8a53593932"
+    },
+    {
+      "path": "live/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "execution/execution_router.ts",
+      "score": 2,
+      "sha256": "5bc0feeae4d0c16a7d4d5cf32a3d24aab47b6ae84d7283dff7d86e19a2ca3f82"
+    },
+    {
+      "path": "accounts/start_all.sh",
+      "score": 2,
+      "sha256": "b305e38dc136dd527c098b2db4d38e75b5b8b1419c2ac5097c7104e55d5fca2c"
+    },
+    {
+      "path": "accounts/ai_parliament.py",
+      "score": 2,
+      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
+    },
+    {
+      "path": "accounts/USDT-1/ai_parliament.py",
+      "score": 2,
+      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
+    },
+    {
+      "path": "accounts/USDT-2/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/USDT-3/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/USDT-4/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/USDT-5/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/COIN-1/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/COIN-2/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/COIN-3/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/COIN-4/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/COIN-5/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "accounts/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/COIN-5/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/COIN-4/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/COIN-3/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/COIN-2/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/COIN-1/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/USDT-5/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/USDT-4/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/USDT-3/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/USDT-2/live/kernel.py",
+      "score": 2,
+      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+    },
+    {
+      "path": "accounts/USDT-1/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "~/backup_sovereign_20260828/sovereign_signer.py",
+      "score": 2,
+      "sha256": "216dcf57630eed99e40f3a361ae339569c0bf748efd676540f8ff08699047d92"
+    },
+    {
+      "path": "backups/final_live_repair_20260911_191534/honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/live_gate_20260911_192103/honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/live_gate_20260911_192509/honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/live_gate_20260911_211401/honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/live_gate_20260912_001923/honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/network_restore_20260910_204437/honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/recovery_20260911_191802/honeycomb_execution_guard.origin.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/recovery_20260911_191802/honeycomb_execution_guard.py",
+      "score": 2,
+      "sha256": "fc3d8142dc06b57f0ed7f930b98c6ea41e3f41ab8b3d2b0d03ade4c8847022ba"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/alpha_brain.py",
+      "score": 2,
+      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_172408/aggressive_live_engine.py",
+      "score": 2,
+      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/alpha_brain.py",
+      "score": 2,
+      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_175753/aggressive_live_engine.py",
+      "score": 2,
+      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/alpha_brain.py",
+      "score": 2,
+      "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
+    },
+    {
+      "path": "backups/full_upgrade_20260913_180236/aggressive_live_engine.py",
+      "score": 2,
+      "sha256": "7efff96bd2cb5163c4ee3bc395e5db55300d7d215ae5e7be17e1e7a1816c74d0"
+    }
+  ]
+}

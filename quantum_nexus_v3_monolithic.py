@@ -157,15 +157,32 @@ class AdaptiveKalmanFilter:
         self.x = self.F @ self.x
         self.P = self.F @ self.P @ self.F.T + self.Q
         z = np.array([[m]])
+        print(f"z shape: {z.shape}, self.H shape: {self.H.shape}, self.x shape: {self.x.shape}")
+        y = z - self.H @ self.x
         S = self.H @ self.P @ self.H.T + self.R
         K = self.P @ self.H.T @ np.linalg.inv(S)
-        y = z - self.H @ self.x
         self.x = self.x + K @ y
-        I = np.eye(2) - K @ self.H
+        I = np.eye(2)
         self.P = I @ self.P @ I.T + K @ self.R @ K.T
-        self._res.append(abs(float(y[0,0])))
+        self.P = (np.eye(2) - K @ self.H) @ self.P
+        self.res.append(abs(float(y[0][0])))
+        print(f"z shape: {z.shape}, self.H shape: {self.H.shape}, self.x shape: {self.x.shape}")
+        return float(self.x[0][0]), float(self.x[1][0]), float(np.trace(self.P))
+
+   #def update(self, m):
+       # self.x = self.F @ self.x
+       # self.P = self.F @ self.P @ self.F.T + self.Q
+       # z = np.array([[m]])
+       # S = self.H @ self.P @ self.H.T + self.R
+       # K = self.P @ self.H.T @ np.linalg.inv(S)
+       # y = z - self.H @ self.x
+       # self.x = self.x + K @ y
+       # I = np.eye(2) - K @ self.H
+       # self.P = I @ self.P @ I.T + K @ self.R @ K.T
+       # self._res.append(abs(float(y[0,0])))
+
         if len(self._res) >= 5:
-            self.R = self.R_base * (1.0 + np.std(list(self._res)) * 10.0)
+         self.R = self.R_base * (1.0 + np.std(list(self._res)) * 10.0)
         return float(self.x[0,0]), float(self.x[1,0]), float(np.trace(self.P))
 
     def predict(self):

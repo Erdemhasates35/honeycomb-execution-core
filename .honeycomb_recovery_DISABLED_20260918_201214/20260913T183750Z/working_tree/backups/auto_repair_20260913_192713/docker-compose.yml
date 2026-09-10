@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: qn_postgres
+    environment:
+      POSTGRES_USER: quantum
+      POSTGRES_PASSWORD: nexus_secure_2024
+      POSTGRES_DB: quantum_nexus
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    command: >
+      postgres -c shared_preload_libraries=timescaledb
+               -c max_connections=200
+               -c shared_buffers=2GB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quantum -d quantum_nexus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: qn_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: qn_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: qn_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=nexus_admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: qn_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+volumes:
+  pg_data:
+  redis_data:
+  ollama_data:
+  grafana_data:
+  prometheus_data:

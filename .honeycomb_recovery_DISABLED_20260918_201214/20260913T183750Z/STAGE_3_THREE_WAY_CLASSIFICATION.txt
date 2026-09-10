@@ -1,0 +1,395 @@
+================================================================================
+HONEYCOMB — STAGE 3 THREE-WAY CLASSIFICATION
+================================================================================
+UTC: 2026-09-13T19:21:58.512917+00:00
+BASE  : 5488b68b11bece74a75cba7c2402d6611513c0d8
+LOCAL : HEAD
+GITHUB: origin/main
+READ ONLY — NO MERGE / CHECKOUT / RESTORE / DELETE
+
+=== KEY FILES ===
+
+[.gitignore]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 07c00f566f515c3ee80b2fc0986d4f9041515c01
+LOCAL_HEAD    = fe19a9eb7372e5a7bf636268162effad6c107fc7
+GITHUB_MAIN   = 07c00f566f515c3ee80b2fc0986d4f9041515c01
+WORKTREE_HASH = 89ca025700ab850dd9c0a60f5fbddf2c9457aa11
+
+[.env.example]
+CLASSIFICATION = GITHUB_ONLY_CHANGE
+WORKTREE       = WORKTREE_EQUALS_HEAD
+BASE          = ad085504d4b8deaa92b52a21572a9c53b198808c
+LOCAL_HEAD    = ad085504d4b8deaa92b52a21572a9c53b198808c
+GITHUB_MAIN   = 7fd9d6da7a88402908ab8c45c81b693ea5c4b556
+WORKTREE_HASH = ad085504d4b8deaa92b52a21572a9c53b198808c
+
+[alpha_core.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = c1675c97e1cdba3364790f6eedfb73de820fdc2b
+LOCAL_HEAD    = a6a9f128f617c2d742504a62464d29b9124412d6
+GITHUB_MAIN   = c1675c97e1cdba3364790f6eedfb73de820fdc2b
+WORKTREE_HASH = 38fe26f04bd46f178a6c72ac5313081e6af7ab1b
+
+[extreme_scanner_engine.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 2e11feee256d0b46ab7a3489a04a6c0d9b343da8
+LOCAL_HEAD    = 5f1c5ffd6e14cd2db5fba47d00260482cde1e181
+GITHUB_MAIN   = 2e11feee256d0b46ab7a3489a04a6c0d9b343da8
+WORKTREE_HASH = ff4c8f09604d526b136d0c7a74afac073fdcb0e0
+
+[extreme_scanner_omega.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 8f0ba172e5ed12e66abc6212bf7a843c4343466d
+LOCAL_HEAD    = 5aea2092678f07fc246b7d10082e04cc8a4de4a6
+GITHUB_MAIN   = 8f0ba172e5ed12e66abc6212bf7a843c4343466d
+WORKTREE_HASH = 7dd0f25b201ffb691e569ff5b2e0d0a3c9a9cc46
+
+[helix_sovereign_pro.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = b8347cc6bdf762279b79472794573934bfba250b
+LOCAL_HEAD    = 3658f7b7cc3955ea55db8f69c89ebcbcffcd39e3
+GITHUB_MAIN   = b8347cc6bdf762279b79472794573934bfba250b
+WORKTREE_HASH = 8f48a30921ecdc44fbf1a1f39f26ae2d37d1de76
+
+[live/__init__.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = bfbe696986616c77c772c3904c18297055d0738c
+LOCAL_HEAD    = b92f9af310de4405bc604664d6d9bffd3e7b287a
+GITHUB_MAIN   = bfbe696986616c77c772c3904c18297055d0738c
+WORKTREE_HASH = 4431d0188bcfd43616cdab9839c6bce51d1376f9
+
+[live/kernel.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 2c5106525f53877fb04d42b730c60a2ea290c2a9
+LOCAL_HEAD    = 5a6b8c9498739547dadea0d11bfa73b466dd1be5
+GITHUB_MAIN   = 2c5106525f53877fb04d42b730c60a2ea290c2a9
+WORKTREE_HASH = df8b3da8afe130b9454a731a5a82082fbd90d5b3
+
+[live/kernel_hardened_sign.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 3ff12a7040d65c20944ec6ead740bb9d5c6258cf
+LOCAL_HEAD    = eafb12b7ee9ba2b4a567a80437133ce3cce1eb1c
+GITHUB_MAIN   = 3ff12a7040d65c20944ec6ead740bb9d5c6258cf
+WORKTREE_HASH = 8658f3d0dae255384327b4128ae27a713d6a2573
+
+[orchestrator/control_plane.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_EQUALS_HEAD
+BASE          = cf557a367c081b9e025808070bc54ac2465a56df
+LOCAL_HEAD    = 7933b927a8132455fcc73c68079ebd232e113600
+GITHUB_MAIN   = cf557a367c081b9e025808070bc54ac2465a56df
+WORKTREE_HASH = 7933b927a8132455fcc73c68079ebd232e113600
+
+[orchestrator/registry.json]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 78ae902a660c0df24247b421b2e6c49dcf4fbf8a
+LOCAL_HEAD    = 315623164bc8333077a77e18834a40547c457d09
+GITHUB_MAIN   = 78ae902a660c0df24247b421b2e6c49dcf4fbf8a
+WORKTREE_HASH = a35868b5d8bec5916fa4ca12a584762cf01e9146
+
+[profit_economics.py]
+CLASSIFICATION = GITHUB_ONLY_CHANGE
+WORKTREE       = WORKTREE_EQUALS_HEAD
+BASE          = f09df5f2c01a3c642312435e31a70f47878aab94
+LOCAL_HEAD    = f09df5f2c01a3c642312435e31a70f47878aab94
+GITHUB_MAIN   = 4ea39a0fbb1578eca548ba1356f32b53ff55dfef
+WORKTREE_HASH = f09df5f2c01a3c642312435e31a70f47878aab94
+
+[quantum_nexus_v3_monolithic.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 2d4f39fadf6fbb43a7f616beb39103b52ddf1352
+LOCAL_HEAD    = 46f570f6fe1c0d75138c68030dab796fb79f7388
+GITHUB_MAIN   = 2d4f39fadf6fbb43a7f616beb39103b52ddf1352
+WORKTREE_HASH = 91678e82d47b11713bee63389fbb6273147708bd
+
+[sovereign_live.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = None
+LOCAL_HEAD    = 9844f6e155aec8504dd83441757ad2356f00454f
+GITHUB_MAIN   = None
+WORKTREE_HASH = 1d84d3de262b7e07f0c59b4dc1700b15619dd256
+
+[sovereign_parliament_engine.py]
+CLASSIFICATION = LOCAL_COMMIT_ONLY_CHANGE
+WORKTREE       = WORKTREE_MODIFIED
+BASE          = 683374a5d1ebb0174ff9c97c614412f3551e5e0d
+LOCAL_HEAD    = 38f17c4e8613cebf6c6fb376c61b05dfc1f8b416
+GITHUB_MAIN   = 683374a5d1ebb0174ff9c97c614412f3551e5e0d
+WORKTREE_HASH = 683374a5d1ebb0174ff9c97c614412f3551e5e0d
+
+[adaptive_profit_runtime.py]
+CLASSIFICATION = GITHUB_ONLY_CHANGE
+WORKTREE       = WORKTREE_EQUALS_HEAD
+BASE          = None
+LOCAL_HEAD    = None
+GITHUB_MAIN   = fd4c40c275423b3f55fbf446051e27976ce0c6e1
+WORKTREE_HASH = None
+
+=== ALL TRACKED FILES: LOCAL vs GITHUB ===
+M	.env.example
+M	.gitignore
+D	.gitignore.backup.20260910_045036
+D	.honeycomb_runtime/binance_guard.json
+D	.honeycomb_runtime/binance_guard.lock
+D	.honeycomb_runtime/binance_market_ws.lock
+D	.honeycomb_runtime/pre_final_local_changes.diff
+D	.honeycomb_runtime/pre_final_status.txt
+D	0
+D	ATLAS_QUANTUM_CORE.py
+D	accounts/COIN-1/ai_parliament.py
+D	accounts/COIN-1/alpha_core.py
+D	accounts/COIN-1/audit_ledger.jsonl
+D	accounts/COIN-1/live/__init__.py
+D	accounts/COIN-1/live/kernel.py
+D	accounts/COIN-1/sovereign_parliament_engine.py
+D	accounts/COIN-2/ai_parliament.py
+D	accounts/COIN-2/alpha_core.py
+D	accounts/COIN-2/audit_ledger.jsonl
+D	accounts/COIN-2/live/__init__.py
+D	accounts/COIN-2/live/kernel.py
+D	accounts/COIN-2/sovereign_parliament_engine.py
+D	accounts/COIN-3/ai_parliament.py
+D	accounts/COIN-3/alpha_core.py
+D	accounts/COIN-3/audit_ledger.jsonl
+D	accounts/COIN-3/live/__init__.py
+D	accounts/COIN-3/live/kernel.py
+D	accounts/COIN-3/sovereign_parliament_engine.py
+D	accounts/COIN-4/ai_parliament.py
+D	accounts/COIN-4/alpha_core.py
+D	accounts/COIN-4/audit_ledger.jsonl
+D	accounts/COIN-4/live/__init__.py
+D	accounts/COIN-4/live/kernel.py
+D	accounts/COIN-4/sovereign_parliament_engine.py
+D	accounts/COIN-5/ai_parliament.py
+D	accounts/COIN-5/alpha_core.py
+D	accounts/COIN-5/audit_ledger.jsonl
+D	accounts/COIN-5/live/__init__.py
+D	accounts/COIN-5/live/kernel.py
+D	accounts/COIN-5/sovereign_parliament_engine.py
+D	accounts/USDT-1/ai_parliament.py
+D	accounts/USDT-1/alpha_core.py
+D	accounts/USDT-1/audit_ledger.jsonl
+D	accounts/USDT-1/live/__init__.py
+D	accounts/USDT-1/live/kernel.py
+D	accounts/USDT-1/sovereign_parliament_engine.py
+D	accounts/USDT-2/ai_parliament.py
+D	accounts/USDT-2/alpha_core.py
+D	accounts/USDT-2/audit_ledger.jsonl
+D	accounts/USDT-2/live/__init__.py
+D	accounts/USDT-2/live/kernel.py
+D	accounts/USDT-2/sovereign_parliament_engine.py
+D	accounts/USDT-3/ai_parliament.py
+D	accounts/USDT-3/alpha_core.py
+D	accounts/USDT-3/audit_ledger.jsonl
+D	accounts/USDT-3/live/__init__.py
+D	accounts/USDT-3/live/kernel.py
+D	accounts/USDT-3/sovereign_parliament_engine.py
+D	accounts/USDT-4/ai_parliament.py
+D	accounts/USDT-4/alpha_core.py
+D	accounts/USDT-4/audit_ledger.jsonl
+D	accounts/USDT-4/live/__init__.py
+D	accounts/USDT-4/live/kernel.py
+D	accounts/USDT-4/sovereign_parliament_engine.py
+D	accounts/USDT-5/ai_parliament.py
+D	accounts/USDT-5/alpha_core.py
+D	accounts/USDT-5/audit_ledger.jsonl
+D	accounts/USDT-5/live/__init__.py
+D	accounts/USDT-5/live/kernel.py
+D	accounts/USDT-5/sovereign_parliament_engine.py
+D	accounts/ai_parliament.py
+D	accounts/alpha_core.py
+D	accounts/audit_ledger.jsonl
+D	accounts/install5.sh
+D	accounts/install6.sh
+D	accounts/install_part2.sh
+D	accounts/live/__init__.py
+D	accounts/live/kernel.py
+D	accounts/manage.sh
+D	accounts/sovereign_parliament_engine.py
+D	accounts/start_all.sh
+D	accounts/status_all.sh
+D	accounts/stop_all.sh
+A	adaptive_profit_runtime.py
+D	ai_parliament.py
+M	ai_sovereign_engine.py
+M	alpha_core.py
+D	alpha_core.py.pre_final_hotfix.20260910_153035
+D	audit_ledger.jsonl
+D	backups/final_live_repair_20260911_191534/binance_endpoint_failover.py
+D	backups/final_live_repair_20260911_191534/honeycomb_execution_guard.py
+D	backups/final_live_repair_20260911_191534/kernel.py
+D	backups/final_live_repair_20260911_191534/protection_bridge.py
+D	backups/final_live_repair_20260911_191534/sitecustomize.py
+D	backups/kernel.py.before-network-20260910_173612
+D	backups/live_gate_20260911_192103/binance_endpoint_failover.py
+D	backups/live_gate_20260911_192103/honeycomb_execution_guard.py
+D	backups/live_gate_20260911_192103/protection_bridge.py
+D	backups/live_gate_20260911_192103/sitecustomize.py
+D	backups/live_gate_20260911_192509/binance_endpoint_failover.py
+D	backups/live_gate_20260911_192509/honeycomb_execution_guard.py
+D	backups/live_gate_20260911_192509/protection_bridge.py
+D	backups/live_gate_20260911_192509/sitecustomize.py
+D	backups/live_gate_20260911_211401/binance_endpoint_failover.py
+D	backups/live_gate_20260911_211401/honeycomb_execution_guard.py
+D	backups/live_gate_20260911_211401/protection_bridge.py
+D	backups/live_gate_20260911_211401/sitecustomize.py
+D	backups/live_gate_20260912_001923/binance_endpoint_failover.py
+D	backups/live_gate_20260912_001923/honeycomb_execution_guard.py
+D	backups/live_gate_20260912_001923/protection_bridge.py
+D	backups/live_gate_20260912_001923/sitecustomize.py
+D	backups/network_restore_20260910_204437/binance_endpoint_failover.py
+D	backups/network_restore_20260910_204437/honeycomb_execution_guard.py
+D	backups/network_restore_20260910_204437/sitecustomize.py
+D	backups/recovery_20260911_191802/binance_endpoint_failover.origin.py
+D	backups/recovery_20260911_191802/binance_endpoint_failover.py
+D	backups/recovery_20260911_191802/honeycomb_execution_guard.origin.py
+D	backups/recovery_20260911_191802/honeycomb_execution_guard.py
+D	backups/recovery_20260911_191802/kernel.py
+D	backups/recovery_20260911_191802/protection_bridge.origin.py
+D	backups/recovery_20260911_191802/protection_bridge.py
+D	backups/recovery_20260911_191802/sitecustomize.py
+M	dashboard/index.html
+A	docs/PROFIT_MAXIMIZATION_REVIEW_2026-09-12.md
+M	extreme_scanner_engine.py
+M	extreme_scanner_omega.py
+D	fix_all.sh
+D	fix_kernel.sh
+D	fix_omega_scanner.sh
+M	helix_sovereign_pro.py
+D	helix_sovereign_pro.py.bak
+D	helix_sovereign_pro.py.bak.20260901_084818
+D	helix_sovereign_pro.py.bak.20260901_085055
+D	helix_sovereign_pro.py.bak.20260910_082548
+D	helix_sovereign_pro.py.bak.ATR.20260901_085317
+D	helix_sovereign_pro.py.bak.ATR.20260910_082759
+D	helix_sovereign_pro.py.bozuk-1788199527
+D	install5.sh
+D	install6.sh
+D	install_par2.sh
+D	install_part.sh
+D	install_part1.sh
+D	install_part2.sh
+D	install_part3.sh
+D	install_sovaring_parlamet.py
+D	install_sovaring_parlamet.sh
+D	install_sovereign_parliament.sh
+D	install_sovereign_parliament2.sh
+D	live/.github/workflows/quantum-nexus-industrial-core.yml
+D	"live/\\~/.honeycomb_runtime/audit_ledger.jsonl"
+M	live/__init__.py
+D	live/__init__.py.bak
+D	live/__init__.py.bak.1788898484
+D	live/__init__.py.bak.1788978646
+D	live/ai_parliament.py
+D	live/alpha_core.py
+D	live/audit_ledger.jsonl
+D	live/desk_state.json
+D	live/engine_scalp_tn2.py
+D	live/init.py
+D	live/install_part1.sh
+D	live/install_part2.sh
+D	live/install_sovereign_parliament.sh
+D	live/install_sovereign_parliament2.sh
+M	live/kernel.py
+D	live/kernel.py.bak
+D	live/kernel.py.bak.1788879071
+D	live/kernel.py.bak.1788879242
+D	live/kernel.py.bak.1788879251
+D	live/kernel.py.bak.1788879937
+D	live/kernel.py.bak.1788880078
+D	live/kernel.py.bak.1788881727
+D	live/kernel.py.bak.1788881836
+D	live/kernel.py.bak.1788881932
+D	live/kernel.py.bak.1788881945
+D	live/kernel.py.bak.1788883461
+D	live/kernel.py.bak.1789039163
+D	live/kernel.py.broken.1789013299
+D	live/kernel.py.broken.1789013342
+D	live/kernel.py.broken.1789014310
+D	live/kernel.py.broken.1789039345
+D	live/kernel.py.pre_final_hotfix.20260910_153035
+D	live/kernel.py.pre_network_final.20260910_204459
+D	live/kernel.py.pre_network_repair.20260910_173616
+D	live/kernel.py.pre_network_repair.20260911_002632
+M	live/kernel_hardened_sign.py
+D	live/live_kernel.py
+D	live/quantum_helix_parliament.py
+D	live/sovereign_parliament_engine.py
+D	lobster_extreme_momentum_engine.py.pre_final_hotfix.20260910_153035
+D	manage.sh
+D	omega_api_patch.py
+M	orchestrator/control_plane.py
+M	orchestrator/registry.json
+M	profit_economics.py
+M	quantum_nexus_v3_monolithic.py
+M	reports/quality-gate.json
+M	run_aggressive_live.sh
+A	run_full_profit_repair.sh
+M	run_lobster_live.sh
+A	run_repo_integrity_repair.sh
+D	scanner_audit_ledger.jsonl
+D	scanner_omega_audit.jsonl
+A	scripts/full_repo_integrity_profit_upgrade.sh
+D	scripts/online.sh
+A	scripts/repo_integrity_profit_repair.py
+D	scripts/start_control_plane.sh
+D	scripts/start_live.sh
+D	scripts/start_testnet.sh
+D	scripts/sync_all.sh
+D	scripts/testnet_auth_probe.py
+D	scripts/verify_control_plane.sh
+D	sovereign_live.py
+M	sovereign_parliament_engine.py
+D	~/.honeycomb_sf.lock
+D	~/honeycomb-execution-core/ai_sovereign_engine.py
+
+=== LOCAL WORKTREE MODIFICATIONS ===
+M .gitignore
+ M .honeycomb_runtime/binance_guard.json
+ M alpha_core.py
+ M extreme_scanner_engine.py
+ M extreme_scanner_omega.py
+ M helix_sovereign_pro.py
+ M live/__init__.py
+ M live/kernel.py
+ M live/kernel_hardened_sign.py
+ M orchestrator/registry.json
+ D quantum_nexus_v3.db-shm
+ D quantum_nexus_v3.db-wal
+ M quantum_nexus_v3_monolithic.py
+ M sovereign_live.py
+ M sovereign_parliament_engine.py
+
+=== CRITICAL DECISION SET ===
+.gitignore :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+.env.example :: GITHUB_ONLY_CHANGE :: WORKTREE_EQUALS_HEAD
+alpha_core.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+extreme_scanner_engine.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+extreme_scanner_omega.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+helix_sovereign_pro.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+live/__init__.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+live/kernel.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+live/kernel_hardened_sign.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+orchestrator/control_plane.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_EQUALS_HEAD
+orchestrator/registry.json :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+profit_economics.py :: GITHUB_ONLY_CHANGE :: WORKTREE_EQUALS_HEAD
+quantum_nexus_v3_monolithic.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+sovereign_live.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+sovereign_parliament_engine.py :: LOCAL_COMMIT_ONLY_CHANGE :: WORKTREE_MODIFIED
+adaptive_profit_runtime.py :: GITHUB_ONLY_CHANGE :: WORKTREE_EQUALS_HEAD
+
+================================================================================
+END STAGE 3
+================================================================================

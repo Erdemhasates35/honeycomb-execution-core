@@ -1,0 +1,333 @@
+#!/data/data/com.termux/files/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""
+ALPHA BRAIN v1 - Agresif, gerçek veri, öğrenmeli
+Canlı motor tarafından import edilir.
+Mock / sahte log yoktur.
+"""
+
+import time, json, urllib.request, sqlite3, os, math
+from collections import defaultdict
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brain_master.db")
+CACHE_TTL = 25          # saniye
+MIN_CONFIDENCE = 58          # gevşetildi
+LOW_VOL_CONF = 54     # bu skorun altını motora verme
+
+# Ağırlıklar (öğrenme ile değişir)
+DEFAULT_WEIGHTS = {
+    "ema_trend": 1.4,
+    "rsi": 1.1,
+    "macd": 1.2,
+    "volume": 1.0,
+    "momentum": 0.9,
+    "supertrend": 1.3,
+    "atr_ok": 0.8,
+}
+
+# ==================== DB ====================
+def _conn():
+    return sqlite3.connect(DB_PATH, timeout=10)
+
+def init_db():
+    with _conn() as c:
+        c.executescript("""
+            CREATE TABLE IF NOT EXISTS weights(
+                key TEXT PRIMARY KEY, value REAL
+            );
+            CREATE TABLE IF NOT EXISTS outcomes(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts INTEGER, symbol TEXT, side TEXT,
+                confidence REAL, net_pnl REAL, reason TEXT
+            );
+            CREATE TABLE IF NOT EXISTS kline_cache(
+                symbol TEXT, interval TEXT, ts INTEGER, data TEXT,
+                PRIMARY KEY(symbol, interval)
+            );
+        """)
+        for k, v in DEFAULT_WEIGHTS.items():
+            c.execute("INSERT OR IGNORE INTO weights(key,value) VALUES(?,?)", (k, v))
+        c.commit()
+
+def get_weight(key):
+    with _conn() as c:
+        row = c.execute("SELECT value FROM weights WHERE key=?", (key,)).fetchone()
+        return float(row[0]) if row else DEFAULT_WEIGHTS.get(key, 1.0)
+
+def set_weight(key, value):
+    value = max(0.3, min(2.5, value))
+    with _conn() as c:
+        c.execute("INSERT OR REPLACE INTO weights(key,value) VALUES(?,?)", (key, value))
+        c.commit()
+
+def record_outcome(symbol, side, confidence, net_pnl, reason):
+    with _conn() as c:
+        c.execute("INSERT INTO outcomes(ts,symbol,side,confidence,net_pnl,reason) VALUES(?,?,?,?,?,?)",
+                   (int(time.time()), symbol, side, confidence, net_pnl, reason[:200]))
+        c.commit()
+    # Basit öğrenme: kazanan sinyallerde ilgili ağırlıkları artır
+    if net_pnl > 0 and confidence >= 60:
+        for k in ["ema_trend", "macd", "supertrend"]:
+            set_weight(k, get_weight(k) * 1.03)
+    elif net_pnl < 0 and confidence >= 60:
+        for k in ["ema_trend", "rsi", "volume"]:
+            set_weight(k, get_weight(k) * 0.97)
+
+init_db()
+
+# ==================== VERİ ====================
+_kline_mem = {}
+
+def fetch_klines(symbol, interval="1m", limit=80):
+    key = "%s_%s" % (symbol, interval)
+    now = time.time()
+    if key in _kline_mem and now - _kline_mem[key][0] < CACHE_TTL:
+        return _kline_mem[key][1]
+
+    try:
+        url = "https://fapi.binance.com/fapi/v1/klines?symbol=%s&interval=%s&limit=%d" % (symbol, interval, limit)
+        req = urllib.request.Request(url, headers={"User-Agent": "alpha-brain"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            raw = json.loads(r.read().decode("utf-8"))
+        closes = [float(x[4]) for x in raw]
+        volumes = [float(x[5]) for x in raw]
+        highs = [float(x[2]) for x in raw]
+        lows = [float(x[3]) for x in raw]
+        data = {"c": closes, "v": volumes, "h": highs, "l": lows}
+        _kline_mem[key] = (now, data)
+        return data
+    except Exception as e:
+        return None
+
+# ==================== İNDİKATÖRLER ====================
+def ema(arr, period):
+    if len(arr) < period:
+        return None
+    k = 2.0 / (period + 1)
+    v = sum(arr[:period]) / period
+    for x in arr[period:]:
+        v = x * k + v * (1 - k)
+    return v
+
+def rsi(arr, period=14):
+    if len(arr) < period + 1:
+        return None
+    gains, losses = [], []
+    for i in range(1, len(arr)):
+        d = arr[i] - arr[i-1]
+        gains.append(max(d, 0.0))
+        losses.append(max(-d, 0.0))
+    ag = sum(gains[-period:]) / period
+    al = sum(losses[-period:]) / period
+    if al == 0:
+        return 100.0
+    return 100.0 - (100.0 / (1.0 + ag / al))
+
+def atr(highs, lows, closes, period=14):
+    if len(closes) < period + 1:
+        return None
+    trs = []
+    for i in range(1, len(closes)):
+        tr = max(highs[i] - lows[i], abs(highs[i] - closes[i-1]), abs(lows[i] - closes[i-1]))
+        trs.append(tr)
+    return sum(trs[-period:]) / period
+
+def macd_hist(closes, fast=12, slow=26, signal=9):
+    if len(closes) < slow + signal:
+        return None
+    ef = ema(closes, fast)
+    es = ema(closes, slow)
+    if ef is None or es is None:
+        return None
+    # Basitleştirilmiş: son macd değeri
+    macd_line = ef - es
+    return macd_line
+
+def momentum(closes, period=10):
+    if len(closes) < period + 1:
+        return None
+    return (closes[-1] - closes[-period-1]) / closes[-period-1] * 100
+
+def supertrend_dir(highs, lows, closes, period=10, mult=3.0):
+    """Basit Supertrend yönü: 1 = yukarı, -1 = aşağı"""
+    if len(closes) < period + 2:
+        return 0
+    a = atr(highs, lows, closes, period)
+    if a is None:
+        return 0
+    hl2 = (highs[-1] + lows[-1]) / 2
+    upper = hl2 + mult * a
+    lower = hl2 - mult * a
+    if closes[-1] > upper:
+        return 1
+    if closes[-1] < lower:
+        return -1
+    # önceki kapanışa bak
+    if closes[-1] > closes[-2]:
+        return 1
+    return -1
+
+# ==================== ANALİZ ====================
+def analyze_tf(symbol, interval):
+    data = fetch_klines(symbol, interval, 80)
+    if not data or len(data["c"]) < 40:
+        return None
+
+    c, v, h, l = data["c"], data["v"], data["h"], data["l"]
+    e9 = ema(c, 9)
+    e21 = ema(c, 21)
+    e55 = ema(c, 55)
+    r = rsi(c, 14)
+    a = atr(h, l, c, 14)
+    mom = momentum(c, 10)
+    macd = macd_hist(c)
+    st = supertrend_dir(h, l, c)
+
+    if None in (e9, e21, e55, r, a, mom):
+        return None
+
+    atr_pct = (a / c[-1]) * 100
+    vol_avg = sum(v[-20:]) / 20
+    vol_ratio = v[-1] / vol_avg if vol_avg > 0 else 1.0
+
+    score = 0.0
+    reasons = []
+
+    # EMA Trend
+    w = get_weight("ema_trend")
+    if e9 > e21 > e55:
+        score += 28 * w
+        reasons.append("EMA yükseliş")
+    elif e9 < e21 < e55:
+        score -= 28 * w
+        reasons.append("EMA düşüş")
+    elif e9 > e21:
+        score += 12 * w
+        reasons.append("EMA kısa yukarı")
+    elif e9 < e21:
+        score -= 12 * w
+        reasons.append("EMA kısa aşağı")
+
+    # RSI
+    w = get_weight("rsi")
+    if 45 <= r <= 68:
+        score += 14 * w
+        reasons.append("RSI nötr-güçlü %.0f" % r)
+    elif r > 72:
+        score -= 10 * w
+        reasons.append("RSI aşırı alım %.0f" % r)
+    elif r < 28:
+        score += 8 * w
+        reasons.append("RSI aşırı satım %.0f" % r)
+    elif r < 40:
+        score -= 6 * w
+
+    # MACD
+    w = get_weight("macd")
+    if macd is not None:
+        if macd > 0:
+            score += 12 * w
+            reasons.append("MACD pozitif")
+        else:
+            score -= 12 * w
+            reasons.append("MACD negatif")
+
+    # Volume
+    w = get_weight("volume")
+    if vol_ratio >= 1.15:
+        score += 11 * w
+        reasons.append("Hacim yüksek x%.1f" % vol_ratio)
+    elif vol_ratio < 0.7:
+        score -= 8 * w
+        reasons.append("Hacim zayıf")
+
+    # Momentum
+    w = get_weight("momentum")
+    if mom > 0.35:
+        score += 10 * w
+        reasons.append("Momentum +%.2f" % mom)
+    elif mom < -0.35:
+        score -= 10 * w
+        reasons.append("Momentum %.2f" % mom)
+
+    # Supertrend
+    w = get_weight("supertrend")
+    if st == 1:
+        score += 15 * w
+        reasons.append("Supertrend yukarı")
+    elif st == -1:
+        score -= 15 * w
+        reasons.append("Supertrend aşağı")
+
+    # ATR filtresi (çok düşük volatilite cezası)
+    w = get_weight("atr_ok")
+    if atr_pct < 0.04:
+        score *= 0.55
+        reasons.append("ATR çok düşük %.3f" % atr_pct)
+    elif atr_pct > 0.25:
+        score += 5 * w
+
+    # Normalize roughly to -100..+100 then to confidence later
+    return {
+        "score": score,
+        "atr_pct": atr_pct,
+        "rsi": r,
+        "reasons": reasons,
+        "interval": interval
+    }
+
+def get_master_signal(symbol):
+    """
+    Ana giriş noktası + Düşük Volatilite Modu
+    Döner: (side, confidence, detail_text, low_vol_flag)
+    """
+    tfs = ["1m", "5m", "15m"]
+    results = {}
+    for tf in tfs:
+        res = analyze_tf(symbol, tf)
+        if res:
+            results[tf] = res
+
+    if len(results) < 2:
+        return None, 0, "yetersiz timeframe verisi", False
+
+    total = 0.0
+    weight_sum = 0.0
+    all_reasons = []
+    atr_vals = []
+    for tf, res in results.items():
+        w = {"1m": 0.25, "5m": 0.35, "15m": 0.40}.get(tf, 0.3)
+        total += res["score"] * w
+        weight_sum += w
+        atr_vals.append(res.get("atr_pct", 0.1))
+        all_reasons.extend(["[%s] %s" % (tf, r) for r in res["reasons"][:2]])
+
+    if weight_sum == 0:
+        return None, 0, "skor hesaplanamadı", False
+
+    avg = total / weight_sum
+    avg_atr = sum(atr_vals) / len(atr_vals) if atr_vals else 0.1
+    low_vol = avg_atr < 0.045
+
+    # Confidence
+    confidence = max(0, min(100, 50 + avg * 0.9))
+    min_conf = 54 if low_vol else 58
+
+    side = None
+    if avg >= 14 and confidence >= min_conf:          # biraz gevşetildi
+        side = "LONG"
+    elif avg <= -14 and confidence >= min_conf:
+        side = "SHORT"
+
+    detail = " | ".join(all_reasons[:6])
+    mode = "DUSUK-VOL" if low_vol else "NORMAL"
+    if side:
+        detail = "%s | %s | Güven:%.0f | ATR%%:%.3f | %s" % (side, mode, confidence, avg_atr, detail)
+    else:
+        detail = "Sinyal yok (%s skor:%.1f güven:%.0f ATR%%:%.3f) %s" % (mode, avg, confidence, avg_atr, detail)
+
+    return side, confidence, detail, low_vol
+
+# Motorun kapanıştan sonra çağırabileceği öğrenme fonksiyonu
+def brain_learn(symbol, side, confidence, net_pnl, reason=""):
+    record_outcome(symbol, side, confidence, net_pnl, reason)

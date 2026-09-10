@@ -1,0 +1,12 @@
+{
+  "soft_lock": true,
+  "lock_cooldown_sec": 300,
+  "escalation": [
+    300,
+    900,
+    3600
+  ],
+  "min_score_threshold": 20.0,
+  "highvol_hard_block": true,
+  "max_trades_per_hour": 12
+}

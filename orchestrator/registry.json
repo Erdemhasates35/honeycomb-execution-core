@@ -16,43 +16,233 @@
   "engines": [
     {
       "path": "bootstrap_honeycomb_control_plane.sh",
-      "score": 10,
+      "score": 8,
       "sha256": "183c122fffabc84903c275771629f21a9976fcf28747ecf16a8b6ba8f2a693e5"
     },
     {
       "path": "orchestrator/control_plane.py",
-      "score": 10,
-      "sha256": "59b81ef4bac03743f21543c5af06fdb607c2b4b695feb9feb799a8698455e3f1"
+      "score": 8,
+      "sha256": "fa41b670f55012799f2ca61fbc942123bdf09f15d2499ee7897f25715b1dc49b"
+    },
+    {
+      "path": "helix_sovereign_pro.py",
+      "score": 6,
+      "sha256": "8953cb48e565d05cb46d34591406f37d1315f3c2af1aa4867fe3f692d0f466ec"
+    },
+    {
+      "path": "install_part1.sh",
+      "score": 6,
+      "sha256": "fffbcab79cb7e4ef75298a7758e733395519a303f308a0bb896abbeef9b18d5f"
+    },
+    {
+      "path": "install_sovereign_parliament2.sh",
+      "score": 6,
+      "sha256": "d97f1699e35ae6d98bda170993abad912bde2a07ed73e0675d7594cbf0de6d30"
+    },
+    {
+      "path": "install_part.sh",
+      "score": 6,
+      "sha256": "fffbcab79cb7e4ef75298a7758e733395519a303f308a0bb896abbeef9b18d5f"
+    },
+    {
+      "path": "live/install_sovereign_parliament2.sh",
+      "score": 6,
+      "sha256": "d97f1699e35ae6d98bda170993abad912bde2a07ed73e0675d7594cbf0de6d30"
+    },
+    {
+      "path": "live/install_part1.sh",
+      "score": 6,
+      "sha256": "f70b386e13bc2fb86747c73b96b15fae260e021babd03080856e5a9f9968e74a"
+    },
+    {
+      "path": "live/engine_scalp_tn2.py",
+      "score": 6,
+      "sha256": "5d26547a9d1358f1e4c082165e218baed0216e5dd2c36c0795899dba43395b03"
+    },
+    {
+      "path": "accounts/install5.sh",
+      "score": 6,
+      "sha256": "fffbcab79cb7e4ef75298a7758e733395519a303f308a0bb896abbeef9b18d5f"
     },
     {
       "path": "engine_live2.py",
-      "score": 6,
+      "score": 5,
       "sha256": "d44a4b8a9b4474039037141fc1260dcc562c62d7f2529830dcd52879c7b828e6"
     },
     {
-      "path": "nexus-cli.tsx",
+      "path": "install_sovereign_parliament.sh",
       "score": 5,
-      "sha256": "9367ef048e1fa97db6af13906ed798e3c156687c5792386493b4a49d6816d69a"
+      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
     },
     {
-      "path": "nexus_engine_audit.sh",
+      "path": "alpha_core.py",
       "score": 5,
-      "sha256": "0ddedd3c0a7a690cd20fe5bbbe681362de3fc13129bb759a15a532b39263a74e"
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
     },
     {
-      "path": "nexus_full_sync.sh",
+      "path": "sovereign_parliament_engine.py",
       "score": 5,
-      "sha256": "17d4c46264a7af4329f8d0c7e7e4af6e575362cf418bd3fb39782f753aed73db"
+      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
+    },
+    {
+      "path": "install5.sh",
+      "score": 5,
+      "sha256": "a8da491bfc4f6f12aca8811a393af23a93d8211feb8ad226f3a67e2acb647d38"
+    },
+    {
+      "path": "install_par2.sh",
+      "score": 5,
+      "sha256": "96e39f00b81268a7a7037bc66fd99f2ab8bc8761aafbca54cc74d84bb043909a"
+    },
+    {
+      "path": "install6.sh",
+      "score": 5,
+      "sha256": "98fda8a3b15cea4b33abf66e84cef422239974767a18ebd13f9724373359de62"
+    },
+    {
+      "path": "live/install_sovereign_parliament.sh",
+      "score": 5,
+      "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
+    },
+    {
+      "path": "live/alpha_core.py",
+      "score": 5,
+      "sha256": "41da620a3b011ac900e8308d160f24678bcd74cf0a30437f2cacce3634b3b2cb"
+    },
+    {
+      "path": "live/install_part2.sh",
+      "score": 5,
+      "sha256": "e90dfa40c3591a4bd29b4d7320721085f6dff5b31f15a3e177b96e1387a8164d"
+    },
+    {
+      "path": "accounts/install6.sh",
+      "score": 5,
+      "sha256": "98fda8a3b15cea4b33abf66e84cef422239974767a18ebd13f9724373359de62"
+    },
+    {
+      "path": "accounts/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
+    },
+    {
+      "path": "accounts/USDT-1/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/USDT-1/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/USDT-2/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/USDT-2/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/USDT-3/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/USDT-3/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/USDT-4/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/USDT-4/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/USDT-5/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/USDT-5/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/COIN-1/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/COIN-1/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/COIN-2/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/COIN-2/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/COIN-3/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/COIN-3/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/COIN-4/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/COIN-4/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "accounts/COIN-5/alpha_core.py",
+      "score": 5,
+      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+    },
+    {
+      "path": "accounts/COIN-5/sovereign_parliament_engine.py",
+      "score": 5,
+      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
+    },
+    {
+      "path": "nexus_futures_engine.ts",
+      "score": 4,
+      "sha256": "939341564552825d20bef9218ecdfb6e43f7ef569c860b0283377eac6437b265"
+    },
+    {
+      "path": "engine_scalp_tn.py",
+      "score": 4,
+      "sha256": "4b81117cc1201e918335ce0d2fb922f226e35c330a2b9c69b1bd001e50359e4e"
     },
     {
       "path": "verify2.ts",
-      "score": 5,
-      "sha256": "9c5db353624a1e7a327d11c084ae542de83400d01ab6917e40bf8822b199a7ac"
-    },
-    {
-      "path": "HelixSovereignEngine.ts",
       "score": 4,
-      "sha256": "dd21d0ffc8e343e276e2a3228b038a15846cc9b8d3cf0728619572006e073bc6"
+      "sha256": "9c5db353624a1e7a327d11c084ae542de83400d01ab6917e40bf8822b199a7ac"
     },
     {
       "path": "engine_alpha.py",
@@ -65,34 +255,59 @@
       "sha256": "a046b9990a6aef89f19adbf0f4550319a6055a67adba44c70f15194a92455524"
     },
     {
-      "path": "engine_scalp_tn.py",
-      "score": 4,
-      "sha256": "4b81117cc1201e918335ce0d2fb922f226e35c330a2b9c69b1bd001e50359e4e"
-    },
-    {
-      "path": "nexus_futures_engine.ts",
-      "score": 4,
-      "sha256": "939341564552825d20bef9218ecdfb6e43f7ef569c860b0283377eac6437b265"
-    },
-    {
       "path": "repair_and_testnet_order.sh",
       "score": 4,
       "sha256": "4dab4accd509532ee224416ae6e26f24efb0eae5a6111edf3a9235d30db750e8"
     },
     {
-      "path": "verify.ts",
+      "path": "nexus_full_sync.sh",
       "score": 4,
-      "sha256": "96f076cd600846cf8d316476366756162b04f8c67bc981ac30ff8c3df8fd7730"
+      "sha256": "17d4c46264a7af4329f8d0c7e7e4af6e575362cf418bd3fb39782f753aed73db"
     },
     {
-      "path": "CatEofUsdcFuturesEngine.ts",
-      "score": 3,
-      "sha256": "01bec8651cc485e0819737a645f908888db8d8a12c9cb0406aecf35e7bd7395b"
+      "path": "nexus_engine_audit.sh",
+      "score": 4,
+      "sha256": "0ddedd3c0a7a690cd20fe5bbbe681362de3fc13129bb759a15a532b39263a74e"
     },
     {
-      "path": "aggressive_futures_bot.py",
-      "score": 3,
-      "sha256": "539fba081c743e4b8598b6bfa212644e6bd66379dfac3a6110cf9d760e588d5c"
+      "path": "ai_sovereign_engine.py",
+      "score": 4,
+      "sha256": "652d44fc2a59f712d14999d8c8c0b0822442a7cbe8ee4ed3626f2a69e19e6f8d"
+    },
+    {
+      "path": "quantum_nexus_v3_monolithic.py",
+      "score": 4,
+      "sha256": "8879f791ece1d7577842b6edfa543d8b900b641b43da97965e14d3d2bc25f418"
+    },
+    {
+      "path": "sovereign_live.py",
+      "score": 4,
+      "sha256": "5f70d8b0c6d5857cafac49c380df89697533c4d0fc0e3dea850e068ba560cacd"
+    },
+    {
+      "path": "install_part3.sh",
+      "score": 4,
+      "sha256": "3f8649a6e2fe80d5ece3ba0938fa7111a23699b17a88316f80312f5c1936efd3"
+    },
+    {
+      "path": "live/sovereign_parliament_engine.py",
+      "score": 4,
+      "sha256": "1129fa659db2f4dab9f1cb10095f8046443186c1b9c6ac3956be48273d7a5e30"
+    },
+    {
+      "path": "~/backup_sovereign_20260828/helix_sovereign_pro.py",
+      "score": 4,
+      "sha256": "99645bdbfb7958b54d76951f5f24a01d85df2c54fd6935aa780cb9143f54c8db"
+    },
+    {
+      "path": "~/backup_sovereign_20260828/helix_sovereign_ultra.py",
+      "score": 4,
+      "sha256": "697b6c1f7d9d7b8811ed3e3de308afc74ab1bd3b225ec4073db48e29fcf8cc50"
+    },
+    {
+      "path": "~/honeycomb-execution-core/ai_sovereign_engine.py",
+      "score": 4,
+      "sha256": "dd9711993bf9ad228824f57ea71f85fe06faa4c2b9ffec5f07adca2783bea161"
     },
     {
       "path": "engine.py",
@@ -105,9 +320,29 @@
       "sha256": "272f9c202ed723e659e862e804307de00bbb5d181472e9a37b90fab2e87e9753"
     },
     {
-      "path": "fix_testnet_stack.sh",
+      "path": "quantum_sovereign_core.py",
       "score": 3,
-      "sha256": "ea7741d2721cc28d50ff83892c9104cc98ccf7947b32c2091d5edf684ba3ad83"
+      "sha256": "1c520721a0d00bd1355a87645b0e069e8c04e9bfd110902cb4727eb10bd2f009"
+    },
+    {
+      "path": "CatEofUsdcFuturesEngine.ts",
+      "score": 3,
+      "sha256": "01bec8651cc485e0819737a645f908888db8d8a12c9cb0406aecf35e7bd7395b"
+    },
+    {
+      "path": "sovereign_app.js",
+      "score": 3,
+      "sha256": "85f8470d7f1fbbfdfe6a61e496a199a282c70fc23be223ff0777465c6ef0d687"
+    },
+    {
+      "path": "verify.ts",
+      "score": 3,
+      "sha256": "96f076cd600846cf8d316476366756162b04f8c67bc981ac30ff8c3df8fd7730"
+    },
+    {
+      "path": "verify3.ts",
+      "score": 3,
+      "sha256": "edcfe4bf7186f4c1ebfba0161aa1e3e502c660cf1237d754792c3c4fcdabce6b"
     },
     {
       "path": "master_alpha.py",
@@ -120,44 +355,44 @@
       "sha256": "5f04da81ab76eef16179d626b1f1d308585ec9f0800c989eaa47a0a43afa5327"
     },
     {
-      "path": "orchestrator/quality_gate.py",
+      "path": "fix_testnet_stack.sh",
       "score": 3,
-      "sha256": "d8b4124342bf1230ebcfe0d3e01467cb2e9606efcdd7538a3d8bb33c040c6e21"
+      "sha256": "ea7741d2721cc28d50ff83892c9104cc98ccf7947b32c2091d5edf684ba3ad83"
     },
     {
-      "path": "quantum_sovereign_core.py",
+      "path": "HelixSovereignEngine.ts",
       "score": 3,
-      "sha256": "1c520721a0d00bd1355a87645b0e069e8c04e9bfd110902cb4727eb10bd2f009"
+      "sha256": "dd21d0ffc8e343e276e2a3228b038a15846cc9b8d3cf0728619572006e073bc6"
     },
     {
-      "path": "run_honeycomb_ui.sh",
+      "path": "aggressive_futures_bot.py",
       "score": 3,
-      "sha256": "5eab1154a07343faf49a7b371f0f03f172783efb41cbc7af50185e944d9086a4"
+      "sha256": "539fba081c743e4b8598b6bfa212644e6bd66379dfac3a6110cf9d760e588d5c"
     },
     {
-      "path": "sovereign_app.js",
+      "path": "nexus_execution_entry.ts",
       "score": 3,
-      "sha256": "85f8470d7f1fbbfdfe6a61e496a199a282c70fc23be223ff0777465c6ef0d687"
+      "sha256": "43bd27b7f83177a9dd88e010887033aea8d8fed70ccc589a4a17790c214d9827"
     },
     {
-      "path": "tests/test_quality_gate.py",
+      "path": "live/quantum_helix_parliament.py",
       "score": 3,
-      "sha256": "b6f89248ea3efad3bd328f132b44499cd1ba392b0acc735aee4391a1195188a8"
+      "sha256": "4ebd373408d2cfacbf1ed70b505d111338f2efb834e7d2c93baff90bcd296bfa"
     },
     {
-      "path": "verify3.ts",
-      "score": 3,
-      "sha256": "edcfe4bf7186f4c1ebfba0161aa1e3e502c660cf1237d754792c3c4fcdabce6b"
+      "path": "engine_live.py",
+      "score": 2,
+      "sha256": "afeed7e61402872ef5b1a9ed57faa422d92edb6cc4b0e856e6f8ac0589175b74"
     },
     {
       "path": "BinanceFuturesEngineCatE.ts",
       "score": 2,
-      "sha256": "f72b44d9b82ce6b16f2ba1fec7a0c9f81777923f499a20ac54985395bb625fcd"
+      "sha256": "c3c5a6496e5201733bf183989b28320b9f1a5465bb4be0253476e71b9d30d9e5"
     },
     {
-      "path": "ai_sovereign_engine.py",
+      "path": "index.ts",
       "score": 2,
-      "sha256": "547f1df5974052f8e19b5b50a647c9109689b94c2812687fac6435f13e9dd610"
+      "sha256": "97bcd5edefa7fd6a25d91c0d995e74dd06ec948e89e95a2b4aba94f3db1cef89"
     },
     {
       "path": "alpha_brain.py",
@@ -165,29 +400,169 @@
       "sha256": "295f599fe851ac9909500ee2bc68733be5421ba88495440f4a1398fc6db289a6"
     },
     {
-      "path": "engine_live.py",
+      "path": "ai_parliament.py",
       "score": 2,
-      "sha256": "bc97f50f856d67ddada1875049483103ae08d92728dce242a256a6ef2729ed04"
-    },
-    {
-      "path": "index.ts",
-      "score": 2,
-      "sha256": "25b47c0bb07fc86976ecc3ec33bc7ccc50f04e289e455f278f9ef7823aa17334"
-    },
-    {
-      "path": "orchestrator/test_ui_control_plane.py",
-      "score": 2,
-      "sha256": "2e5299781d1eb5c189beae640ebf88092cad2b0ff1613c9db40d9d5700a4098e"
-    },
-    {
-      "path": "orchestrator/ui_control_plane.py",
-      "score": 2,
-      "sha256": "5e39ab17e303e61a7023703685c58bc5d22d0c99e16cfc6efc96b1432296382f"
+      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
     },
     {
       "path": "runtime/start_testnet.sh",
       "score": 2,
       "sha256": "1c03c204b90cd2417503c6b3bf78747dfe83c137472d8d9bdf8ec941b72b6edc"
+    },
+    {
+      "path": "scripts/start_live.sh",
+      "score": 2,
+      "sha256": "81aeaf473663ff8c17f4b5dc5387234fe80fb58fc8aa7d5d656d7f27b41537e6"
+    },
+    {
+      "path": "tests/binance-venue.test.ts",
+      "score": 2,
+      "sha256": "7d72b1af791870f9d042dee6675653bec624cad2f31a4f4d2fc762430dc055ef"
+    },
+    {
+      "path": "live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "live/live_kernel.py",
+      "score": 2,
+      "sha256": "01ca1e3616f01d46ab018f449f7468b4ace76874224d3a57541ecb8a53593932"
+    },
+    {
+      "path": "live/ai_parliament.py",
+      "score": 2,
+      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+    },
+    {
+      "path": "execution/execution_router.ts",
+      "score": 2,
+      "sha256": "5bc0feeae4d0c16a7d4d5cf32a3d24aab47b6ae84d7283dff7d86e19a2ca3f82"
+    },
+    {
+      "path": "accounts/start_all.sh",
+      "score": 2,
+      "sha256": "b305e38dc136dd527c098b2db4d38e75b5b8b1419c2ac5097c7104e55d5fca2c"
+    },
+    {
+      "path": "accounts/ai_parliament.py",
+      "score": 2,
+      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
+    },
+    {
+      "path": "accounts/USDT-1/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/USDT-2/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/USDT-3/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/USDT-4/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/USDT-5/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/COIN-1/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/COIN-2/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/COIN-3/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/COIN-4/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/COIN-5/ai_parliament.py",
+      "score": 2,
+      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
+    },
+    {
+      "path": "accounts/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/COIN-5/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/COIN-4/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/COIN-3/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/COIN-2/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/COIN-1/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/USDT-5/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/USDT-4/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/USDT-3/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/USDT-2/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "accounts/USDT-1/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+    },
+    {
+      "path": "~/backup_sovereign_20260828/sovereign_signer.py",
+      "score": 2,
+      "sha256": "216dcf57630eed99e40f3a361ae339569c0bf748efd676540f8ff08699047d92"
+    },
+    {
+      "path": "live/live/kernel.py",
+      "score": 2,
+      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
     }
   ]
 }

@@ -1,0 +1,235 @@
+#!/data/data/com.termux/files/usr/bin/python3
+# -*- coding: utf-8 -*-
+import time, json, urllib.request, sqlite3, os, math
+from collections import defaultdict
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "brain_master.db")
+CACHE_TTL = 25
+MIN_CONFIDENCE = 62
+
+DEFAULT_WEIGHTS = {
+    "ema_trend": 1.4, "rsi": 1.1, "macd": 1.2, "volume": 1.0,
+    "momentum": 0.9, "supertrend": 1.3, "atr_ok": 0.8,
+}
+
+def _conn():
+    return sqlite3.connect(DB_PATH, timeout=10)
+
+def init_db():
+    with _conn() as c:
+        c.executescript("""
+            CREATE TABLE IF NOT EXISTS weights(key TEXT PRIMARY KEY, value REAL);
+            CREATE TABLE IF NOT EXISTS outcomes(
+                id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, symbol TEXT, side TEXT,
+                confidence REAL, net_pnl REAL, reason TEXT);
+            CREATE TABLE IF NOT EXISTS kline_cache(
+                symbol TEXT, interval TEXT, ts INTEGER, data TEXT, PRIMARY KEY(symbol, interval));
+        """)
+        for k, v in DEFAULT_WEIGHTS.items():
+            c.execute("INSERT OR IGNORE INTO weights(key,value) VALUES(?,?)", (k, v))
+        c.commit()
+
+def get_weight(key):
+    with _conn() as c:
+        row = c.execute("SELECT value FROM weights WHERE key=?", (key,)).fetchone()
+        return float(row[0]) if row else DEFAULT_WEIGHTS.get(key, 1.0)
+
+def set_weight(key, value):
+    value = max(0.3, min(2.5, value))
+    with _conn() as c:
+        c.execute("INSERT OR REPLACE INTO weights(key,value) VALUES(?,?)", (key, value))
+        c.commit()
+
+def record_outcome(symbol, side, confidence, net_pnl, reason):
+    with _conn() as c:
+        c.execute("INSERT INTO outcomes(ts,symbol,side,confidence,net_pnl,reason) VALUES(?,?,?,?,?,?)",
+                   (int(time.time()), symbol, side, confidence, net_pnl, reason[:200]))
+        c.commit()
+    if net_pnl > 0 and confidence >= 60:
+        for k in ["ema_trend", "macd", "supertrend"]:
+            set_weight(k, get_weight(k) * 1.03)
+    elif net_pnl < 0 and confidence >= 60:
+        for k in ["ema_trend", "rsi", "volume"]:
+            set_weight(k, get_weight(k) * 0.97)
+
+init_db()
+
+_kline_mem = {}
+
+def fetch_klines(symbol, interval="1m", limit=80):
+    key = "%s_%s" % (symbol, interval)
+    now = time.time()
+    if key in _kline_mem and now - _kline_mem[key][0] < CACHE_TTL:
+        return _kline_mem[key][1]
+    try:
+        url = "https://fapi.binance.com/fapi/v1/klines?symbol=%s&interval=%s&limit=%d" % (symbol, interval, limit)
+        req = urllib.request.Request(url, headers={"User-Agent": "alpha-brain"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            raw = json.loads(r.read().decode("utf-8"))
+        closes = [float(x[4]) for x in raw]
+        volumes = [float(x[5]) for x in raw]
+        highs = [float(x[2]) for x in raw]
+        lows = [float(x[3]) for x in raw]
+        data = {"c": closes, "v": volumes, "h": highs, "l": lows}
+        _kline_mem[key] = (now, data)
+        return data
+    except Exception:
+        return None
+
+def ema(arr, period):
+    if len(arr) < period:
+        return None
+    k = 2.0 / (period + 1)
+    v = sum(arr[:period]) / period
+    for x in arr[period:]:
+        v = x * k + v * (1 - k)
+    return v
+
+def rsi(arr, period=14):
+    if len(arr) < period + 1:
+        return None
+    gains, losses = [], []
+    for i in range(1, len(arr)):
+        d = arr[i] - arr[i-1]
+        gains.append(max(d, 0.0))
+        losses.append(max(-d, 0.0))
+    ag = sum(gains[-period:]) / period
+    al = sum(losses[-period:]) / period
+    if al == 0:
+        return 100.0
+    return 100.0 - (100.0 / (1.0 + ag / al))
+
+def atr(highs, lows, closes, period=14):
+    if len(closes) < period + 1:
+        return None
+    trs = []
+    for i in range(1, len(closes)):
+        tr = max(highs[i] - lows[i], abs(highs[i] - closes[i-1]), abs(lows[i] - closes[i-1]))
+        trs.append(tr)
+    return sum(trs[-period:]) / period
+
+def macd_hist(closes, fast=12, slow=26, signal=9):
+    if len(closes) < slow + signal:
+        return None
+    ef = ema(closes, fast)
+    es = ema(closes, slow)
+    if ef is None or es is None:
+        return None
+    return ef - es
+
+def momentum(closes, period=10):
+    if len(closes) < period + 1:
+        return None
+    return (closes[-1] - closes[-period-1]) / closes[-period-1] * 100
+
+def supertrend_dir(highs, lows, closes, period=10, mult=3.0):
+    if len(closes) < period + 2:
+        return 0
+    a = atr(highs, lows, closes, period)
+    if a is None:
+        return 0
+    hl2 = (highs[-1] + lows[-1]) / 2
+    upper = hl2 + mult * a
+    lower = hl2 - mult * a
+    if closes[-1] > upper:
+        return 1
+    if closes[-1] < lower:
+        return -1
+    if closes[-1] > closes[-2]:
+        return 1
+    return -1
+
+def analyze_tf(symbol, interval):
+    data = fetch_klines(symbol, interval, 80)
+    if not data or len(data["c"]) < 40:
+        return None
+    c, v, h, l = data["c"], data["v"], data["h"], data["l"]
+    e9 = ema(c, 9); e21 = ema(c, 21); e55 = ema(c, 55)
+    r = rsi(c, 14); a = atr(h, l, c, 14); mom = momentum(c, 10)
+    macd = macd_hist(c); st = supertrend_dir(h, l, c)
+    if None in (e9, e21, e55, r, a, mom):
+        return None
+    atr_pct = (a / c[-1]) * 100
+    vol_avg = sum(v[-20:]) / 20
+    vol_ratio = v[-1] / vol_avg if vol_avg > 0 else 1.0
+    score = 0.0
+    reasons = []
+    w = get_weight("ema_trend")
+    if e9 > e21 > e55:
+        score += 28 * w; reasons.append("EMA yükseliş")
+    elif e9 < e21 < e55:
+        score -= 28 * w; reasons.append("EMA düşüş")
+    elif e9 > e21:
+        score += 12 * w; reasons.append("EMA kısa yukarı")
+    elif e9 < e21:
+        score -= 12 * w; reasons.append("EMA kısa aşağı")
+    w = get_weight("rsi")
+    if 45 <= r <= 68:
+        score += 14 * w; reasons.append("RSI nötr-güçlü %.0f" % r)
+    elif r > 72:
+        score -= 10 * w; reasons.append("RSI aşırı alım %.0f" % r)
+    elif r < 28:
+        score += 8 * w; reasons.append("RSI aşırı satım %.0f" % r)
+    elif r < 40:
+        score -= 6 * w
+    w = get_weight("macd")
+    if macd is not None:
+        if macd > 0:
+            score += 12 * w; reasons.append("MACD pozitif")
+        else:
+            score -= 12 * w; reasons.append("MACD negatif")
+    w = get_weight("volume")
+    if vol_ratio >= 1.15:
+        score += 11 * w; reasons.append("Hacim yüksek x%.1f" % vol_ratio)
+    elif vol_ratio < 0.7:
+        score -= 8 * w; reasons.append("Hacim zayıf")
+    w = get_weight("momentum")
+    if mom > 0.35:
+        score += 10 * w; reasons.append("Momentum +%.2f" % mom)
+    elif mom < -0.35:
+        score -= 10 * w; reasons.append("Momentum %.2f" % mom)
+    w = get_weight("supertrend")
+    if st == 1:
+        score += 15 * w; reasons.append("Supertrend yukarı")
+    elif st == -1:
+        score -= 15 * w; reasons.append("Supertrend aşağı")
+    w = get_weight("atr_ok")
+    if atr_pct < 0.04:
+        score *= 0.55; reasons.append("ATR çok düşük %.3f" % atr_pct)
+    elif atr_pct > 0.25:
+        score += 5 * w
+    return {"score": score, "atr_pct": atr_pct, "rsi": r, "reasons": reasons, "interval": interval}
+
+def get_master_signal(symbol):
+    tfs = ["1m", "5m", "15m"]
+    results = {}
+    for tf in tfs:
+        res = analyze_tf(symbol, tf)
+        if res:
+            results[tf] = res
+    if len(results) < 2:
+        return None, 0, "yetersiz timeframe verisi"
+    total = 0.0; weight_sum = 0.0; all_reasons = []
+    for tf, res in results.items():
+        w = {"1m": 0.25, "5m": 0.35, "15m": 0.40}.get(tf, 0.3)
+        total += res["score"] * w
+        weight_sum += w
+        all_reasons.extend(["[%s] %s" % (tf, r) for r in res["reasons"][:2]])
+    if weight_sum == 0:
+        return None, 0, "skor hesaplanamadı"
+    avg = total / weight_sum
+    confidence = max(0, min(100, 50 + avg * 0.9))
+    side = None
+    if avg >= 18 and confidence >= MIN_CONFIDENCE:
+        side = "LONG"
+    elif avg <= -18 and confidence >= MIN_CONFIDENCE:
+        side = "SHORT"
+    detail = " | ".join(all_reasons[:6])
+    if side:
+        detail = "%s | Güven:%.0f | %s" % (side, confidence, detail)
+    else:
+        detail = "Sinyal yok (skor:%.1f güven:%.0f) %s" % (avg, confidence, detail)
+    return side, confidence, detail
+
+def brain_learn(symbol, side, confidence, net_pnl, reason=""):
+    record_outcome(symbol, side, confidence, net_pnl, reason)

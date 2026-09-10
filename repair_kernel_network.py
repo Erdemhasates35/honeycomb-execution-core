@@ -3,7 +3,7 @@
 """One-shot local repair for LiveKernel transport bootstrap.
 
 Preserves the original kernel as a timestamped backup and performs only
-additive/targeted substitutions. No trading logic is removed.
+explicit targeted substitutions. Existing trading logic is not removed.
 """
 from __future__ import annotations
 
@@ -21,14 +21,21 @@ ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 backup = path.with_name(f"kernel.py.pre_network_repair.{ts}")
 backup.write_text(src, encoding="utf-8")
 
-# 1) Stable per-user lock path; the old literal is retained in the backup.
+# Repair the previously injected directory-creation statement if it landed
+# at an invalid indentation level. The statement itself is retained.
+legacy = '        os.makedirs(os.path.dirname(os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock")), exist_ok=True)'
+if legacy in src:
+    src = src.replace(legacy, 'os.makedirs(os.path.dirname(os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock")), exist_ok=True)', 1)
+
+# Stable per-user lock path; the old literal remains in the timestamped backup.
 src = src.replace(
     'self.path = path or "/tmp/honeycomb_sf.lock"',
-    'self.path = path or os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock")\n        os.makedirs(os.path.dirname(self.path), exist_ok=True)'
+    'self.path = path or os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock")\n        os.makedirs(os.path.dirname(self.path), exist_ok=True)',
+    1,
 )
 
-# 2) Import the shared guard + endpoint failover from the kernel itself.
-# This does not depend on sitecustomize/PYTHONPATH startup behavior.
+# Bootstrap the shared guard and endpoint failover directly from LiveKernel so
+# operation does not depend on sitecustomize startup semantics.
 anchor = 'from typing import Any, Dict, List, Optional, Tuple\n'
 boot = (
     anchor +
@@ -45,9 +52,8 @@ if 'import binance_endpoint_failover  # noqa: F401' not in src:
         raise SystemExit("kernel import anchor not found; nothing changed")
     src = src.replace(anchor, boot, 1)
 
-# 3) Do not let a previous transient public-network failure block time sync.
-# Signed business calls still honor stale-halt; the time endpoint is the
-# recovery mechanism and must remain reachable through endpoint failover.
+# A transient transport failure must not prevent the time endpoint from being
+# queried again; time synchronization is itself the recovery path.
 old = 'if time.time() < self._stale_until:\n            raise RuntimeError("stale-halt active %.0fs" % (self._stale_until - time.time()))'
 new = (
     'if time.time() < self._stale_until and signed and path != self.v["time"]:\n'

@@ -4,8 +4,8 @@
   "type": "module",
   "main": "BinanceFuturesEngineCatE.ts",
   "scripts": {
-    "start": "tsx verify.ts",
-    "start:nexus": "tsx nexus_execution_entry.ts",
+    "start": "node --import ./honeycomb_node_guard.mjs --import tsx verify.ts",
+    "start:nexus": "node --import ./honeycomb_node_guard.mjs --import tsx nexus_execution_entry.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

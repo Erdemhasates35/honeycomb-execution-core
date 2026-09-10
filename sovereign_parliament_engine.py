@@ -38,29 +38,40 @@ SYMBOLS = [s.strip().upper() for s in os.getenv(
 
 
 def scan_symbol(symbol: str) -> None:
-    tech = alpha_core.get_technical_decision(symbol)
+    tech = alpha_core.get_technical_decision(symbol) or {}
+    # Defensive contract: old/third-party alpha cores may omit optional keys.
+    # Missing permission is always interpreted as DENY, never as approval.
+    allow = bool(tech.get("allow", False))
     side = tech.get("side")
     print("PARLIAMENT %s allow=%s side=%s conf=%s regime=%s reason=%s" % (
-        symbol, tech.get("allow"), side, tech.get("confidence"), tech.get("regime"), tech.get("reason")
+        symbol, allow, side, tech.get("confidence", 0), tech.get("regime", "UNKNOWN"), tech.get("reason", "missing-decision-key")
     ), flush=True)
 
 
 def main() -> None:
     print("SOVEREIGN PARLIAMENT ENGINE — alpha_core.get_technical_decision OK", flush=True)
     print("DEFENSE_ENABLED=%s" % alpha_core.DEFENSE_ENABLED, flush=True)
+    scan_sleep = max(1.0, float(os.getenv("SCAN_SYMBOL_DELAY_SEC", "1.0")))
+    cycle_sleep = max(10.0, float(os.getenv("SCAN_INTERVAL_SEC", "20")))
     while True:
         if not breaker.allow():
             time.sleep(2)
             continue
+        cycle_failed = False
         for s in SYMBOLS:
             try:
                 scan_symbol(s)
-                breaker.record_success()
             except Exception as e:
+                cycle_failed = True
                 breaker.record_failure()
                 print("PARLIAMENT HATA %s: %s" % (s, e), flush=True)
-            time.sleep(0.4)
-        time.sleep(float(os.getenv("SCAN_INTERVAL_SEC", "20")))
+            time.sleep(scan_sleep)
+        if cycle_failed:
+            # A rate-limit/auth/network failure must cool down rather than poll harder.
+            time.sleep(max(cycle_sleep, 30.0))
+        else:
+            breaker.record_success()
+            time.sleep(cycle_sleep)
 
 
 if __name__ == "__main__":

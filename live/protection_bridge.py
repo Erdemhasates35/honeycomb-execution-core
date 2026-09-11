@@ -55,6 +55,18 @@ def _position_mode(kernel):
     return bool(value) if isinstance(value, bool) else None
 
 
+def _price(kernel, symbol: str, value: float) -> str:
+    try:
+        tick = float(kernel.get_filters(symbol).get("tickSize") or 0)
+        if tick > 0:
+            decimals = max(0, min(12, len(("%.12f" % tick).rstrip("0").split(".")[-1])))
+            value = math.floor(value / tick) * tick
+            return ("%%.%df" % decimals) % value
+    except Exception:
+        pass
+    return ("%.8f" % float(value)).rstrip("0").rstrip(".")
+
+
 def _protect(self, symbol, side, entry, tp=None, sl=None, position_side=None, **kwargs):
     symbol = str(symbol).upper()
     side = str(side).upper()
@@ -92,7 +104,7 @@ def _protect(self, symbol, side, entry, tp=None, sl=None, position_side=None, **
                 "side": close_side,
                 "type": algo_type,
                 "algoType": "CONDITIONAL",
-                "triggerPrice": self._fmt_price(symbol, trigger_f),
+                "triggerPrice": _price(self, symbol, trigger_f),
                 "workingType": "MARK_PRICE",
                 "closePosition": "true",
                 "clientAlgoId": client_id,
@@ -135,6 +147,7 @@ def install(*args, **kwargs):
 
 
 try:
+    import math
     from live.kernel import LiveKernel as _LK
 except Exception:
     _LK = None

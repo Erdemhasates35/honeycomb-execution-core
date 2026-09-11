@@ -55,11 +55,7 @@ def init_db():
 
 
 def history_bonus(symbol: str, side: str) -> float:
-    """Read compatible local SQLite trade tables without mutating them.
-
-    Only recent rows with numeric pnl/net fields are used; unknown schemas are
-    skipped. This turns existing DB evidence into a small adaptive prior.
-    """
+    """Read compatible local SQLite trade tables without mutating them."""
     paths = [DB_OUT, os.path.join(RUNTIME, "aggressive_live.db"), os.path.join(RUNTIME, "lobster_extreme.db"), os.path.join(ROOT, "brain.db"), os.path.join(ROOT, "quantum_nexus_v3.db")]
     vals=[]
     for path in paths:
@@ -76,9 +72,10 @@ def history_bonus(symbol: str, side: str) -> float:
                 q='SELECT symbol,%s%s FROM "%s" ORDER BY rowid DESC LIMIT 200' % (pnlcol, (","+sidecol if sidecol else ""), t.replace('"','""'))
                 for row in c.execute(q):
                     if str(row[0]).upper()!=symbol: continue
-                    if sidecol and str(row[1]).upper()!=side.upper(): continue
-                    pv=f(row[1] if sidecol else row[1], 0.0) if sidecol else f(row[1],0.0)
-                    vals.append(pv)
+                    pnl_value=f(row[1],0.0)
+                    row_side=str(row[2]).upper() if sidecol and len(row)>2 else ""
+                    if sidecol and row_side!=side.upper(): continue
+                    vals.append(pnl_value)
             c.close()
         except Exception:
             continue
@@ -142,7 +139,7 @@ def open_trade(k: LiveKernel, p: Dict[str,Any], econ: Dict[str,float], style: st
     tp=entry*(1+tp_pct/100) if side=='LONG' else entry*(1-tp_pct/100)
     sl=entry*(1-sl_pct/100) if side=='LONG' else entry*(1+sl_pct/100)
     k.place_protect(s,side,entry,tp,sl,pos_side)
-    positions[s]={"symbol":s,"side":side,"entry":entry,"qty":f(fill.get('qty'),qty),"tp":tp,"sl":sl,"lev":lev,"fee":f(fill.get('commission')),"opened":time.time(),"style":style,"edge":edge}
+    positions[s]={"symbol":s,"side":side,"entry":entry,"qty":f(fill.get('qty'),qty),"tp":tp,"sl":sl,"lev":lev,"fee":f(fill.get('commission')),"opened":time.time(),"style":style,"edge":edge,"pos_side":pos_side}
     db("INSERT INTO trades VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",(time.time(),s,side,'OPEN',entry,0,positions[s]['qty'],0,0,positions[s]['fee'],lev,style,'profit-max'))
     print(time.strftime('%H:%M:%S'),'[PROFIT-MAX] ENTER',side,s,'lev=%dx'%lev,'style='+style,'net_edge_bps=%.2f'%(edge*10000),'notional=%.4f'%size['notional'],flush=True)
 

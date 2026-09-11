@@ -16,6 +16,8 @@ MAX_LEVERAGE = int(float(os.getenv("MAX_LEVERAGE", "75")))
 DEFAULT_TAKER = float(os.getenv("TAKER_FEE_RATE", os.getenv("FEE_RATE", "0.0005")))
 DEFAULT_MAKER = float(os.getenv("MAKER_FEE_RATE", "0.0002"))
 SLIPPAGE_BPS = float(os.getenv("EXECUTION_SLIPPAGE_BPS", os.getenv("SCANNER_SLIPPAGE_BPS", "2.0")))
+COMMISSION_CACHE_TTL = float(os.getenv("COMMISSION_CACHE_TTL_SEC", "300"))
+_commission_cache: Dict[tuple[str,str], tuple[float,float,float]] = {}
 
 
 def finite(x: Any, default: float = 0.0) -> float:
@@ -34,14 +36,17 @@ def leverage_floor(requested: Any, maximum: int | None = None) -> int:
 
 def _commission_rates(kernel, symbol: str) -> tuple[float, float]:
     """Return (maker,taker), preferring the user's live Binance rate."""
+    key=(str(getattr(kernel,"venue","usdt")),symbol.upper()); now=time.time(); cached=_commission_cache.get(key)
+    if cached and now-cached[2] < COMMISSION_CACHE_TTL: return cached[0],cached[1]
     try:
         path = "/fapi/v1/commissionRate" if getattr(kernel, "venue", "usdt") == "usdt" else "/dapi/v1/commissionRate"
         data = kernel._http("GET", path, {"symbol": symbol}, signed=True, weight=20)
         maker = finite(data.get("makerCommissionRate"), DEFAULT_MAKER)
         taker = finite(data.get("takerCommissionRate"), DEFAULT_TAKER)
-        return maker, taker
+        _commission_cache[key]=(maker,taker,now)
+        return maker,taker
     except Exception:
-        return DEFAULT_MAKER, DEFAULT_TAKER
+        return (cached[0],cached[1]) if cached else (DEFAULT_MAKER,DEFAULT_TAKER)
 
 
 def market_economics(kernel, symbol: str, side: str, horizon_hours: float = 1.0) -> Dict[str, float]:
@@ -57,8 +62,6 @@ def market_economics(kernel, symbol: str, side: str, horizon_hours: float = 1.0)
     funding_due = 0.0
     if next_ms > time.time() * 1000:
         hours = max(0.0, (next_ms - time.time() * 1000) / 3600000.0)
-        # Funding is paid only if the position is held at settlement. Charge a
-        # proportional expected cost only when the modeled horizon reaches it.
         if hours <= max(0.0, horizon_hours):
             direction = 1.0 if str(side).upper() == "LONG" else -1.0
             funding_due = direction * funding
@@ -66,24 +69,12 @@ def market_economics(kernel, symbol: str, side: str, horizon_hours: float = 1.0)
     maker_roundtrip = 2.0 * maker
     spread_cost = spread_bps / 10000.0
     slip_cost = SLIPPAGE_BPS / 10000.0
-    return {
-        "maker_fee": maker,
-        "taker_fee": taker,
-        "spread_bps": spread_bps,
-        "funding_rate": funding,
-        "funding_cost": funding_due,
-        "maker_roundtrip_cost": maker_roundtrip + spread_cost,
-        "taker_roundtrip_cost": taker_roundtrip + spread_cost + slip_cost,
-        "entry_mid": mid,
-        "bid": bid,
-        "ask": ask,
-    }
+    return {"maker_fee":maker,"taker_fee":taker,"spread_bps":spread_bps,"funding_rate":funding,"funding_cost":funding_due,"maker_roundtrip_cost":maker_roundtrip+spread_cost,"taker_roundtrip_cost":taker_roundtrip+spread_cost+slip_cost,"entry_mid":mid,"bid":bid,"ask":ask}
 
 
 def net_edge(expected_move_pct: float, econ: Dict[str, float], style: str = "TAKER") -> float:
     gross = abs(finite(expected_move_pct)) / 100.0
     cost = econ["maker_roundtrip_cost"] if style.upper() == "MAKER" else econ["taker_roundtrip_cost"]
-    # Funding sign is directional: positive means cost, negative means receipt.
     return gross - cost - max(0.0, econ.get("funding_cost", 0.0))
 
 
@@ -95,8 +86,7 @@ def choose_leverage(confidence: float, edge_pct: float) -> int:
 
 
 def sizing(balance: float, risk_fraction: float, leverage: int, max_notional: float, min_notional: float = 5.0) -> Dict[str, float]:
-    bal = max(0.0, finite(balance))
-    lev = leverage_floor(leverage)
+    bal = max(0.0, finite(balance)); lev = leverage_floor(leverage)
     margin = max(0.0, bal * max(0.0, finite(risk_fraction)))
     notional = min(max(0.0, finite(max_notional)), margin * lev)
-    return {"balance": bal, "margin": margin, "notional": notional, "leverage": float(lev), "tradable": 1.0 if notional >= min_notional else 0.0}
+    return {"balance":bal,"margin":margin,"notional":notional,"leverage":float(lev),"tradable":1.0 if notional>=min_notional else 0.0}

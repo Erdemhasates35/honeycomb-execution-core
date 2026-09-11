@@ -55,17 +55,17 @@ def _position_mode(kernel):
     return bool(value) if isinstance(value, bool) else None
 
 
-def _protect(self, symbol, side, qty, tp=None, sl=None, **kwargs):
+def _protect(self, symbol, side, entry, tp=None, sl=None, position_side=None, **kwargs):
     symbol = str(symbol).upper()
     side = str(side).upper()
     if tp is None and sl is None:
         return []
 
-    close_side = "SELL" if side == "BUY" else "BUY"
+    close_side = "SELL" if side in ("BUY", "LONG") else "BUY"
     hedge = _position_mode(self)
-    position_side = kwargs.get("positionSide")
+    position_side = position_side or kwargs.get("positionSide")
     if hedge is True and position_side is None:
-        position_side = "LONG" if side == "BUY" else "SHORT"
+        position_side = "LONG" if side in ("BUY", "LONG") else "SHORT"
     if hedge is False:
         position_side = None
 
@@ -84,6 +84,9 @@ def _protect(self, symbol, side, qty, tp=None, sl=None, **kwargs):
             if not (trigger_f > 0.0):
                 raise ValueError("invalid trigger price")
             client_id = "HC_" + label[:3] + "_" + uuid.uuid4().hex[:20]
+            offset_ms = getattr(self, "_off", None)
+            if offset_ms is None:
+                offset_ms = int(float(getattr(self, "time_offset", 0.0) or 0.0) * 1000)
             params = {
                 "symbol": symbol,
                 "side": close_side,
@@ -93,7 +96,7 @@ def _protect(self, symbol, side, qty, tp=None, sl=None, **kwargs):
                 "workingType": "MARK_PRICE",
                 "closePosition": "true",
                 "clientAlgoId": client_id,
-                "timestamp": int((time.time() + getattr(self, "time_offset", 0.0)) * 1000),
+                "timestamp": int(time.time() * 1000) + int(offset_ms),
                 "recvWindow": 10000,
             }
             if position_side is not None:
@@ -111,7 +114,10 @@ def _protect(self, symbol, side, qty, tp=None, sl=None, **kwargs):
 
 
 def _query_open_algo(self, symbol=None):
-    params = {"timestamp": int((time.time() + getattr(self, "time_offset", 0.0)) * 1000), "recvWindow": 10000}
+    offset_ms = getattr(self, "_off", None)
+    if offset_ms is None:
+        offset_ms = int(float(getattr(self, "time_offset", 0.0) or 0.0) * 1000)
+    params = {"timestamp": int(time.time() * 1000) + int(offset_ms), "recvWindow": 10000}
     if symbol:
         params["symbol"] = str(symbol).upper()
     return self._http("GET", _algo_open_endpoint(self), params, signed=True, weight=1, is_order=False)

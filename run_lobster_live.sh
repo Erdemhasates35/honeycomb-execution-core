@@ -4,7 +4,9 @@ cd /data/data/com.termux/files/home/honeycomb-execution-core
 export EXECUTION_MODE=LIVE
 export HONEYCOMB_MODE=LIVE
 export LIVE_ARMED=1
-export LEV_MIN=50
-export MAX_LEVERAGE=75
+export MIN_LEVERAGE="${MIN_LEVERAGE:-40}"
+export LEV_MIN="${LEV_MIN:-40}"
+export MAX_LEVERAGE="${MAX_LEVERAGE:-75}"
 export LOBSTER_MAX_POSITIONS="${LOBSTER_MAX_POSITIONS:-3}"
+export EXECUTION_STYLE="${EXECUTION_STYLE:-AUTO}"
 exec python3 lobster_extreme_momentum_engine.py

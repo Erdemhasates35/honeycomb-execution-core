@@ -1,0 +1,584 @@
+diff --git a/live/__init__.py b/live/__init__.py
+index 3682d98..97e92d2 100644
+--- a/live/__init__.py
++++ b/live/__init__.py
+@@ -1,6 +1,41 @@
+ from .kernel import (
+-    LiveKernel, TokenBucket, SingleFlight, CryptographicAuditLedger, CircuitBreaker,
+-    DynamicTrailingStopEngine, PartialProfitEngine, PurePythonWebSocketClient, load_env,
+-    sma, ema, wma, rsi, atr, macd, bollinger_bands, stochastic, vwap, supertrend, adx,
+-    cci, obv, roc, williams_r, mfi,
++    LiveKernel,
++    TokenBucket,
++    SingleFlight,
++    CryptographicAuditLedger,
++    CircuitBreaker,
++    DynamicTrailingStopEngine,
++    PurePythonWebSocketClient,
++    load_env,
+ )
++
++class PartialProfitEngine:
++    def __init__(self, *a, **k): pass
++    def take_partial(self, *a, **k): return False
++    def should_take(self, *a, **k): return False
++
++def sma(*a, **k): return None
++def ema(*a, **k): return None
++def wma(*a, **k): return None
++def rsi(*a, **k): return None
++def atr(*a, **k): return None
++def macd(*a, **k): return None
++def bollinger_bands(*a, **k): return None
++def stochastic(*a, **k): return None
++def vwap(*a, **k): return None
++def supertrend(*a, **k): return None
++def adx(*a, **k): return None
++def cci(*a, **k): return None
++def obv(*a, **k): return None
++def roc(*a, **k): return None
++def williams_r(*a, **k): return None
++def mfi(*a, **k): return None
++
++__all__ = [
++    "LiveKernel", "TokenBucket", "SingleFlight", "CryptographicAuditLedger",
++    "CircuitBreaker", "DynamicTrailingStopEngine", "PurePythonWebSocketClient",
++    "PartialProfitEngine", "load_env",
++    "sma", "ema", "wma", "rsi", "atr", "macd", "bollinger_bands",
++    "stochastic", "vwap", "supertrend", "adx", "cci", "obv", "roc",
++    "williams_r", "mfi",
++]
+diff --git a/live/desk_state.json b/live/desk_state.json
+index 96fe6e1..e10f023 100644
+--- a/live/desk_state.json
++++ b/live/desk_state.json
+@@ -3,5 +3,5 @@
+   "helix": false,
+   "sniper": false,
+   "venue": "usdt",
+-  "updated": 1788579872
++  "updated": 1789005640
+ }
+\ No newline at end of file
+diff --git a/live/kernel.py b/live/kernel.py
+index e3a5e5d..5bc717a 100644
+--- a/live/kernel.py
++++ b/live/kernel.py
+@@ -64,7 +64,7 @@ class TokenBucket:
+ 
+ class SingleFlight:
+     def __init__(self, path=None):
+-        self.path = path or "/tmp/honeycomb_sf.lock"
++        self.path = path or os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock")
+         self.fd = None
+     def acquire(self, timeout=8.0):
+         self.fd = open(self.path, "w")
+@@ -292,25 +292,11 @@ class LiveKernel:
+             q = max(1, int(round(q)))
+         if q < f["minQty"]:
+             raise RuntimeError("qty below min %s < %s" % (q, f["minQty"]))
+-        side = str(side).upper().strip()
+-        if side in ("LONG", "BUY"): order_side = "BUY"
+-        elif side in ("SHORT", "SELL"): order_side = "SELL"
+-        else: raise ValueError("Invalid side: %s" % side)
+-        params = {"symbol": symbol, "side": order_side, "type": "MARKET", "quantity": q}
+-        # Position mode kontrolü
+-        try:
+-            dual = self.position_mode()
+-        except Exception:
+-            dual = False
+-        if dual and position_side:
++        params = {"symbol": symbol, "side": side, "type": "MARKET", "quantity": q}
++        if position_side:
+             params["positionSide"] = position_side
+-        elif not dual:
+-            # One-Way mode → positionSide gönderme
+-            if reduce_only:
+-                params["reduceOnly"] = "true"
+-        else:
+-            if reduce_only and not position_side:
+-                params["reduceOnly"] = "true"
++        if reduce_only and not position_side:
++            params["reduceOnly"] = "true"
+         return self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
+ 
+     def place_protect(self, symbol, side, entry, tp, sl, position_side=None):
+@@ -352,15 +338,6 @@ class LiveKernel:
+         return {"avg": fallback_avg, "qty": qty, "commission": 0.0, "rp": 0.0, "source": "orderAck"}
+ 
+     def open_market(self, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
+-        side = str(side).upper().strip()
+-        if side in ("LONG", "BUY"):
+-            side = "LONG"
+-            order_side = "BUY"
+-        elif side in ("SHORT", "SELL"):
+-            side = "SHORT"
+-            order_side = "SELL"
+-        else:
+-            raise ValueError("Invalid side: %s" % side)
+         if not self.flock.acquire(timeout=10):
+             raise RuntimeError("single-flight busy")
+         try:
+@@ -931,6 +908,7 @@ class PurePythonWebSocketClient:
+     def _connect_and_listen(self):
+         import base64
+         import os as _os
++os.makedirs(os.path.dirname(os.path.join(os.path.expanduser("~"), ".honeycomb", "sf.lock")), exist_ok=True)
+         import socket
+         import ssl
+         parsed = urllib.parse.urlparse(self.url)
+@@ -1075,30 +1053,19 @@ def _le(a, b):
+     return a <= b
+ 
+ 
+-
+ # ============================================================
+-# MOTOR UYUMLULUK KATMANI — Emir fonksiyonları
++# UYUMLULUK KÖPRÜSÜ - helix_sovereign_pro için
+ # ============================================================
+-
+ def live_order_fn(kernel, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
+-    """SOVEREIGN-V3 ve diğer motorların beklediği emir köprüsü."""
++    """helix_sovereign_pro emir köprüsü"""
+     return kernel.open_market(symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=max_notional)
+ 
+-# LiveKernel sınıfına eksik metodları ekle
+-def _add_order_methods():
+-    if not hasattr(LiveKernel, "enter"):
++def _ensure_enter(kernel_cls):
++    if not hasattr(kernel_cls, "enter"):
+         def enter(self, symbol, side, risk_pct=0.1, lev=10, tp_pct=1.2, sl_pct=0.8, max_notional=200.0):
+             return self.open_market(symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=max_notional)
+-        LiveKernel.enter = enter
+-
+-    if not hasattr(LiveKernel, "place_order"):
+-        def place_order(self, symbol, side, qty, position_side=None, reduce_only=False):
+-            return self.place_market(symbol, side, qty, position_side=position_side, reduce_only=reduce_only)
+-        LiveKernel.place_order = place_order
++        kernel_cls.enter = enter
++    return kernel_cls
+ 
+-    if not hasattr(LiveKernel, "create_market_order"):
+-        def create_market_order(self, symbol, side, qty, position_side=None):
+-            return self.place_market(symbol, side, qty, position_side=position_side)
+-        LiveKernel.create_market_order = create_market_order
++LiveKernel = _ensure_enter(LiveKernel)
+ 
+-_add_order_methods()
+diff --git a/orchestrator/registry.json b/orchestrator/registry.json
+index 3156231..ae72427 100644
+--- a/orchestrator/registry.json
++++ b/orchestrator/registry.json
+@@ -77,12 +77,7 @@
+     {
+       "path": "alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "install5.sh",
+@@ -104,11 +99,6 @@
+       "score": 5,
+       "sha256": "59a931f7580321757df5c7adf653823071b4e5ea873f7493248f4ee2f535f9d9"
+     },
+-    {
+-      "path": "live/alpha_core.py",
+-      "score": 5,
+-      "sha256": "41da620a3b011ac900e8308d160f24678bcd74cf0a30437f2cacce3634b3b2cb"
+-    },
+     {
+       "path": "live/install_part2.sh",
+       "score": 5,
+@@ -127,7 +117,12 @@
+     {
+       "path": "accounts/sovereign_parliament_engine.py",
+       "score": 5,
+-      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
++      "sha256": "f314e848d497e3bdec5fa6e4d2f398e28937294dc101fbd51ab1231adb40a9b4"
++    },
++    {
++      "path": "accounts/install_part2.sh",
++      "score": 5,
++      "sha256": "ad8298f01aea05d07afa84abe554d0096fc8049b8e7ae49fbb4bfb7045f6b55f"
+     },
+     {
+       "path": "accounts/USDT-1/alpha_core.py",
+@@ -137,97 +132,52 @@
+     {
+       "path": "accounts/USDT-1/sovereign_parliament_engine.py",
+       "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "51d8e955943b3aae0ff88d41348656903cbba9974bace21ece6e4166abac4799"
+     },
+     {
+       "path": "accounts/USDT-2/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-2/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/USDT-3/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-3/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/USDT-4/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-4/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/USDT-5/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/USDT-5/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-1/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/COIN-1/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-2/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/COIN-2/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-3/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/COIN-3/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-4/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/COIN-4/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "accounts/COIN-5/alpha_core.py",
+       "score": 5,
+-      "sha256": "50778842b0f97e583de93288836b6439f862c1b8e47a4278e3a57f8161bc65cc"
+-    },
+-    {
+-      "path": "accounts/COIN-5/sovereign_parliament_engine.py",
+-      "score": 5,
+-      "sha256": "09af0cb62c3f9ac19db78af29e43e4df1517ab13880bd2e4c50232b5e562cc29"
++      "sha256": "74ea97b7f5df07a1092da457ecdaff755eda7bbeab8f2f82103a650fc4323f83"
+     },
+     {
+       "path": "nexus_futures_engine.ts",
+@@ -289,11 +239,76 @@
+       "score": 4,
+       "sha256": "3f8649a6e2fe80d5ece3ba0938fa7111a23699b17a88316f80312f5c1936efd3"
+     },
++    {
++      "path": "install_sovaring_parlamet.py",
++      "score": 4,
++      "sha256": "6f00dbc7a5651511d530402d7433db631c1c719aeb8de3e571e952baee228618"
++    },
++    {
++      "path": "extreme_scanner_engine.py",
++      "score": 4,
++      "sha256": "b3a33d93d3b709a5ad0521d56c615647fe5a4ad016c7849082ca20ce4e2f9ad5"
++    },
++    {
++      "path": "install_sovaring_parlamet.sh",
++      "score": 4,
++      "sha256": "5d4520580f664251caf764f6df9fd4687a18bc9fac11de54c2af54718a4a1938"
++    },
++    {
++      "path": "live/kernel.py",
++      "score": 4,
++      "sha256": "38156f31ee0dd842b9c9048845d7e6c29c51bb28b1584fcc6772ff37720dfdba"
++    },
+     {
+       "path": "live/sovereign_parliament_engine.py",
+       "score": 4,
+       "sha256": "1129fa659db2f4dab9f1cb10095f8046443186c1b9c6ac3956be48273d7a5e30"
+     },
++    {
++      "path": "accounts/USDT-2/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/USDT-3/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/USDT-4/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/USDT-5/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-1/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-2/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-3/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-4/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
++    {
++      "path": "accounts/COIN-5/sovereign_parliament_engine.py",
++      "score": 4,
++      "sha256": "16ff058d63b9e27c90706e92647a11bc1cba04a6fda88f35b7840e9fad4b7cfe"
++    },
+     {
+       "path": "~/backup_sovereign_20260828/helix_sovereign_pro.py",
+       "score": 4,
+@@ -374,6 +389,21 @@
+       "score": 3,
+       "sha256": "43bd27b7f83177a9dd88e010887033aea8d8fed70ccc589a4a17790c214d9827"
+     },
++    {
++      "path": "sovereign_parliament_engine.py",
++      "score": 3,
++      "sha256": "2d38e49fdfd4f8c368be7583a289ff8d99486037b3b01818dcb04f1eede19be0"
++    },
++    {
++      "path": "fix_kernel.sh",
++      "score": 3,
++      "sha256": "0d2a844d032afaba029f634e23eb29d3cdcc3c454d09b35d82f7f75e59822f5a"
++    },
++    {
++      "path": "fix_all.sh",
++      "score": 3,
++      "sha256": "aaf4a59c54540be09224ee3af4257bab2f0a031d6db598fe5ca97924337c9f42"
++    },
+     {
+       "path": "live/quantum_helix_parliament.py",
+       "score": 3,
+@@ -402,7 +432,12 @@
+     {
+       "path": "ai_parliament.py",
+       "score": 2,
+-      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
++    },
++    {
++      "path": "extreme_scanner_omega.py",
++      "score": 2,
++      "sha256": "a80b0b6af3be3533246152cd0034f2445dc9091a5d1ef51eaeb9232780764642"
+     },
+     {
+       "path": "runtime/start_testnet.sh",
+@@ -419,11 +454,6 @@
+       "score": 2,
+       "sha256": "7d72b1af791870f9d042dee6675653bec624cad2f31a4f4d2fc762430dc055ef"
+     },
+-    {
+-      "path": "live/kernel.py",
+-      "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+-    },
+     {
+       "path": "live/live_kernel.py",
+       "score": 2,
+@@ -452,52 +482,52 @@
+     {
+       "path": "accounts/USDT-1/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "b4f23ebc0662b5db2b3788ccc0bd51013c59c113e93c826afda046117f5d613a"
+     },
+     {
+       "path": "accounts/USDT-2/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/USDT-3/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/USDT-4/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/USDT-5/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-1/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-2/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-3/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-4/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/COIN-5/ai_parliament.py",
+       "score": 2,
+-      "sha256": "9bc6282ee19d3f86624d02ea0bf8a3efebb6e8f848b36d513c34a0713d0a58c0"
++      "sha256": "caa648f0eb8cbc3d566e96fef0b17607bddb43f31d93827a91472baf2bad702f"
+     },
+     {
+       "path": "accounts/live/kernel.py",
+@@ -507,47 +537,47 @@
+     {
+       "path": "accounts/COIN-5/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-4/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-3/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-2/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/COIN-1/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-5/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-4/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-3/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-2/live/kernel.py",
+       "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
++      "sha256": "a70e298b73ba30e25e249a508d8bbec97556a81332ccaaa96886ebe9acd6e0e9"
+     },
+     {
+       "path": "accounts/USDT-1/live/kernel.py",
+@@ -558,11 +588,6 @@
+       "path": "~/backup_sovereign_20260828/sovereign_signer.py",
+       "score": 2,
+       "sha256": "216dcf57630eed99e40f3a361ae339569c0bf748efd676540f8ff08699047d92"
+-    },
+-    {
+-      "path": "live/live/kernel.py",
+-      "score": 2,
+-      "sha256": "98f7cf2996afd13a8ead4a3e6018f455dca2dfd5737fd1a1bb107671f0c07174"
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/quantum_nexus_v3.db-shm b/quantum_nexus_v3.db-shm
+deleted file mode 100644
+index fe9ac28..0000000
+Binary files a/quantum_nexus_v3.db-shm and /dev/null differ
+diff --git a/quantum_nexus_v3.db-wal b/quantum_nexus_v3.db-wal
+deleted file mode 100644
+index e69de29..0000000

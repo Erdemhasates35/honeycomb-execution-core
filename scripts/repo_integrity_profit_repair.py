@@ -6,10 +6,10 @@ Repairs local working-tree text files without deleting originals. Every changed
 file is copied to a timestamped backup first. Merge-conflict blocks are tested
 as OURS/THEIRS/BOTH and the first syntactically valid candidate is selected;
 when only one side is valid, the discarded side is preserved in the backup.
-Also repairs known Helix bootstrap defects and writes a machine-readable audit.
+Also repairs known Helix bootstrap/execution defects and writes an audit.
 """
 from __future__ import annotations
-import ast, datetime as dt, json, os, re, shutil, subprocess, tempfile
+import ast, datetime as dt, json, os, re, shutil, subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,34 +43,26 @@ def resolve_conflicts(text: str, suffix: str):
     if "<<<<<<< " not in text or "=======\n" not in text or ">>>>>>> " not in text:
         return text, False, "none"
     lines = text.splitlines(True)
-    out, i, changed = [], 0, False
-    choices = []
+    out, i, changed, choices = [], 0, False, []
     while i < len(lines):
         if lines[i].startswith("<<<<<<< "):
-            start = i
-            i += 1; ours = []
+            start = i; i += 1; ours = []
             while i < len(lines) and not lines[i].startswith("======="):
                 ours.append(lines[i]); i += 1
-            if i >= len(lines):
-                return text, False, "unterminated"
+            if i >= len(lines): return text, False, "unterminated"
             i += 1; theirs = []
             while i < len(lines) and not lines[i].startswith(">>>>>>> "):
                 theirs.append(lines[i]); i += 1
-            if i >= len(lines):
-                return text, False, "unterminated"
+            if i >= len(lines): return text, False, "unterminated"
             i += 1
-            prefix = lines[start].split(" ", 1)[1].strip()
-            suffix_name = ""
+            branch = lines[start].split(" ", 1)[1].strip()
             candidates = [("both", ours + theirs), ("ours", ours), ("theirs", theirs)]
             if suffix == ".py":
                 valid = [(n, body) for n, body in candidates if py_ok("".join(out + body + lines[i:]))]
-                if valid:
-                    name, body = valid[0]
-                else:
-                    name, body = "both", ours + theirs
+                name, body = valid[0] if valid else ("both", ours + theirs)
             else:
                 name, body = "both", ours + theirs
-            out.extend(body); choices.append({"branch": prefix, "choice": name}); changed = True
+            out.extend(body); choices.append({"branch": branch, "choice": name}); changed = True
         else:
             out.append(lines[i]); i += 1
     return "".join(out), changed, choices
@@ -80,7 +72,6 @@ def repair_helix(path: Path):
     text = path.read_text(encoding="utf-8", errors="surrogateescape")
     original = text
     text, conflict_changed, conflict_choice = resolve_conflicts(text, path.suffix)
-    # Known current-main defects: typing/ROOT bootstrap and malformed defaults.
     if "from typing import" not in text:
         text = text.replace("import sys\n", "import sys\nfrom typing import Any, Deque, Dict, List, Optional, Tuple\n", 1)
     elif "Dict" not in text.split("from typing import", 1)[1].split("\n", 1)[0]:
@@ -98,8 +89,11 @@ def repair_helix(path: Path):
         'huggingfaceh4/nvidia/nemotron-3.5-lightning:nvidia/nemotron-3.5-lightning:inclusionai/ling-3.0-flash-fin:minimax/minimax-m3:meta-llama/llama-3.3-70b-instruct:qwen/qwen3-coder:free': 'minimax/minimax-m3',
     }
     for a, b in replacements.items(): text = text.replace(a, b)
-    # Remove duplicated literal failure-print lines while preserving the first occurrence.
     text = text.replace('            print("[GİRİŞ BAŞARISIZ]")\n            log_and_learn(symbol, side, score, conf, "FAIL", "exception")\n            print("[GİRİŞ BAŞARISIZ]")\n            print("[GİRİŞ BAŞARISIZ]")', '            print("[GİRİŞ BAŞARISIZ]")')
+    # Known broken zero-balance branch: it referenced e outside an exception scope.
+    bad = re.compile(r'        if bal <= 0:\n(?:            .*\n){1,12}?            return\n', re.M)
+    if bad.search(text):
+        text = bad.sub('        if bal <= 0:\n            log_and_learn(symbol, side, score, conf, "FAIL", "zero futures wallet balance", engine="helix")\n            log("ENTER FAIL %s: futures wallet balance is zero" % symbol)\n            return\n', text, count=1)
     if text != original:
         backup(path); path.write_text(text, encoding="utf-8")
     return {"changed": text != original, "conflicts": conflict_changed, "conflict_choice": conflict_choice}
@@ -109,12 +103,9 @@ def main():
     BACKUP.mkdir(parents=True, exist_ok=True)
     report = {"timestamp": STAMP, "backup": str(BACKUP), "files": [], "python_failures": []}
     for path in tracked_files():
-        if not path.exists() or path.suffix.lower() not in TEXT_EXT:
-            continue
-        try:
-            raw = path.read_text(encoding="utf-8", errors="surrogateescape")
-        except Exception:
-            continue
+        if not path.exists() or path.suffix.lower() not in TEXT_EXT: continue
+        try: raw = path.read_text(encoding="utf-8", errors="surrogateescape")
+        except Exception: continue
         if path.name == "helix_sovereign_pro.py":
             result = repair_helix(path)
             if result["changed"]: report["files"].append({"path": str(path.relative_to(ROOT)), **result})
@@ -133,5 +124,4 @@ def main():
     print(json.dumps({"backup": str(BACKUP), "report": str(REPORT), "changed": len(report["files"]), "python_failures": len(report["python_failures"])}, ensure_ascii=False))
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

@@ -1,7 +1,6 @@
-#!/data/data/com.termux/files/usr/bin/python3
-# -*- coding: utf-8 -*-
-"""Compatibility runner for AGG-LIVE with a 40x minimum leverage floor."""
+# Compatibility runner for AGG-LIVE with centralized 40x–75x leverage bounds.
 from __future__ import annotations
+import os
 import aggressive_live_engine as base
 
 _original_plan = base.plan
@@ -9,7 +8,11 @@ _original_plan = base.plan
 def plan(symbol, kernel=None):
     p = _original_plan(symbol, kernel)
     if p:
-        p['leverage'] = max(40, int(p.get('leverage', 40)))
+        requested = int(float(p.get("leverage", os.getenv("MIN_LEVERAGE", "40"))))
+        lo = max(40, int(float(os.getenv("MIN_LEVERAGE", "40"))))
+        hi = max(lo, int(float(os.getenv("MAX_LEVERAGE", "75"))))
+        p["leverage"] = max(lo, min(hi, requested))
+        p["risk_pct"] = min(0.05, max(0.0, float(p.get("risk_pct", 0.05))))
     return p
 
 base.plan = plan

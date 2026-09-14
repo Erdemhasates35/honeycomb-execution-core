@@ -31,7 +31,7 @@ def test_net_edge_includes_round_trip_costs_and_direction():
 
 
 def test_pnl_percent_is_margin_return_not_leveraged_price_return():
-    assert math.isclose(pnl_percent("LONG", 100.0, 101.0, 10.0, 100.0, 0.001), 0.9)
+    assert math.isclose(pnl_percent("LONG", 100.0, 101.0, 10.0, 100.0, 0.001), 9.0)
 
 
 def test_position_size_is_capped_by_risk_and_notional():

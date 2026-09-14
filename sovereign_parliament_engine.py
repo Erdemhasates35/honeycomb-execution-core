@@ -18,8 +18,9 @@ kernel=LiveKernel(venue=os.getenv("VENUE","usdt").lower(),log_fn=lambda m:print(
 
 def scan_symbol(symbol:str)->None:
     try:equity=max(0.0,float(kernel.balance_usdt() or 0.0))
-    except Exception:return
-    tech=normalize_decision(symbol,kernel,equity,[] ) or {}
+    except Exception:equity=0.0
+    try:tech=normalize_decision(symbol,kernel,equity,[]) or {}
+    except Exception as e:tech={"allow":False,"side":None,"confidence":0,"regime":"UNKNOWN","reason":"adapter_error:%s"%e}
     print("PARLIAMENT %s allow=%s side=%s conf=%s edge_bps=%s regime=%s reason=%s"%(symbol,bool(tech.get("allow",False)),tech.get("side"),tech.get("confidence",0),tech.get("net_edge_bps"),tech.get("regime","UNKNOWN"),tech.get("reason","missing-decision-key")),flush=True)
 
 def main()->None:

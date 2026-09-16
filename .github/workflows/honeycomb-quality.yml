@@ -1,26 +1,86 @@
 name: Honeycomb Quality Gate
+
 on:
   push:
     branches: [main, 'upgrade/**', 'feat/**']
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: honeycomb-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
+    name: Python / Node / Shell Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+          cache: pip
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
-      - run: python -m pip install --upgrade pip
-      - run: pip install fastapi uvicorn httpx python-dotenv pydantic pytest
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
-      - run: python -m py_compile orchestrator/control_plane.py orchestrator/quality_gate.py orchestrator/ui_control_plane.py nexus_testnet_bridge.py
-      - run: bash -n run_nexus_testnet.sh run_honeycomb_ui.sh runtime/start_testnet.sh
-      - run: pytest -q
+          package-manager-cache: false
+
+      - name: Install Python quality dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi uvicorn httpx python-dotenv pydantic pytest
+
+      - name: Install Node dependencies
+        if: hashFiles('package-lock.json') != ''
+        run: npm ci
+
+      - name: Node typecheck
+        if: hashFiles('package.json') != ''
+        run: npm run typecheck
+
+      - name: Node tests
+        if: hashFiles('package.json') != ''
+        run: npm test
+
+      - name: Python compile gate
+        run: |
+          python - <<'PY'
+          import pathlib
+          import py_compile
+          import sys
+          files = [p for p in pathlib.Path('.').rglob('*.py') if '.git' not in p.parts and 'node_modules' not in p.parts]
+          failures = []
+          for path in files:
+              try:
+                  py_compile.compile(str(path), doraise=True)
+              except Exception as exc:
+                  failures.append((str(path), str(exc)))
+          if failures:
+              for path, error in failures:
+                  print(f'PY_COMPILE_FAIL {path}: {error}', file=sys.stderr)
+              raise SystemExit(1)
+          print(f'Compiled {len(files)} Python files successfully.')
+          PY
+
+      - name: Shell syntax gate
+        run: |
+          files=(run_nexus_testnet.sh run_honeycomb_ui.sh runtime/start_testnet.sh)
+          for file in "${files[@]}"; do
+            if [ -f "$file" ]; then bash -n "$file"; fi
+          done
+
+      - name: Action workflow lint
+        uses: raven-actions/actionlint@v2

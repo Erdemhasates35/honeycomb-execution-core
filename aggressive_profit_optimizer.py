@@ -75,7 +75,7 @@ def plan(symbol,kernel):
     kelly=kelly_fraction(p,reward_risk,float(os.getenv("KELLY_FRACTION","0.25")))
     quality=min(1,abs(raw_score)+max(0,edge)*20)
     exits=dynamic_exit_surface("LONG" if direction>0 else "SHORT",px,aa/px*100,quality,1.0)
-    lev=max(1,min(int(float(os.getenv("MAX_LEVERAGE","75"))),int(round(1+quality*(float(os.getenv("MAX_LEVERAGE","75"))-1)))))
+    exchange_max=kernel.max_leverage_for_notional(symbol,max(1.0,float(os.getenv("MAX_POSITION_SIZE_USDT","500"))))\n    configured_max=min(exchange_max,int(float(os.getenv("MAX_LEVERAGE",str(exchange_max)))))\n    lev=max(1,min(configured_max,int(round(1+quality*(configured_max-1)))))
     return {"symbol":symbol,"side":"LONG" if direction>0 else "SHORT","score":abs(raw_score),"confidence":confidence,
             "expected_edge":edge,"expected_move_pct":expected_move_pct,"kelly":kelly,"margin_pct":min(.05,kelly),
             "leverage":lev,"tp_pct":exits["tp_pct"],"sl_pct":exits["sl_pct"],"atr_pct":aa/px*100,

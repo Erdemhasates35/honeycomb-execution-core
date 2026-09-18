@@ -317,6 +317,18 @@ class LiveKernel:
     def set_margin_type(self, symbol: str, isolated: bool = True) -> str:
         return self.set_margin(symbol, isolated)
 
+    def max_leverage_for_notional(self, symbol: str, notional: float = 0.0) -> int:
+        data = self._http("GET", self.v["bracket"], {"symbol": symbol}, signed=True, weight=1)
+        rows = data if isinstance(data, list) else []
+        if rows and isinstance(rows[0], dict) and "brackets" in rows[0]:
+            rows = rows[0]["brackets"]
+        if not rows:
+            raise RuntimeError("leverage bracket unavailable for " + symbol)
+        n = max(0.0, finite(notional))
+        eligible = [r for r in rows if n <= finite(r.get("notionalCap", float("inf")))]
+        row = eligible[0] if eligible else rows[-1]
+        return max(1, int(float(row.get("initialLeverage") or row.get("leverage") or 1)))
+
     def set_leverage(self, symbol: str, leverage: int) -> int:
         requested = int(leverage)
         if requested < 1:

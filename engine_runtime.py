@@ -20,7 +20,7 @@ class LiveEngineRuntime:
         if self.env.get("EXECUTION_MODE","LIVE").upper()!="LIVE" or self.env.get("LIVE_ARMED","0")!="1":
             raise RuntimeError("LIVE production execution requires EXECUTION_MODE=LIVE and LIVE_ARMED=1")
         self.venue=venue.lower()
-        self.symbols=[s.strip().upper() for s in (self.env.get("LIVE_SYMBOLS") or "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,ADAUSDT,DOGEUSDT,AVAXUSDT,LINKUSDT,LTCUSDT").split(",") if s.strip()]
+        self.symbols=[s.strip().upper() for s in ((self.env.get("COIN_SYMBOLS") if self.venue=="coin" else self.env.get("LIVE_SYMBOLS")) or ("BTCUSD_PERP,ETHUSD_PERP" if self.venue=="coin" else "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT,ADAUSDT,DOGEUSDT,AVAXUSDT,LINKUSDT,LTCUSDT")).split(",") if s.strip()]
         self.max_positions=max(1,int(float(self.env.get("MAX_POSITIONS",self.env.get("PROFIT_MAX_POSITIONS","3")))))
         self.max_notional=max(0.0,float(self.env.get("MAX_POSITION_SIZE_USDT",self.env.get("PROFIT_MAX_NOTIONAL","500"))))
         self.interval=max(.5,float(self.env.get("ENGINE_SCAN_SEC",self.env.get("AGGRESSIVE_SCAN_SEC","12"))))

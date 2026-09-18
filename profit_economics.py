@@ -47,8 +47,10 @@ def _commission_rates(kernel, symbol: str) -> tuple[float, float]:
         taker = max(0.0, finite(data.get("takerCommissionRate"), DEFAULT_TAKER))
         _commission_cache[key] = (maker, taker, now)
         return maker, taker
-    except Exception:
-        return (cached[0], cached[1]) if cached else (DEFAULT_MAKER, DEFAULT_TAKER)
+    except Exception as e:
+        if cached:
+            return cached[0], cached[1]
+        raise RuntimeError("live commission rate unavailable for %s: %s" % (symbol, e))
 
 
 def market_economics(kernel, symbol: str, side: str, horizon_hours: float = 1.0) -> Dict[str, float]:
@@ -60,8 +62,8 @@ def market_economics(kernel, symbol: str, side: str, horizon_hours: float = 1.0)
         premium = kernel._http("GET", kernel.v["premium"], {"symbol": symbol}, signed=False, weight=1)
         funding = finite(premium.get("lastFundingRate"), 0.0)
         next_ms = finite(premium.get("nextFundingTime"), 0.0)
-    except Exception:
-        pass
+    except Exception as e:
+        raise RuntimeError("live funding data unavailable for %s: %s" % (symbol, e))
     now_ms = time.time() * 1000.0
     horizon_sec = max(0.0, finite(horizon_hours)) * 3600.0
     next_sec = max(0.0, (next_ms - now_ms) / 1000.0) if next_ms > now_ms else 0.0

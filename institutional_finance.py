@@ -26,10 +26,13 @@ def funding_cost_fraction(funding_rate: float, side: str, holding_seconds: float
 def net_edge_bps(expected_move_bps: float,maker_fee_rate: float,taker_fee_rate: float,spread_bps: float,slippage_bps: float,funding_bps: float,style: str="TAKER",market_impact_bps: float=0.0,adverse_selection_bps: float=0.0)->float:
     fee=finite(maker_fee_rate if str(style).upper()=="MAKER" else taker_fee_rate);cost=2*fee*10000+max(0,finite(spread_bps))+max(0,finite(slippage_bps))+max(0,finite(market_impact_bps))+max(0,finite(adverse_selection_bps));return finite(expected_move_bps)-cost-finite(funding_bps)
 
-def pnl_percent(side: str,entry: float,exit: float,quantity: float,margin: float,fee_rate: float=0.0,funding: float=0.0)->float:
+def pnl_percent(side: str,entry: float,exit: float,quantity: float,margin: float,fee_rate: float=0.0,funding: float=0.0,exit_fee_rate: float|None=None)->float:
     e,x,q,m=finite(entry),finite(exit),abs(finite(quantity)),finite(margin)
     if min(e,x,q,m)<=0:return 0.0
-    gross=(x-e)*q*(1 if str(side).upper()=="LONG" else -1);commission=e*q*max(0,finite(fee_rate));return (gross-commission+finite(funding))/m*100
+    gross=(x-e)*q*(1 if str(side).upper()=="LONG" else -1)
+    entry_fee=max(0.0,finite(fee_rate)); exit_fee=entry_fee if exit_fee_rate is None else max(0.0,finite(exit_fee_rate))
+    commission=(e*q*entry_fee)+(x*q*exit_fee)
+    return (gross-commission+finite(funding))/m*100
 
 def position_size_from_risk(equity: float,risk_fraction: float,stop_distance_pct: float,leverage: float,max_notional: float,price: float)->Dict[str,float]:
     eq=max(0,finite(equity));frac=clamp(risk_fraction,0,1);lev=max(1,finite(leverage,1));px=max(0,finite(price));margin=eq*frac;raw_cap=float(max_notional);cap=raw_cap if math.isinf(raw_cap) else max(0,finite(raw_cap));notional=min(cap,margin*lev);qty=notional/px if px>0 else 0;stop=max(0,finite(stop_distance_pct))/100

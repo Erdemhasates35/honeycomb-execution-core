@@ -150,6 +150,9 @@ class LiveKernel:
                 if f.get("stepSize", 0) <= 0 or f.get("minQty", 0) <= 0 or f.get("tickSize", 0) <= 0:
                     continue
                 f.setdefault("minNotional", 0.0)
+                if self.venue == "coin":
+                    f["contractSize"] = float(s.get("contractSize") or 0)
+                    if f["contractSize"] <= 0: continue
                 self._filters[sym] = f
             self.log("exchangeInfo loaded filters=%d" % len(self._filters))
         except Exception as e:
@@ -240,6 +243,9 @@ class LiveKernel:
                 if f.get("stepSize", 0) <= 0 or f.get("minQty", 0) <= 0 or f.get("tickSize", 0) <= 0:
                     raise RuntimeError("incomplete exchange filters for %s" % symbol)
                 f.setdefault("minNotional", 0.0)
+                if self.venue == "coin":
+                    f["contractSize"] = float(s.get("contractSize") or 0)
+                    if f["contractSize"] <= 0: raise RuntimeError("missing contractSize for %s" % symbol)
                 self._filters[symbol] = f
                 return f
         except Exception as e:
@@ -280,13 +286,26 @@ class LiveKernel:
 
     def balance_usdt(self):
         data = self._http("GET", self.v["balance"], {}, signed=True, weight=5)
+        if self.venue == "usdt":
+            for a in data:
+                if a.get("asset") == "USDT":
+                    return float(a.get("availableBalance") or a.get("balance") or 0)
+            return 0.0
+        usd_total = 0.0
         for a in data:
-            asset = a.get("asset")
-            if self.venue == "usdt" and asset == "USDT":
-                return float(a.get("availableBalance") or a.get("balance") or 0)
-            if self.venue == "coin" and asset in ("BTC", "ETH", "BNB"):
-                return float(a.get("availableBalance") or a.get("balance") or 0)
-        return 0.0
+            asset = str(a.get("asset") or "").upper()
+            avail = float(a.get("availableBalance") or a.get("balance") or 0)
+            if avail <= 0: continue
+            if asset == "USD":
+                usd_total += avail
+                continue
+            symbol = asset + "USD_PERP"
+            try:
+                px = self.mark(symbol)
+                if px > 0: usd_total += avail * px
+            except Exception:
+                continue
+        return usd_total
 
     def balance(self):
         """Alias used by local helix/apex engines."""
@@ -297,8 +316,7 @@ class LiveKernel:
         total = 0.0
         for p in data:
             if p.get("symbol") != symbol: continue
-            amt = float(p.get("positionAmt") or 0)
-            if side == "LONG" and amt > 0: return abs(amt)
+            amt = float(p.get("positionAmt") or 0)            if side == "LONG" and amt > 0: return abs(amt)
             if side == "SHORT" and amt < 0: return abs(amt)
             total += abs(amt)
         return total if side is None else 0.0
@@ -393,7 +411,11 @@ class LiveKernel:
             margin = min(bal * risk_pct, max_notional / max(lev, 1))
             notional = margin * lev
             if notional < 5: raise RuntimeError("notional too small")
-            qty = notional / entry_px
+            f = self.get_filters(symbol)
+            if self.venue == "coin":
+                qty = notional / f["contractSize"]
+            else:
+                qty = notional / entry_px
             self.set_margin(symbol, isolated=True)
             actual_lev = self.set_leverage(symbol, lev)
             dual = self.position_mode()
@@ -597,8 +619,7 @@ def adx(highs, lows, closes, period=14):
         dn = lows[i - 1] - lows[i]
         plus_dm.append(up if up > dn and up > 0 else 0.0)
         minus_dm.append(dn if dn > up and dn > 0 else 0.0)
-        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
-    atr_v = sum(trs[-period:]) / period
+        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))    atr_v = sum(trs[-period:]) / period
     if atr_v <= 0:
         return 0.0
     pdi = 100.0 * (sum(plus_dm[-period:]) / period) / atr_v
@@ -897,8 +918,7 @@ class DynamicTrailingStopEngine:
                 self.kernel.place_protect(symbol, pos["side"], entry, pos["tp"], new_sl)
                 pos["sl"] = new_sl
                 pos["stage"] = new_stage
-                self.log("TRAIL %s %s stage=%d new_sl=%.6f" % (pos["side"], symbol, new_stage, new_sl))
-                return new_sl
+                self.log("TRAIL %s %s stage=%d new_sl=%.6f" % (pos["side"], symbol, new_stage, new_sl))                return new_sl
             except Exception as e:
                 self.log("TRAIL HATA %s: %s" % (symbol, e))
                 return None

@@ -36,7 +36,7 @@ VENUES = {
         "leverage": "/fapi/v1/leverage", "dual": "/fapi/v1/positionSide/dual",
         "allOpen": "/fapi/v1/allOpenOrders", "bookTicker": "/fapi/v1/ticker/bookTicker",
         "klines": "/fapi/v1/klines", "marginType": "/fapi/v1/marginType",
-        "commission": "/fapi/v1/commissionRate",
+        "commission": "/fapi/v1/commissionRate", "bracket": "/fapi/v1/leverageBracket",
     },
     "coin": {
         "rest": "https://dapi.binance.com",
@@ -47,7 +47,7 @@ VENUES = {
         "leverage": "/dapi/v1/leverage", "dual": "/dapi/v1/positionSide/dual",
         "allOpen": "/dapi/v1/allOpenOrders", "bookTicker": "/dapi/v1/ticker/bookTicker",
         "klines": "/dapi/v1/klines", "marginType": "/dapi/v1/marginType",
-        "commission": "/dapi/v1/commissionRate",
+        "commission": "/dapi/v1/commissionRate", "bracket": "/dapi/v1/leverageBracket",
     },
 }
 

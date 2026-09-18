@@ -640,20 +640,10 @@ def get_technical_decision(symbol: str, *args: Any, **kwargs: Any) -> Dict[str, 
             }
         gate = evaluate_entry_gate(symbol, equity=equity, open_positions=open_positions)
         if not gate:
-            mh, _ = multi_horizon(symbol)
-            side = "LONG" if mh > 0 else ("SHORT" if mh < 0 else None)
-            conf = min(abs(mh), 99.0)
-            allow = side is not None and conf >= (54 if regime == "RANGE" else MIN_FINAL_CONF)
-            if allow and correlation_blocked(symbol, side, open_positions):
-                return {
-                    "allow": False, "side": None, "confidence": conf, "regime": regime,
-                    "risk_mult": risk_m, "score": mh, "atr_pct": atr_pct,
-                    "reason": "correlation",
-                }
             return {
-                "allow": allow, "side": side if allow else None, "confidence": conf,
-                "regime": regime, "risk_mult": risk_m, "score": mh, "atr_pct": atr_pct,
-                "reason": "mtf_fallback",
+                "allow": False, "side": None, "confidence": 0.0, "regime": regime,
+                "risk_mult": risk_m, "score": 0.0, "atr_pct": atr_pct,
+                "reason": "entry_gate_rejected",
             }
         return {
             "allow": True, "side": gate["side"], "confidence": gate["confidence"],

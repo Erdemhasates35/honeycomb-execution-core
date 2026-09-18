@@ -136,16 +136,20 @@ class LiveKernel:
                 sym = s.get("symbol") or ""
                 if want is not None and sym not in want:
                     continue
-                f = dict(DEFAULT_FILTER)
+                f = {}
                 for fl in s.get("filters", []):
                     t = fl.get("filterType")
                     if t == "LOT_SIZE":
-                        f["stepSize"] = float(fl.get("stepSize", f["stepSize"]))
-                        f["minQty"] = float(fl.get("minQty", f["minQty"]))
+                        f["stepSize"] = float(fl.get("stepSize", "0"))
+                        f["minQty"] = float(fl.get("minQty", "0"))
+                        f["maxQty"] = float(fl.get("maxQty", "0"))
                     elif t in ("MIN_NOTIONAL", "NOTIONAL"):
-                        f["minNotional"] = float(fl.get("notional", fl.get("minNotional", f["minNotional"])))
+                        f["minNotional"] = float(fl.get("notional", fl.get("minNotional", "0")))
                     elif t == "PRICE_FILTER":
-                        f["tickSize"] = float(fl.get("tickSize", f["tickSize"]))
+                        f["tickSize"] = float(fl.get("tickSize", "0"))
+                if f.get("stepSize", 0) <= 0 or f.get("minQty", 0) <= 0 or f.get("tickSize", 0) <= 0:
+                    continue
+                f.setdefault("minNotional", 0.0)
                 self._filters[sym] = f
             self.log("exchangeInfo loaded filters=%d" % len(self._filters))
         except Exception as e:
@@ -223,7 +227,7 @@ class LiveKernel:
             info = self._http("GET", self.v["exchangeInfo"], {}, signed=False, weight=10)
             for s in info.get("symbols", []):
                 if s.get("symbol") != symbol: continue
-                f = dict(DEFAULT_FILTER)
+                f = {}
                 for fl in s.get("filters", []):
                     t = fl.get("filterType")
                     if t == "LOT_SIZE":
@@ -232,13 +236,15 @@ class LiveKernel:
                     elif t == "MIN_NOTIONAL" or t == "NOTIONAL":
                         f["minNotional"] = float(fl.get("notional", fl.get("minNotional", f["minNotional"])))
                     elif t == "PRICE_FILTER":
-                        f["tickSize"] = float(fl.get("tickSize", f["tickSize"]))
+                        f["tickSize"] = float(fl.get("tickSize", "0"))
+                if f.get("stepSize", 0) <= 0 or f.get("minQty", 0) <= 0 or f.get("tickSize", 0) <= 0:
+                    raise RuntimeError("incomplete exchange filters for %s" % symbol)
+                f.setdefault("minNotional", 0.0)
                 self._filters[symbol] = f
                 return f
         except Exception as e:
-            self.log("filters fallback %s: %s" % (symbol, e))
-        self._filters[symbol] = dict(DEFAULT_FILTER)
-        return self._filters[symbol]
+            self.log("filters unavailable %s: %s" % (symbol, e))
+            raise RuntimeError("exchange metadata unavailable for %s: %s" % (symbol, e))
 
     @staticmethod
     def _decimal(value):
@@ -297,8 +303,7 @@ class LiveKernel:
             total += abs(amt)
         return total if side is None else 0.0
 
-    def set_leverage(self, symbol, lev):
-        requested = int(lev)
+    def set_leverage(self, symbol, lev):        requested = int(lev)
         try:
             self._http("POST", self.v["leverage"], {"symbol": symbol, "leverage": requested}, signed=True, weight=1, is_order=True)
             data = self._http("GET", self.v["position"], {"symbol": symbol}, signed=True, weight=5)
@@ -412,7 +417,9 @@ class LiveKernel:
             self.place_protect(symbol, side, entry, tp, sl, pos_side)
             self.log("OPEN %s %s entry=%.6f qty=%s oid=%s slip=%.1fbps" % (side, symbol, entry, qty, oid, slip_bps))
             return {"symbol": symbol, "side": side, "entry": entry, "qty": qty, "tp": tp, "sl": sl,
-                    "oid": oid, "commission": fill["commission"], "slip_bps": slip_bps, "pos_side": pos_side}
+                    "oid": oid, "commission": fill["commission"], "realized_pnl": fill["rp"],
+                    "fill_source": fill["source"], "slip_bps": slip_bps, "pos_side": pos_side,
+                    "leverage": actual_lev}
         finally:
             self.flock.release()
 
@@ -597,8 +604,7 @@ def adx(highs, lows, closes, period=14):
     pdi = 100.0 * (sum(plus_dm[-period:]) / period) / atr_v
     mdi = 100.0 * (sum(minus_dm[-period:]) / period) / atr_v
     den = pdi + mdi
-    dx = 0.0 if den == 0 else abs(pdi - mdi) / den * 100.0
-    return dx
+    dx = 0.0 if den == 0 else abs(pdi - mdi) / den * 100.0    return dx
 
 def cci(highs, lows, closes, period=20):
     n = min(len(highs), len(lows), len(closes))

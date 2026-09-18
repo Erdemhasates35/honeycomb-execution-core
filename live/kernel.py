@@ -84,8 +84,8 @@ def _D(x: Any) -> Decimal:
     return d
 
 class TokenBucket:
-    def __init__(self, wpm: float = 1800.0, orders10m: float = 200.0):
-        self.wcap, self.ocap = float(wpm), float(orders10m)
+    def __init__(self, wpm: float = 1800.0, orders10s: float = 200.0):
+        self.wcap, self.ocap = float(wpm), float(orders10s)
         self.w, self.o, self.t = self.wcap, self.ocap, time.time()
         self.lock = threading.Lock()
 
@@ -97,7 +97,7 @@ class TokenBucket:
                 dt = max(0.0, now - self.t)
                 self.t = now
                 self.w = min(self.wcap, self.w + dt * self.wcap / 60.0)
-                self.o = min(self.ocap, self.o + dt * self.ocap / 600.0)
+                self.o = min(self.ocap, self.o + dt * self.ocap / 10.0)
                 need_w = max(0.0, weight - self.w)
                 need_o = max(0.0, 1.0 - self.o) if is_order else 0.0
                 if need_w <= 0 and need_o <= 0:
@@ -107,7 +107,7 @@ class TokenBucket:
                     return
                 sleep_for = max(
                     need_w / (self.wcap / 60.0),
-                    need_o / (self.ocap / 600.0),
+                    need_o / (self.ocap / 10.0),
                     0.05,
                 )
             time.sleep(min(sleep_for, 5.0))

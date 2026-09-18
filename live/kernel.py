@@ -3,6 +3,7 @@
 """Honeycomb Live Kernel — dual-venue HMAC. No ghost fills. Exchange protect. Fill ledger."""
 from __future__ import annotations
 import fcntl, hashlib, hmac, json, math, os, sys, threading, time, urllib.error, urllib.parse, urllib.request
+from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_UP
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
@@ -239,10 +240,26 @@ class LiveKernel:
         self._filters[symbol] = dict(DEFAULT_FILTER)
         return self._filters[symbol]
 
-    def round_step(self, qty, step):
-        if step <= 0: return qty
-        precision = max(0, len(str(step).rstrip("0").split(".")[-1]) if "." in str(step) else 0)
-        return round((qty // step) * step, precision)
+    @staticmethod
+    def _decimal(value):
+        try:
+            d = Decimal(str(value))
+        except (InvalidOperation, ValueError, TypeError):
+            raise ValueError("non-finite decimal value")
+        if not d.is_finite():
+            raise ValueError("non-finite decimal value")
+        return d
+
+    def round_step(self, qty, step, rounding=ROUND_DOWN):
+        q = self._decimal(qty); s = self._decimal(step)
+        if s <= 0: raise ValueError("invalid step")
+        return float((q / s).to_integral_value(rounding=rounding) * s)
+
+    def round_price(self, price, tick, direction):
+        p = self._decimal(price); t = self._decimal(tick)
+        if p <= 0 or t <= 0: raise ValueError("invalid price/tick")
+        rounding = ROUND_DOWN if direction == "DOWN" else ROUND_UP
+        return float((p / t).to_integral_value(rounding=rounding) * t)
 
     def book(self, symbol):
         data = self._http("GET", self.v["bookTicker"], {"symbol": symbol}, signed=False, weight=2)
@@ -281,10 +298,18 @@ class LiveKernel:
         return total if side is None else 0.0
 
     def set_leverage(self, symbol, lev):
+        requested = int(lev)
         try:
-            self._http("POST", self.v["leverage"], {"symbol": symbol, "leverage": int(lev)}, signed=True, weight=1, is_order=True)
+            self._http("POST", self.v["leverage"], {"symbol": symbol, "leverage": requested}, signed=True, weight=1, is_order=True)
+            data = self._http("GET", self.v["position"], {"symbol": symbol}, signed=True, weight=5)
+            rows = [p for p in (data if isinstance(data, list) else []) if p.get("symbol") == symbol]
+            actual = int(float(rows[0].get("leverage"))) if rows and rows[0].get("leverage") is not None else 0
+            if actual != requested:
+                raise RuntimeError("leverage verification failed %s requested=%s actual=%s" % (symbol, requested, actual))
+            return actual
         except Exception as e:
-            self.log("lev set %s: %s" % (symbol, e))
+            self.log("lev set/verify %s: %s" % (symbol, e))
+            raise
 
     def set_margin(self, symbol, isolated=True):
         try:
@@ -297,31 +322,38 @@ class LiveKernel:
         f = self.get_filters(symbol)
         q = self.round_step(qty, f["stepSize"])
         if self.venue == "coin":
-            q = max(1, int(round(q)))
-        if q < f["minQty"]:
+            q = max(1, int(round(q)))        if q < f["minQty"]:
             raise RuntimeError("qty below min %s < %s" % (q, f["minQty"]))
         params = {"symbol": symbol, "side": side, "type": "MARKET", "quantity": q}
         if position_side:
             params["positionSide"] = position_side
-        if reduce_only and not position_side:
+        if reduce_only and position_side not in ("LONG", "SHORT"):
             params["reduceOnly"] = "true"
         return self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
 
     def place_protect(self, symbol, side, entry, tp, sl, position_side=None):
+        f = self.get_filters(symbol)
         close_side = "SELL" if side == "LONG" else "BUY"
-        ps = position_side or ("LONG" if side == "LONG" else "SHORT")
-        for kind, stop in (("TAKE_PROFIT_MARKET", tp), ("STOP_MARKET", sl)):
-            try:
+        specs = (("TAKE_PROFIT_MARKET", tp), ("STOP_MARKET", sl))
+        placed = []
+        try:
+            for kind, stop in specs:
+                direction = "DOWN" if side == "LONG" else "UP"
+                stop_px = self.round_price(stop, f["tickSize"], direction)
                 params = {
                     "symbol": symbol, "side": close_side, "type": kind,
-                    "stopPrice": round(stop, 8), "closePosition": "true",
+                    "stopPrice": stop_px, "closePosition": "true",
                     "workingType": "MARK_PRICE",
                 }
-                if position_side:
-                    params["positionSide"] = ps
+                if position_side in ("LONG", "SHORT"):
+                    params["positionSide"] = position_side
                 self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
-            except Exception as e:
-                self.log("protect %s fail: %s" % (kind, e))
+                placed.append(kind)
+        except Exception as e:
+            self.log("protect failure %s placed=%s: %s" % (symbol, placed, e))
+            try: self.cancel_all(symbol)
+            except Exception: pass
+            raise
 
     def cancel_all(self, symbol):
         try:
@@ -343,7 +375,7 @@ class LiveKernel:
                 return {"avg": avg, "qty": qsum, "commission": commission, "rp": rp, "source": "userTrades"}
         except Exception as e:
             self.log("resolve_fill userTrades: %s" % e)
-        return {"avg": fallback_avg, "qty": qty, "commission": 0.0, "rp": 0.0, "source": "orderAck"}
+        return {"avg": fallback_avg, "qty": qty, "commission": None, "rp": None, "source": "orderAck_unreconciled"}
 
     def open_market(self, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
         if not self.flock.acquire(timeout=10):
@@ -358,8 +390,9 @@ class LiveKernel:
             if notional < 5: raise RuntimeError("notional too small")
             qty = notional / entry_px
             self.set_margin(symbol, isolated=True)
-            self.set_leverage(symbol, lev)
-            pos_side = "LONG" if side == "LONG" else "SHORT"
+            actual_lev = self.set_leverage(symbol, lev)
+            dual = self.position_mode()
+            pos_side = ("LONG" if side == "LONG" else "SHORT") if dual else "BOTH"
             order_side = "BUY" if side == "LONG" else "SELL"
             res = self.place_market(symbol, order_side, qty, pos_side)
             oid = res.get("orderId")
@@ -395,7 +428,7 @@ class LiveKernel:
         fill = self.resolve_fill(symbol, oid, float(res.get("avgPrice") or 0) or 1.0, q)
         try: self.cancel_all(symbol)
         except Exception: pass
-        self.log("CLOSE %s %s exit=%.6f oid=%s rp=%.6f" % (side, symbol, fill["avg"], oid, fill["rp"]))
+        self.log("CLOSE %s %s exit=%.6f oid=%s rp=%s fill_source=%s" % (side, symbol, fill["avg"], oid, fill["rp"], fill["source"]))
         return fill
 
     def klines(self, symbol, interval="1m", limit=60):
@@ -597,8 +630,7 @@ def roc(values, period=10):
 
 def williams_r(highs, lows, closes, period=14):
     if min(len(highs), len(lows), len(closes)) < period:
-        return None
-    hh = max(highs[-period:])
+        return None    hh = max(highs[-period:])
     ll = min(lows[-period:])
     if hh == ll:
         return -50.0

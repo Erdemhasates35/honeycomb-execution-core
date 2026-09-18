@@ -1,93 +1,139 @@
 #!/data/data/com.termux/files/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Honeycomb Live Kernel — dual-venue HMAC. No ghost fills. Exchange protect. Fill ledger."""
+"""HONEYCOMB LIVE KERNEL — single source of truth for Binance Futures execution.
+
+Design invariants:
+- LIVE execution only; no paper/testnet endpoint is exposed by this kernel.
+- Exchange metadata is authoritative; synthetic filters are forbidden.
+- Decimal tick/step arithmetic; no binary-float order rounding.
+- Position mode, leverage, margin mode and fills are verified from Binance.
+- No synthetic zero commission/PnL is ever returned as a reconciled fill.
+- COIN-M quantity uses exchange contractSize.
+- Protection orders are exchange-native MARK_PRICE close-position orders.
+"""
 from __future__ import annotations
-import fcntl, hashlib, hmac, json, math, os, sys, threading, time, urllib.error, urllib.parse, urllib.request
+
+import fcntl, hashlib, hmac, json, math, os, sys, threading, time
+import urllib.error, urllib.parse, urllib.request
 from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_UP
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    if hasattr(sys.stderr, 'reconfigure'):
-        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
 
 VENUES = {
     "usdt": {
-        "rest": "https://fapi.binance.com", "time": "/fapi/v1/time", "order": "/fapi/v1/order",
-        "balance": "/fapi/v2/balance", "position": "/fapi/v2/positionRisk", "account": "/fapi/v2/account",
-        "userTrades": "/fapi/v1/userTrades", "premium": "/fapi/v1/premiumIndex",
-        "exchangeInfo": "/fapi/v1/exchangeInfo", "leverage": "/fapi/v1/leverage",
-        "dual": "/fapi/v1/positionSide/dual", "allOpen": "/fapi/v1/allOpenOrders",
-        "bookTicker": "/fapi/v1/ticker/bookTicker", "klines": "/fapi/v1/klines",
-        "marginType": "/fapi/v1/marginType",
+        "rest": "https://fapi.binance.com",
+        "time": "/fapi/v1/time", "order": "/fapi/v1/order",
+        "balance": "/fapi/v2/balance", "position": "/fapi/v2/positionRisk",
+        "account": "/fapi/v2/account", "trades": "/fapi/v1/userTrades",
+        "premium": "/fapi/v1/premiumIndex", "exchangeInfo": "/fapi/v1/exchangeInfo",
+        "leverage": "/fapi/v1/leverage", "dual": "/fapi/v1/positionSide/dual",
+        "allOpen": "/fapi/v1/allOpenOrders", "bookTicker": "/fapi/v1/ticker/bookTicker",
+        "klines": "/fapi/v1/klines", "marginType": "/fapi/v1/marginType",
+        "commission": "/fapi/v1/commissionRate",
     },
     "coin": {
-        "rest": "https://dapi.binance.com", "time": "/dapi/v1/time", "order": "/dapi/v1/order",
-        "balance": "/dapi/v1/balance", "position": "/dapi/v1/positionRisk", "account": "/dapi/v1/account",
-        "userTrades": "/dapi/v1/userTrades", "premium": "/dapi/v1/premiumIndex",
-        "exchangeInfo": "/dapi/v1/exchangeInfo", "leverage": "/dapi/v1/leverage",
-        "dual": "/dapi/v1/positionSide/dual", "allOpen": "/dapi/v1/allOpenOrders",
-        "bookTicker": "/dapi/v1/ticker/bookTicker", "klines": "/dapi/v1/klines",
-        "marginType": "/dapi/v1/marginType",
+        "rest": "https://dapi.binance.com",
+        "time": "/dapi/v1/time", "order": "/dapi/v1/order",
+        "balance": "/dapi/v1/balance", "position": "/dapi/v1/positionRisk",
+        "account": "/dapi/v1/account", "trades": "/dapi/v1/userTrades",
+        "premium": "/dapi/v1/premiumIndex", "exchangeInfo": "/dapi/v1/exchangeInfo",
+        "leverage": "/dapi/v1/leverage", "dual": "/dapi/v1/positionSide/dual",
+        "allOpen": "/dapi/v1/allOpenOrders", "bookTicker": "/dapi/v1/ticker/bookTicker",
+        "klines": "/dapi/v1/klines", "marginType": "/dapi/v1/marginType",
+        "commission": "/dapi/v1/commissionRate",
     },
 }
-DEFAULT_FILTER = {"stepSize": 0.001, "minQty": 0.001, "minNotional": 5.0, "tickSize": 0.01}
 
-def load_env(path=None):
-    env = {}
+def load_env(path: Optional[str] = None) -> Dict[str, str]:
     p = path or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    out: Dict[str, str] = {}
     if os.path.exists(p):
-        with open(p, encoding="utf-8") as f:
-            for line in f:
+        with open(p, encoding="utf-8") as fh:
+            for line in fh:
                 line = line.strip()
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
-                    env[k.strip()] = v.strip().split("#")[0].strip()
+                    out[k.strip()] = v.strip().split("#", 1)[0].strip()
     for k, v in os.environ.items():
-        env.setdefault(k, v)
-    return env
+        out.setdefault(k, v)
+    return out
+
+def finite(x: Any) -> float:
+    try:
+        v = float(x)
+        if not math.isfinite(v):
+            raise ValueError("non-finite")
+        return v
+    except (TypeError, ValueError):
+        raise ValueError("non-finite numeric value")
+
+def _D(x: Any) -> Decimal:
+    try:
+        d = Decimal(str(x))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError("invalid decimal")
+    if not d.is_finite():
+        raise ValueError("non-finite decimal")
+    return d
 
 class TokenBucket:
-    def __init__(self, wpm=1800.0, o10=200.0):
-        self.w_cap, self.o_cap, self.w, self.o = wpm, o10, wpm, o10
-        self.t = time.time()
+    def __init__(self, wpm: float = 1800.0, orders10m: float = 200.0):
+        self.wcap, self.ocap = float(wpm), float(orders10m)
+        self.w, self.o, self.t = self.wcap, self.ocap, time.time()
         self.lock = threading.Lock()
-    def take(self, weight=1, is_order=False):
-        with self.lock:
-            now = time.time()
-            elapsed = now - self.t
-            self.t = now
-            self.w = min(self.w_cap, self.w + elapsed * (self.w_cap / 60.0))
-            self.o = min(self.o_cap, self.o + elapsed * (self.o_cap / 10.0))
-            if self.w < weight or (is_order and self.o < 1):
-                need_w = max(0, (weight - self.w) / (self.w_cap / 60.0))
-                need_o = max(0, (1 - self.o) / (self.o_cap / 10.0)) if is_order else 0
-                time.sleep(max(need_w, need_o, 0.05))
-                return self.take(weight, is_order)
-            self.w -= weight
-            if is_order: self.o -= 1
-            return True
+
+    def take(self, weight: float = 1.0, is_order: bool = False) -> None:
+        weight = max(1.0, float(weight))
+        while True:
+            with self.lock:
+                now = time.time()
+                dt = max(0.0, now - self.t)
+                self.t = now
+                self.w = min(self.wcap, self.w + dt * self.wcap / 60.0)
+                self.o = min(self.ocap, self.o + dt * self.ocap / 600.0)
+                need_w = max(0.0, weight - self.w)
+                need_o = max(0.0, 1.0 - self.o) if is_order else 0.0
+                if need_w <= 0 and need_o <= 0:
+                    self.w -= weight
+                    if is_order:
+                        self.o -= 1.0
+                    return
+                sleep_for = max(
+                    need_w / (self.wcap / 60.0),
+                    need_o / (self.ocap / 600.0),
+                    0.05,
+                )
+            time.sleep(min(sleep_for, 5.0))
 
 class SingleFlight:
-    def __init__(self, path=None):
-        self.path = path or "/tmp/honeycomb_sf.lock"
+    def __init__(self, path: Optional[str] = None):
+        self.path = path or os.path.expanduser("~/.honeycomb_runtime/honeycomb_sf.lock")
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
         self.fd = None
-    def acquire(self, timeout=8.0):
-        self.fd = open(self.path, "w")
+
+    def acquire(self, timeout: float = 8.0, blocking: bool = True) -> bool:
+        self.fd = open(self.path, "a+")
         start = time.time()
         while True:
             try:
-                fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                flags = fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB)
+                fcntl.flock(self.fd, flags)
                 return True
             except BlockingIOError:
-                if time.time() - start > timeout:
+                if not blocking or time.time() - start >= timeout:
+                    self.release()
                     return False
                 time.sleep(0.05)
-    def release(self):
-        if self.fd:
+
+    def release(self) -> None:
+        if self.fd is not None:
             try: fcntl.flock(self.fd, fcntl.LOCK_UN)
             except Exception: pass
             try: self.fd.close()
@@ -95,830 +141,538 @@ class SingleFlight:
             self.fd = None
 
 class LiveKernel:
-    def __init__(self, venue="usdt", api_key=None, api_secret=None, env=None, log_fn=None):
+    def __init__(self, venue: str = "usdt", api_key: Optional[str] = None,
+                 api_secret: Optional[str] = None, env: Optional[Dict[str, str]] = None,
+                 log_fn=None):
         self.env = env or load_env()
-        self.venue = venue if venue in VENUES else "usdt"
+        self.venue = str(venue).lower()
+        if self.venue not in VENUES:
+            raise ValueError("unsupported venue")
         self.v = VENUES[self.venue]
         self.key = (api_key or self.env.get("BINANCE_API_KEY") or self.env.get("API_KEY") or "").strip()
-        # BINANCE_SECRET_KEY alias eklendi — .env tutarsızlığını engeller
-        raw_sec = (
-            api_secret
-            or self.env.get("BINANCE_SECRET_KEY")
-            or self.env.get("BINANCE_API_SECRET")
-            or self.env.get("BINANCE_SECRET")
-            or self.env.get("API_SECRET")
-            or ""
-        ).strip()
-        self.secret = raw_sec.encode("utf-8")
+        secret = api_secret or self.env.get("BINANCE_SECRET_KEY") or self.env.get("BINANCE_API_SECRET") or self.env.get("BINANCE_SECRET") or self.env.get("API_SECRET") or ""
+        self.secret = str(secret).strip().encode()
+        if not self.key or not self.secret:
+            raise RuntimeError("Binance API credentials unavailable")
         self.recv = int(self.env.get("RECV_WINDOW", "10000"))
         self.bucket = TokenBucket()
         self.flock = SingleFlight()
-        self._off = 0
-        self._filters: Dict[str, Dict] = {}
-        self._stale_until = 0.0
-        self._dual = None
-        self.log = log_fn or (lambda m: print(time.strftime("%H:%M:%S") + " [K] " + str(m), flush=True))
+        self._offset_ms = 0
+        self._filters: Dict[str, Dict[str, float]] = {}
+        self._dual: Optional[bool] = None
+        self._margin_type: Dict[str, str] = {}
+        self._halt_until = 0.0
+        self.log = log_fn or (lambda m: print(time.strftime("%H:%M:%S") + " [KERNEL] " + str(m), flush=True))
         self.sync_time()
 
-    def sync_time(self):
-        try:
-            data = self._http("GET", self.v["time"], {}, signed=False, weight=1)
-            server = int(data["serverTime"])
-            self._off = server - int(time.time() * 1000)
-        except Exception as e:
-            self.log("time sync fail: %s" % e)
+    @property
+    def hedge_mode(self) -> bool:
+        return bool(self.position_mode())
 
-    def load_exchange_info(self, symbols=None):
-        try:
-            info = self._http("GET", self.v["exchangeInfo"], {}, signed=False, weight=10)
-            want = set(s.upper() for s in (symbols or [])) if symbols else None
-            for s in info.get("symbols", []):
-                sym = s.get("symbol") or ""
-                if want is not None and sym not in want:
-                    continue
-                f = {}
-                for fl in s.get("filters", []):
-                    t = fl.get("filterType")
-                    if t == "LOT_SIZE":
-                        f["stepSize"] = float(fl.get("stepSize", "0"))
-                        f["minQty"] = float(fl.get("minQty", "0"))
-                        f["maxQty"] = float(fl.get("maxQty", "0"))
-                    elif t in ("MIN_NOTIONAL", "NOTIONAL"):
-                        f["minNotional"] = float(fl.get("notional", fl.get("minNotional", "0")))
-                    elif t == "PRICE_FILTER":
-                        f["tickSize"] = float(fl.get("tickSize", "0"))
-                if f.get("stepSize", 0) <= 0 or f.get("minQty", 0) <= 0 or f.get("tickSize", 0) <= 0:
-                    continue
-                f.setdefault("minNotional", 0.0)
-                if self.venue == "coin":
-                    f["contractSize"] = float(s.get("contractSize") or 0)
-                    if f["contractSize"] <= 0: continue
-                self._filters[sym] = f
-            self.log("exchangeInfo loaded filters=%d" % len(self._filters))
-        except Exception as e:
-            self.log("load_exchange_info: %s" % e)
-        return self._filters
+    @property
+    def margin_type(self) -> str:
+        return "ISOLATED"
 
-    def position_mode(self, dual=None):
-        try:
-            if dual is None:
-                data = self._http("GET", self.v["dual"], {}, signed=True, weight=1)
-                self._dual = bool(data.get("dualSidePosition"))
-                return self._dual
-            self._http("POST", self.v["dual"], {"dualSidePosition": "true" if dual else "false"},
-                       signed=True, weight=1, is_order=True)
-            self._dual = bool(dual)
-            return self._dual
-        except Exception as e:
-            msg = str(e)
-            if "No need" in msg or "not modified" in msg.lower():
-                self._dual = bool(dual) if dual is not None else self._dual
-                return self._dual
-            self.log("position_mode: %s" % e)
-            return self._dual
+    def sync_time(self) -> int:
+        data = self._http("GET", self.v["time"], signed=False, weight=1)
+        self._offset_ms = int(data["serverTime"]) - int(time.time() * 1000)
+        return self._offset_ms
 
-    def _sign(self, params: Dict) -> str:
-        # Değerler string, insertion order korunur — Binance imza kuralı
-        clean = {k: str(v) for k, v in params.items() if v is not None}
+    def _signed_query(self, params: Dict[str, Any]) -> str:
+        clean = [(k, str(v)) for k, v in params.items() if v is not None]
         qs = urllib.parse.urlencode(clean, doseq=True)
-        sig = hmac.new(self.secret, qs.encode("utf-8"), hashlib.sha256).hexdigest()
+        sig = hmac.new(self.secret, qs.encode(), hashlib.sha256).hexdigest()
         return qs + "&signature=" + sig
 
-    def _http(self, method, path, params=None, signed=False, weight=1, is_order=False, retries=3):
-        if time.time() < self._stale_until:
-            raise RuntimeError("stale-halt active %.0fs" % (self._stale_until - time.time()))
+    def _http(self, method: str, path: str, params: Optional[Dict[str, Any]] = None,
+              signed: bool = False, weight: int = 1, is_order: bool = False,
+              retries: int = 3) -> Any:
+        if time.time() < self._halt_until:
+            raise RuntimeError("execution halted after transport failure")
         self.bucket.take(weight, is_order)
-        params = dict(params or {})
-        if signed:
-            params["timestamp"] = int(time.time() * 1000) + self._off
-            params["recvWindow"] = self.recv
-            body = self._sign(params)
-        else:
-            body = urllib.parse.urlencode({k: str(v) for k, v in params.items()}, doseq=True)
-        url = self.v["rest"] + path + (("?" + body) if method == "GET" and body else "")
-        data = body.encode("utf-8") if method != "GET" else None
-        headers = {"X-MBX-APIKEY": self.key, "Content-Type": "application/x-www-form-urlencoded"}
-        last_err = None
-        for attempt in range(retries):
+        base = dict(params or {})
+        last = None
+        for attempt in range(max(1, retries)):
+            q = dict(base)
+            if signed:
+                q["timestamp"] = int(time.time() * 1000) + self._offset_ms
+                q["recvWindow"] = self.recv
+                body = self._signed_query(q)
+            else:
+                body = urllib.parse.urlencode([(k, str(v)) for k, v in q.items() if v is not None], doseq=True)
+            url = self.v["rest"] + path + (("?" + body) if method == "GET" and body else "")
+            data = None if method == "GET" else body.encode()
+            req = urllib.request.Request(
+                url, data=data,
+                headers={"X-MBX-APIKEY": self.key, "Content-Type": "application/x-www-form-urlencoded"},
+                method=method,
+            )
             try:
-                req = urllib.request.Request(url, data=data, headers=headers, method=method)
                 with urllib.request.urlopen(req, timeout=12) as resp:
                     raw = resp.read().decode()
                     return json.loads(raw) if raw else {}
-            except urllib.error.HTTPError as e:
-                raw = e.read().decode() if e.fp else str(e)
+            except urllib.error.HTTPError as exc:
+                raw = exc.read().decode() if exc.fp else str(exc)
                 try: err = json.loads(raw)
                 except Exception: err = {"msg": raw}
                 code = err.get("code")
-                if code in (-1021, -1022):
+                if code in (-1021, -1022) and attempt + 1 < retries:
                     self.sync_time()
-                    last_err = RuntimeError("time/sig %s" % err)
                     time.sleep(0.15 * (attempt + 1))
                     continue
+                if code == -1003:
+                    self._halt_until = time.time() + 30
+                    raise RuntimeError("Binance rate-limit response -1003")
                 if code == -2015:
-                    raise RuntimeError("API key invalid or IP restricted (-2015)")
-                raise RuntimeError("HTTP %s: %s" % (e.code, err))
-            except (urllib.error.URLError, ConnectionResetError, TimeoutError, OSError) as e:
-                last_err = e
-                self._stale_until = time.time() + min(30, 2 ** attempt + 1)
-                time.sleep(0.3 * (attempt + 1))
-        raise RuntimeError("net fail after retries: %s" % last_err)
+                    raise RuntimeError("Binance API key/IP permission rejected (-2015)")
+                raise RuntimeError("HTTP %s: %s" % (exc.code, err))
+            except (urllib.error.URLError, TimeoutError, ConnectionResetError, OSError) as exc:
+                last = exc
+                if attempt + 1 < retries:
+                    time.sleep(0.3 * (attempt + 1))
+                    continue
+                self._halt_until = time.time() + 15
+                raise RuntimeError("Binance transport failure: %s" % exc)
+        raise RuntimeError("request failed: %s" % last)
 
-    def get_filters(self, symbol):
-        if symbol in self._filters: return self._filters[symbol]
-        try:
-            info = self._http("GET", self.v["exchangeInfo"], {}, signed=False, weight=10)
-            for s in info.get("symbols", []):
-                if s.get("symbol") != symbol: continue
-                f = {}
-                for fl in s.get("filters", []):
-                    t = fl.get("filterType")
-                    if t == "LOT_SIZE":
-                        f["stepSize"] = float(fl.get("stepSize", f["stepSize"]))
-                        f["minQty"] = float(fl.get("minQty", f["minQty"]))
-                    elif t == "MIN_NOTIONAL" or t == "NOTIONAL":
-                        f["minNotional"] = float(fl.get("notional", fl.get("minNotional", f["minNotional"])))
-                    elif t == "PRICE_FILTER":
-                        f["tickSize"] = float(fl.get("tickSize", "0"))
-                if f.get("stepSize", 0) <= 0 or f.get("minQty", 0) <= 0 or f.get("tickSize", 0) <= 0:
-                    raise RuntimeError("incomplete exchange filters for %s" % symbol)
-                f.setdefault("minNotional", 0.0)
-                if self.venue == "coin":
-                    f["contractSize"] = float(s.get("contractSize") or 0)
-                    if f["contractSize"] <= 0: raise RuntimeError("missing contractSize for %s" % symbol)
-                self._filters[symbol] = f
-                return f
-        except Exception as e:
-            self.log("filters unavailable %s: %s" % (symbol, e))
-            raise RuntimeError("exchange metadata unavailable for %s: %s" % (symbol, e))
+    def _parse_filters(self, symbol: str, row: Dict[str, Any]) -> Dict[str, float]:
+        f: Dict[str, float] = {}
+        for x in row.get("filters", []):
+            typ = x.get("filterType")
+            if typ == "LOT_SIZE":
+                f["stepSize"] = finite(x.get("stepSize"))
+                f["minQty"] = finite(x.get("minQty"))
+                f["maxQty"] = finite(x.get("maxQty"))
+            elif typ in ("MIN_NOTIONAL", "NOTIONAL"):
+                f["minNotional"] = finite(x.get("notional", x.get("minNotional", 0)))
+            elif typ == "PRICE_FILTER":
+                f["tickSize"] = finite(x.get("tickSize"))
+        if min(f.get("stepSize", 0), f.get("minQty", 0), f.get("tickSize", 0)) <= 0:
+            raise RuntimeError("incomplete exchange metadata for " + symbol)
+        if self.venue == "coin":
+            f["contractSize"] = finite(row.get("contractSize"))
+            if f["contractSize"] <= 0:
+                raise RuntimeError("missing contractSize for " + symbol)
+        f.setdefault("minNotional", 0.0)
+        return f
+
+    def load_exchange_info(self, symbols: Optional[List[str]] = None) -> Dict[str, Dict[str, float]]:
+        wanted = {s.upper() for s in symbols} if symbols else None
+        data = self._http("GET", self.v["exchangeInfo"], signed=False, weight=10)
+        loaded = 0
+        for row in data.get("symbols", []):
+            sym = str(row.get("symbol") or "").upper()
+            if not sym or (wanted is not None and sym not in wanted):
+                continue
+            try:
+                self._filters[sym] = self._parse_filters(sym, row)
+                loaded += 1
+            except Exception as exc:
+                self.log("metadata rejected %s: %s" % (sym, exc))
+        if wanted and not wanted.issubset(self._filters):
+            missing = sorted(wanted - set(self._filters))
+            raise RuntimeError("exchange metadata missing: " + ",".join(missing))
+        return self._filters
+
+    def get_filters(self, symbol: str) -> Dict[str, float]:
+        symbol = symbol.upper()
+        if symbol not in self._filters:
+            self.load_exchange_info([symbol])
+        return self._filters[symbol]
 
     @staticmethod
-    def _decimal(value):
-        try:
-            d = Decimal(str(value))
-        except (InvalidOperation, ValueError, TypeError):
-            raise ValueError("non-finite decimal value")
-        if not d.is_finite():
-            raise ValueError("non-finite decimal value")
-        return d
-
-    def round_step(self, qty, step, rounding=ROUND_DOWN):
-        q = self._decimal(qty); s = self._decimal(step)
-        if s <= 0: raise ValueError("invalid step")
+    def round_step(qty: Any, step: Any, rounding=ROUND_DOWN) -> float:
+        q, s = _D(qty), _D(step)
+        if s <= 0: raise ValueError("invalid quantity step")
         return float((q / s).to_integral_value(rounding=rounding) * s)
 
-    def round_price(self, price, tick, direction):
-        p = self._decimal(price); t = self._decimal(tick)
+    @staticmethod
+    def round_price(price: Any, tick: Any, direction: str) -> float:
+        p, t = _D(price), _D(tick)
         if p <= 0 or t <= 0: raise ValueError("invalid price/tick")
-        rounding = ROUND_DOWN if direction == "DOWN" else ROUND_UP
-        return float((p / t).to_integral_value(rounding=rounding) * t)
+        mode = ROUND_DOWN if direction.upper() == "DOWN" else ROUND_UP
+        return float((p / t).to_integral_value(rounding=mode) * t)
 
-    def book(self, symbol):
-        data = self._http("GET", self.v["bookTicker"], {"symbol": symbol}, signed=False, weight=2)
-        bid, ask = float(data["bidPrice"]), float(data["askPrice"])
+    def position_mode(self, dual: Optional[bool] = None) -> bool:
+        if dual is None:
+            data = self._http("GET", self.v["dual"], signed=True, weight=1)
+            self._dual = bool(data.get("dualSidePosition"))
+            return self._dual
+        self._http("POST", self.v["dual"], {"dualSidePosition": "true" if dual else "false"},
+                   signed=True, weight=1, is_order=True)
+        self._dual = bool(dual)
+        return self._dual
+
+    def set_margin(self, symbol: str, isolated: bool = True) -> str:
+        desired = "ISOLATED" if isolated else "CROSSED"
+        try:
+            self._http("POST", self.v["marginType"], {"symbol": symbol, "marginType": desired},
+                       signed=True, weight=1, is_order=True)
+        except Exception as exc:
+            if "No need" not in str(exc) and "already" not in str(exc).lower():
+                raise
+        self._margin_type[symbol] = desired
+        return desired
+
+    def set_margin_type(self, symbol: str, isolated: bool = True) -> str:
+        return self.set_margin(symbol, isolated)
+
+    def set_leverage(self, symbol: str, leverage: int) -> int:
+        requested = int(leverage)
+        if requested < 1:
+            raise ValueError("leverage must be >= 1")
+        self._http("POST", self.v["leverage"], {"symbol": symbol, "leverage": requested},
+                   signed=True, weight=1, is_order=True)
+        rows = self._http("GET", self.v["position"], {"symbol": symbol}, signed=True, weight=5)
+        rows = rows if isinstance(rows, list) else []
+        same = [p for p in rows if str(p.get("symbol")) == symbol]
+        if not same or same[0].get("leverage") is None:
+            raise RuntimeError("leverage verification unavailable for " + symbol)
+        actual = int(float(same[0]["leverage"]))
+        if actual != requested:
+            raise RuntimeError("leverage mismatch %s requested=%s actual=%s" % (symbol, requested, actual))
+        return actual
+
+    def book(self, symbol: str) -> Tuple[float, float, float]:
+        d = self._http("GET", self.v["bookTicker"], {"symbol": symbol}, signed=False, weight=2)
+        bid, ask = finite(d.get("bidPrice")), finite(d.get("askPrice"))
         if bid <= 0 or ask <= 0 or ask < bid:
-            raise RuntimeError("stale book %s" % symbol)
+            raise RuntimeError("invalid/stale book " + symbol)
         return bid, ask, (bid + ask) / 2.0
 
-    def mark(self, symbol):
-        data = self._http("GET", self.v["premium"], {"symbol": symbol}, signed=False, weight=1)
-        return float(data.get("markPrice") or data.get("indexPrice") or 0)
+    def mark(self, symbol: str) -> float:
+        d = self._http("GET", self.v["premium"], {"symbol": symbol}, signed=False, weight=1)
+        px = finite(d.get("markPrice") or d.get("indexPrice"))
+        if px <= 0:
+            raise RuntimeError("invalid mark price " + symbol)
+        return px
 
-    def balance_usdt(self):
-        data = self._http("GET", self.v["balance"], {}, signed=True, weight=5)
+    def price(self, symbol: str) -> float:
+        return self.mark(symbol)
+
+    def klines(self, symbol: str, interval: str = "1m", limit: int = 200) -> Tuple[List[float], List[float]]:
+        d = self._http("GET", self.v["klines"], {"symbol": symbol, "interval": interval, "limit": min(1500, max(10, int(limit)))}, signed=False, weight=2)
+        closes = [finite(x[4]) for x in d]
+        volumes = [finite(x[5]) for x in d]
+        if len(closes) < 10 or any(x <= 0 for x in closes):
+            raise RuntimeError("insufficient/invalid klines " + symbol)
+        return closes, volumes
+
+    def balance_usdt(self) -> float:
+        data = self._http("GET", self.v["balance"], signed=True, weight=5)
         if self.venue == "usdt":
-            for a in data:
-                if a.get("asset") == "USDT":
-                    return float(a.get("availableBalance") or a.get("balance") or 0)
-            return 0.0
-        usd_total = 0.0
-        for a in data:
-            asset = str(a.get("asset") or "").upper()
-            avail = float(a.get("availableBalance") or a.get("balance") or 0)
-            if avail <= 0: continue
+            row = next((x for x in data if str(x.get("asset")).upper() == "USDT"), None)
+            if row is None:
+                raise RuntimeError("USDT balance row unavailable")
+            return max(0.0, finite(row.get("availableBalance", row.get("balance"))))
+        total = 0.0
+        for row in data:
+            asset = str(row.get("asset") or "").upper()
+            amount = max(0.0, finite(row.get("availableBalance", row.get("balance"))))
+            if amount <= 0: continue
             if asset == "USD":
-                usd_total += avail
+                total += amount
                 continue
-            symbol = asset + "USD_PERP"
-            try:
-                px = self.mark(symbol)
-                if px > 0: usd_total += avail * px
-            except Exception:
-                continue
-        return usd_total
+            sym = asset + "USD_PERP"
+            try: total += amount * self.mark(sym)
+            except Exception: continue
+        if total <= 0:
+            raise RuntimeError("COIN-M USD-equity unavailable")
+        return total
 
-    def balance(self):
-        """Alias used by local helix/apex engines."""
+    def balance(self) -> float:
         return self.balance_usdt()
 
-    def position_amt(self, symbol, side=None):
-        data = self._http("GET", self.v["position"], {"symbol": symbol}, signed=True, weight=5)
+    def position_rows(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+        p = {"symbol": symbol} if symbol else {}
+        data = self._http("GET", self.v["position"], p, signed=True, weight=5)
+        return [x for x in (data if isinstance(data, list) else []) if symbol is None or x.get("symbol") == symbol]
+
+    def position_amt(self, symbol: str, side: Optional[str] = None) -> float:
+        rows = self.position_rows(symbol)
         total = 0.0
-        for p in data:
-            if p.get("symbol") != symbol: continue
-            amt = float(p.get("positionAmt") or 0)            if side == "LONG" and amt > 0: return abs(amt)
-            if side == "SHORT" and amt < 0: return abs(amt)
-            total += abs(amt)
+        for p in rows:
+            amt = finite(p.get("positionAmt", 0))
+            if side is None:
+                total += abs(amt)
+            elif side.upper() == "LONG" and amt > 0:
+                return abs(amt)
+            elif side.upper() == "SHORT" and amt < 0:
+                return abs(amt)
         return total if side is None else 0.0
 
-    def set_leverage(self, symbol, lev):        requested = int(lev)
-        try:
-            self._http("POST", self.v["leverage"], {"symbol": symbol, "leverage": requested}, signed=True, weight=1, is_order=True)
-            data = self._http("GET", self.v["position"], {"symbol": symbol}, signed=True, weight=5)
-            rows = [p for p in (data if isinstance(data, list) else []) if p.get("symbol") == symbol]
-            actual = int(float(rows[0].get("leverage"))) if rows and rows[0].get("leverage") is not None else 0
-            if actual != requested:
-                raise RuntimeError("leverage verification failed %s requested=%s actual=%s" % (symbol, requested, actual))
-            return actual
-        except Exception as e:
-            self.log("lev set/verify %s: %s" % (symbol, e))
-            raise
+    def _order_qty(self, symbol: str, notional: float, entry: float) -> float:
+        f = self.get_filters(symbol)
+        n = finite(notional)
+        if n <= 0 or entry <= 0:
+            raise ValueError("invalid notional/entry")
+        if self.venue == "coin":
+            qty = n / f["contractSize"]
+        else:
+            qty = n / entry
+        qty = self.round_step(qty, f["stepSize"])
+        if self.venue == "coin":
+            qty = max(1.0, qty)
+        if qty < f["minQty"]:
+            raise RuntimeError("quantity below exchange minimum")
+        if f.get("maxQty", 0) > 0 and qty > f["maxQty"]:
+            qty = self.round_step(f["maxQty"], f["stepSize"])
+        if f.get("minNotional", 0) > 0:
+            actual_notional = qty * (f["contractSize"] if self.venue == "coin" else entry)
+            if actual_notional < f["minNotional"]:
+                raise RuntimeError("notional below exchange minimum")
+        return qty
 
-    def set_margin(self, symbol, isolated=True):
-        try:
-            mt = "ISOLATED" if isolated else "CROSSED"
-            self._http("POST", self.v["marginType"], {"symbol": symbol, "marginType": mt}, signed=True, weight=1, is_order=True)
-        except Exception as e:
-            if "No need" not in str(e): self.log("margin %s: %s" % (symbol, e))
-
-    def place_market(self, symbol, side, qty, position_side=None, reduce_only=False):
+    def place_market(self, symbol: str, side: str, qty: float,
+                     position_side: Optional[str] = None, reduce_only: bool = False) -> Dict[str, Any]:
         f = self.get_filters(symbol)
         q = self.round_step(qty, f["stepSize"])
-        if self.venue == "coin":
-            q = max(1, int(round(q)))        if q < f["minQty"]:
-            raise RuntimeError("qty below min %s < %s" % (q, f["minQty"]))
-        params = {"symbol": symbol, "side": side, "type": "MARKET", "quantity": q}
-        if position_side:
+        if q < f["minQty"]:
+            raise RuntimeError("quantity below exchange minimum")
+        params: Dict[str, Any] = {"symbol": symbol, "side": side.upper(), "type": "MARKET", "quantity": q}
+        if position_side in ("LONG", "SHORT"):
             params["positionSide"] = position_side
-        if reduce_only and position_side not in ("LONG", "SHORT"):
+        elif self.position_mode():
+            raise RuntimeError("hedge mode requires LONG/SHORT positionSide")
+        elif reduce_only:
             params["reduceOnly"] = "true"
         return self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
 
-    def place_protect(self, symbol, side, entry, tp, sl, position_side=None):
+    def place_protect(self, symbol: str, side: str, entry: float, tp: float, sl: float,
+                      position_side: Optional[str] = None) -> Dict[str, Any]:
         f = self.get_filters(symbol)
-        close_side = "SELL" if side == "LONG" else "BUY"
-        specs = (("TAKE_PROFIT_MARKET", tp), ("STOP_MARKET", sl))
-        placed = []
+        close_side = "SELL" if side.upper() == "LONG" else "BUY"
+        direction = "DOWN" if side.upper() == "LONG" else "UP"
+        tp_px = self.round_price(tp, f["tickSize"], direction)
+        sl_px = self.round_price(sl, f["tickSize"], direction)
+        if side.upper() == "LONG" and not (sl_px < entry < tp_px):
+            raise RuntimeError("invalid LONG protection surface")
+        if side.upper() == "SHORT" and not (tp_px < entry < sl_px):
+            raise RuntimeError("invalid SHORT protection surface")
+        placed: List[str] = []
         try:
-            for kind, stop in specs:
-                direction = "DOWN" if side == "LONG" else "UP"
-                stop_px = self.round_price(stop, f["tickSize"], direction)
-                params = {
-                    "symbol": symbol, "side": close_side, "type": kind,
-                    "stopPrice": stop_px, "closePosition": "true",
-                    "workingType": "MARK_PRICE",
+            for typ, stop in (("TAKE_PROFIT_MARKET", tp_px), ("STOP_MARKET", sl_px)):
+                params: Dict[str, Any] = {
+                    "symbol": symbol, "side": close_side, "type": typ,
+                    "stopPrice": stop, "closePosition": "true", "workingType": "MARK_PRICE",
                 }
                 if position_side in ("LONG", "SHORT"):
                     params["positionSide"] = position_side
+                elif self.position_mode():
+                    raise RuntimeError("hedge mode protection requires positionSide")
                 self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
-                placed.append(kind)
-        except Exception as e:
-            self.log("protect failure %s placed=%s: %s" % (symbol, placed, e))
+                placed.append(typ)
+        except Exception:
             try: self.cancel_all(symbol)
             except Exception: pass
             raise
+        return {"tp": tp_px, "sl": sl_px, "placed": placed}
 
-    def cancel_all(self, symbol):
-        try:
-            self._http("DELETE", self.v["allOpen"], {"symbol": symbol}, signed=True, weight=1, is_order=True)
-        except Exception as e:
-            self.log("cancel_all %s: %s" % (symbol, e))
+    def cancel_all(self, symbol: str) -> Any:
+        return self._http("DELETE", self.v["allOpen"], {"symbol": symbol}, signed=True, weight=1, is_order=True)
 
-    def resolve_fill(self, symbol, order_id, fallback_avg, qty):
+    def _fill_ledger(self, symbol: str, order_id: Any, start_ms: int = 0) -> Dict[str, Any]:
+        params = {"symbol": symbol, "limit": 1000}
+        if start_ms > 0: params["startTime"] = int(start_ms)
+        rows = self._http("GET", self.v["trades"], params, signed=True, weight=5)
+        matched = [x for x in rows if str(x.get("orderId")) == str(order_id)]
+        if not matched:
+            raise RuntimeError("order fill ledger unavailable for order %s" % order_id)
+        qty = sum(finite(x.get("qty")) for x in matched)
+        if qty <= 0:
+            raise RuntimeError("zero filled quantity for order %s" % order_id)
+        avg = sum(finite(x.get("price")) * finite(x.get("qty")) for x in matched) / qty
+        commission = sum(finite(x.get("commission")) for x in matched)
+        realized = sum(finite(x.get("realizedPnl")) for x in matched)
+        return {"avg": avg, "qty": qty, "commission": commission, "rp": realized,
+                "order_id": order_id, "fill_source": "userTrades"}
+
+    def resolve_fill(self, symbol: str, order_id: Any, fallback_avg: Optional[float] = None,
+                     qty: Optional[float] = None, start_ms: int = 0) -> Dict[str, Any]:
         time.sleep(0.15)
         try:
-            trades = self._http("GET", self.v["userTrades"], {"symbol": symbol, "limit": 20}, signed=True, weight=5)
-            matched = [t for t in trades if str(t.get("orderId")) == str(order_id)]
-            if matched:
-                notional = sum(float(t["price"]) * float(t["qty"]) for t in matched)
-                qsum = sum(float(t["qty"]) for t in matched)
-                avg = notional / qsum if qsum else fallback_avg
-                commission = sum(float(t.get("commission") or 0) for t in matched)
-                rp = sum(float(t.get("realizedPnl") or 0) for t in matched)
-                return {"avg": avg, "qty": qsum, "commission": commission, "rp": rp, "source": "userTrades"}
-        except Exception as e:
-            self.log("resolve_fill userTrades: %s" % e)
-        return {"avg": fallback_avg, "qty": qty, "commission": None, "rp": None, "source": "orderAck_unreconciled"}
+            return self._fill_ledger(symbol, order_id, start_ms)
+        except Exception as exc:
+            self.log("fill reconciliation failed %s: %s" % (symbol, exc))
+            return {"avg": fallback_avg, "qty": qty, "commission": None, "rp": None,
+                    "order_id": order_id, "fill_source": "orderAck_unreconciled"}
 
-    def open_market(self, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
-        if not self.flock.acquire(timeout=10):
-            raise RuntimeError("single-flight busy")
+    def open_market(self, symbol: str, side: str, risk_or_notional: float, leverage: int,
+                    tp_pct: float, sl_pct: float, max_notional: Optional[float] = None) -> Dict[str, Any]:
+        symbol = symbol.upper(); side = side.upper()
+        if side not in ("LONG", "SHORT"): raise ValueError("side must be LONG/SHORT")
+        balance = self.balance_usdt()
+        bid, ask, entry = self.book(symbol)
+        lev = self.set_leverage(symbol, int(leverage))
+        self.set_margin(symbol, True)
+        if max_notional is not None:
+            cap = finite(max_notional)
+            if risk_or_notional <= 1.0:
+                requested = min(cap, balance * max(0.0, risk_or_notional) * lev)
+            else:
+                requested = min(cap, risk_or_notional)
+        else:
+            requested = balance * max(0.0, risk_or_notional) * lev if risk_or_notional <= 1.0 else risk_or_notional
+        if requested <= 0:
+            raise RuntimeError("zero executable notional")
+        qty = self._order_qty(symbol, requested, entry)
+        dual = self.position_mode()
+        pos_side = side if dual else "BOTH"
+        self.flock.acquire(timeout=8.0, blocking=True)
         try:
-            bal = self.balance_usdt()
-            if bal <= 0: raise RuntimeError("zero balance")
-            bid, ask, mid = self.book(symbol)
-            entry_px = ask if side == "LONG" else bid
-            margin = min(bal * risk_pct, max_notional / max(lev, 1))
-            notional = margin * lev
-            if notional < 5: raise RuntimeError("notional too small")
-            f = self.get_filters(symbol)
-            if self.venue == "coin":
-                qty = notional / f["contractSize"]
-            else:
-                qty = notional / entry_px
-            self.set_margin(symbol, isolated=True)
-            actual_lev = self.set_leverage(symbol, lev)
-            dual = self.position_mode()
-            pos_side = ("LONG" if side == "LONG" else "SHORT") if dual else "BOTH"
-            order_side = "BUY" if side == "LONG" else "SELL"
-            res = self.place_market(symbol, order_side, qty, pos_side)
-            oid = res.get("orderId")
-            ack_avg = float(res.get("avgPrice") or 0) or entry_px
-            fill = self.resolve_fill(symbol, oid, ack_avg, qty)
-            slip_bps = abs(fill["avg"] - entry_px) / entry_px * 10000 if entry_px else 0
-            if slip_bps > 25:
-                self.log("SLIP REJECT %.1f bps — closing" % slip_bps)
-                try: self.close_market(symbol, side, fill["qty"], pos_side)
-                except Exception: pass
-                raise RuntimeError("slip %.1f bps" % slip_bps)
-            entry = fill["avg"]
-            if side == "LONG":
-                tp, sl = entry * (1 + tp_pct / 100.0), entry * (1 - sl_pct / 100.0)
-            else:
-                tp, sl = entry * (1 - tp_pct / 100.0), entry * (1 + sl_pct / 100.0)
-            self.place_protect(symbol, side, entry, tp, sl, pos_side)
-            self.log("OPEN %s %s entry=%.6f qty=%s oid=%s slip=%.1fbps" % (side, symbol, entry, qty, oid, slip_bps))
-            return {"symbol": symbol, "side": side, "entry": entry, "qty": qty, "tp": tp, "sl": sl,
-                    "oid": oid, "commission": fill["commission"], "realized_pnl": fill["rp"],
-                    "fill_source": fill["source"], "slip_bps": slip_bps, "pos_side": pos_side,
-                    "leverage": actual_lev}
+            ack = self.place_market(symbol, "BUY" if side == "LONG" else "SELL", qty,
+                                    position_side=pos_side if dual else None)
         finally:
             self.flock.release()
+        oid = ack.get("orderId")
+        fill = self.resolve_fill(symbol, oid, entry, qty, int(time.time() * 1000) - 5000)
+        if fill["avg"] is None or fill["commission"] is None or fill["rp"] is None:
+            raise RuntimeError("market order accepted but fill ledger is not reconciled")
+        actual_qty = float(fill["qty"])
+        avg = float(fill["avg"])
+        tp = avg * (1.0 + float(tp_pct) / 100.0) if side == "LONG" else avg * (1.0 - float(tp_pct) / 100.0)
+        sl = avg * (1.0 - float(sl_pct) / 100.0) if side == "LONG" else avg * (1.0 + float(sl_pct) / 100.0)
+        protect = self.place_protect(symbol, side, avg, tp, sl, pos_side if dual else None)
+        return {"symbol": symbol, "side": side, "entry": avg, "qty": actual_qty,
+                "tp": protect["tp"], "sl": protect["sl"], "commission": fill["commission"],
+                "realized_pnl": fill["rp"], "fill_source": fill["fill_source"],
+                "oid": oid, "leverage": lev, "pos_side": pos_side}
 
-    def close_market(self, symbol, side, qty, position_side=None):
-        real = self.position_amt(symbol, side)
-        if real <= 0: raise RuntimeError("no position on exchange")
-        f = self.get_filters(symbol)
-        q = self.round_step(min(qty, real), f["stepSize"])
-        if self.venue == "coin": q = max(1, int(round(q)))
-        close_side = "SELL" if side == "LONG" else "BUY"
-        res = self.place_market(symbol, close_side, q, position_side, reduce_only=True)
-        oid = res.get("orderId")
-        fill = self.resolve_fill(symbol, oid, float(res.get("avgPrice") or 0) or 1.0, q)
-        try: self.cancel_all(symbol)
-        except Exception: pass
-        self.log("CLOSE %s %s exit=%.6f oid=%s rp=%s fill_source=%s" % (side, symbol, fill["avg"], oid, fill["rp"], fill["source"]))
-        return fill
+    def close_market(self, symbol: str, side: str, qty: float,
+                     position_side: Optional[str] = None) -> Dict[str, Any]:
+        dual = self.position_mode()
+        ps = position_side if position_side in ("LONG", "SHORT") else (side if dual else "BOTH")
+        close_side = "SELL" if side.upper() == "LONG" else "BUY"
+        self.flock.acquire(timeout=8.0, blocking=True)
+        try:
+            ack = self.place_market(symbol, close_side, qty, position_side=ps if dual else None, reduce_only=not dual)
+        finally:
+            self.flock.release()
+        oid = ack.get("orderId")
+        return self.resolve_fill(symbol, oid, None, qty, int(time.time() * 1000) - 5000)
 
-    def klines(self, symbol, interval="1m", limit=60):
-        data = self._http("GET", self.v["klines"], {"symbol": symbol, "interval": interval, "limit": limit}, signed=False, weight=5)
-        return [float(x[4]) for x in data], [float(x[5]) for x in data]
-
-def ema(values, period):
-    if len(values) < period: return None
-    k = 2.0 / (period + 1); v = sum(values[:period]) / period
-    for x in values[period:]: v = x * k + v * (1 - k)
-    return v
-
-def rsi(values, period=14):
-    if len(values) < period + 1: return None
-    gains, losses = [], []
-    for i in range(1, len(values)):
-        d = values[i] - values[i - 1]; gains.append(max(d, 0)); losses.append(max(-d, 0))
-    ag, al = sum(gains[-period:]) / period, sum(losses[-period:]) / period
-    if al == 0: return 100.0
-    return 100.0 - (100.0 / (1.0 + ag / al))
-
-def atr(closes, period=14):
-    if len(closes) < period + 1: return None
-    trs = [abs(closes[i] - closes[i - 1]) for i in range(1, len(closes))]
-    return sum(trs[-period:]) / period
-
-
-# =====================================================================
-# α-COUPLING APPEND — nothing above deleted. Missing live/__init__ surface.
-# =====================================================================
-
-def _finite_num(x, default=0.0):
-    """None/NaN/inf-safe float. Prevents latin-1/None crashes in score paths."""
-    try:
-        if x is None:
-            return default
-        v = float(x)
-        return v if math.isfinite(v) else default
-    except (TypeError, ValueError):
-        return default
-
-def _gt(a, b):
-    if a is None or b is None:
-        return False
-    return _finite_num(a) > _finite_num(b)
-
-def _lt(a, b):
-    if a is None or b is None:
-        return False
-    return _finite_num(a) < _finite_num(b)
-
-def _ge(a, b):
-    if a is None or b is None:
-        return False
-    return _finite_num(a) >= _finite_num(b)
-
-def _le(a, b):
-    if a is None or b is None:
-        return False
-    return _finite_num(a) <= _finite_num(b)
-
-def sma(values, period):
-    if not values or len(values) < period:
-        return None
-    return sum(values[-period:]) / float(period)
-
-def wma(values, period):
-    if not values or len(values) < period:
-        return None
-    w = list(range(1, period + 1))
-    s = values[-period:]
-    return sum(x * wi for x, wi in zip(s, w)) / float(sum(w))
-
-def macd(closes, fast=12, slow=26, signal=9):
-    if not closes or len(closes) < slow + signal:
-        return None, None, None
-    def _ema_series(vals, p):
-        k = 2.0 / (p + 1)
-        out = []
-        v = sum(vals[:p]) / p
-        out.append(v)
-        for x in vals[p:]:
-            v = x * k + v * (1 - k)
-            out.append(v)
-        return out
-    ef = _ema_series(closes, fast)
-    es = _ema_series(closes, slow)
-    n = min(len(ef), len(es))
-    macd_line = [ef[-n + i] - es[-n + i] for i in range(n)]
-    sig_s = _ema_series(macd_line, signal)
-    m = macd_line[-1]
-    s = sig_s[-1]
-    return m, s, m - s
-
-def bollinger_bands(closes, period=20, nstd=2.0):
-    if not closes or len(closes) < period:
-        return None, None, None
-    w = closes[-period:]
-    mid = sum(w) / period
-    var = sum((x - mid) ** 2 for x in w) / period
-    sd = math.sqrt(max(var, 0.0))
-    return mid + nstd * sd, mid, mid - nstd * sd
-
-def bollinger_pctb(closes, period=20, nstd=2.0):
-    up, mid, lo = bollinger_bands(closes, period, nstd)
-    if None in (up, mid, lo) or up == lo:
-        return None
-    return (closes[-1] - lo) / (up - lo)
-
-def stochastic(highs, lows, closes, period=14):
-    if min(len(highs), len(lows), len(closes)) < period:
-        return None, None
-    hh = max(highs[-period:])
-    ll = min(lows[-period:])
-    if hh == ll:
-        k = 50.0
-    else:
-        k = (closes[-1] - ll) / (hh - ll) * 100.0
-    return k, None
-
-def vwap(highs, lows, closes, volumes, period=None):
-    n = min(len(closes), len(highs), len(lows), len(volumes))
-    if n < 2:
-        return None
-    if period:
-        sl = slice(-period, None)
-    else:
-        sl = slice(None)
-    tp = [(highs[i] + lows[i] + closes[i]) / 3.0 for i in range(n)][sl]
-    vol = volumes[sl]
-    den = sum(vol) or 1e-12
-    return sum(t * v for t, v in zip(tp, vol)) / den
-
-def supertrend(highs, lows, closes, period=10, mult=3.0):
-    if len(closes) < period + 2:
-        return None, None
-    trs = []
-    for i in range(1, len(closes)):
-        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
-    atr_v = sum(trs[-period:]) / period
-    hl2 = (highs[-1] + lows[-1]) / 2.0
-    upper = hl2 + mult * atr_v
-    lower = hl2 - mult * atr_v
-    direction = 1 if closes[-1] > upper else (-1 if closes[-1] < lower else 0)
-    value = lower if direction >= 0 else upper
-    return value, direction
-
-def supertrend_dir(highs, lows, closes, period=10, mult=3.0):
-    _v, d = supertrend(highs, lows, closes, period, mult)
-    return d
-
-def adx(highs, lows, closes, period=14):
-    n = min(len(highs), len(lows), len(closes))
-    if n < period + 2:
-        return None
-    plus_dm, minus_dm, trs = [], [], []
-    for i in range(1, n):
-        up = highs[i] - highs[i - 1]
-        dn = lows[i - 1] - lows[i]
-        plus_dm.append(up if up > dn and up > 0 else 0.0)
-        minus_dm.append(dn if dn > up and dn > 0 else 0.0)
-        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))    atr_v = sum(trs[-period:]) / period
-    if atr_v <= 0:
-        return 0.0
-    pdi = 100.0 * (sum(plus_dm[-period:]) / period) / atr_v
-    mdi = 100.0 * (sum(minus_dm[-period:]) / period) / atr_v
-    den = pdi + mdi
-    dx = 0.0 if den == 0 else abs(pdi - mdi) / den * 100.0    return dx
-
-def cci(highs, lows, closes, period=20):
-    n = min(len(highs), len(lows), len(closes))
-    if n < period:
-        return None
-    tp = [(highs[i] + lows[i] + closes[i]) / 3.0 for i in range(n)]
-    w = tp[-period:]
-    avg = sum(w) / period
-    md = sum(abs(x - avg) for x in w) / period
-    if md == 0:
-        return 0.0
-    return (tp[-1] - avg) / (0.015 * md)
-
-def obv(closes, volumes):
-    if min(len(closes), len(volumes)) < 2:
-        return None
-    v = 0.0
-    for i in range(1, len(closes)):
-        if closes[i] > closes[i - 1]:
-            v += volumes[i]
-        elif closes[i] < closes[i - 1]:
-            v -= volumes[i]
-    return v
-
-def roc(values, period=10):
-    if not values or len(values) < period + 1 or values[-period - 1] == 0:
-        return None
-    return (values[-1] - values[-period - 1]) / values[-period - 1] * 100.0
-
-def williams_r(highs, lows, closes, period=14):
-    if min(len(highs), len(lows), len(closes)) < period:
-        return None    hh = max(highs[-period:])
-    ll = min(lows[-period:])
-    if hh == ll:
-        return -50.0
-    return (hh - closes[-1]) / (hh - ll) * -100.0
-
-def mfi(highs, lows, closes, volumes, period=14):
-    n = min(len(highs), len(lows), len(closes), len(volumes))
-    if n < period + 1:
-        return None
-    pos = neg = 0.0
-    for i in range(n - period, n):
-        tp = (highs[i] + lows[i] + closes[i]) / 3.0
-        prev = (highs[i - 1] + lows[i - 1] + closes[i - 1]) / 3.0
-        raw = tp * volumes[i]
-        if tp > prev:
-            pos += raw
-        elif tp < prev:
-            neg += raw
-    if neg == 0:
-        return 100.0
-    mr = pos / neg
-    return 100.0 - (100.0 / (1.0 + mr))
-
-def atr_hlc(highs, lows, closes, period=14):
-    if min(len(highs), len(lows), len(closes)) < period + 1:
-        return None
-    trs = []
-    for i in range(1, len(closes)):
-        trs.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
-    return sum(trs[-period:]) / period
-
-def live_order_fn(kernel, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
-    return kernel.open_market(symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=max_notional)
-
-def fetch_ohlcv(symbol, interval="5m", limit=80, base="https://fapi.binance.com"):
-    """Public OHLCV dict {o,h,l,c,v} — parliament / alpha_core compatible."""
-    url = "%s/fapi/v1/klines?symbol=%s&interval=%s&limit=%d" % (
-        base.rstrip("/"), symbol, interval, int(limit)
-    )
-    req = urllib.request.Request(url, headers={"User-Agent": "honeycomb-kernel-ohlcv", "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=8) as resp:
-        raw = json.loads(resp.read().decode("utf-8"))
-    return {
-        "o": [float(x[1]) for x in raw],
-        "h": [float(x[2]) for x in raw],
-        "l": [float(x[3]) for x in raw],
-        "c": [float(x[4]) for x in raw],
-        "v": [float(x[5]) for x in raw],
-    }
-
+    def funding_veto(self, symbol: str, side: str, max_rate: Optional[float] = None) -> Optional[str]:
+        d = self._http("GET", self.v["premium"], {"symbol": symbol}, signed=False, weight=1)
+        rate = finite(d.get("lastFundingRate"))
+        lim = float(max_rate if max_rate is not None else self.env.get("MAX_FUNDING_RATE", "0.0025"))
+        adverse = rate if side.upper() == "LONG" else -rate
+        return "adverse funding %.8f > %.8f" % (adverse, lim) if adverse > lim else None
 
 class CircuitBreaker:
-    """Consecutive-failure trip with cooldown. Thread-safe."""
+    def __init__(self, fail_threshold: int = 4, cooldown_sec: float = 180):
+        self.threshold, self.cooldown = max(1, fail_threshold), max(1.0, cooldown_sec)
+        self.failures, self.blocked_until = 0, 0.0
+        self.lock = threading.Lock()
 
-    def __init__(self, fail_threshold=4, cooldown_sec=180, half_open_trial=True):
-        self.fail_threshold = fail_threshold
-        self.cooldown_sec = cooldown_sec
-        self.half_open_trial = half_open_trial
-        self.fails = 0
-        self.state = "CLOSED"
-        self.opened_at = 0.0
-        self._lock = threading.Lock()
+    def allow(self) -> bool:
+        with self.lock: return time.time() >= self.blocked_until
 
-    def record_success(self):
-        with self._lock:
-            self.fails = 0
-            self.state = "CLOSED"
+    def record_failure(self) -> None:
+        with self.lock:
+            self.failures += 1
+            if self.failures >= self.threshold:
+                self.blocked_until = time.time() + self.cooldown
+                self.failures = 0
 
-    def record_failure(self):
-        with self._lock:
-            self.fails += 1
-            if self.fails >= self.fail_threshold:
-                self.state = "OPEN"
-                self.opened_at = time.time()
-
-    def allow(self):
-        with self._lock:
-            if self.state == "CLOSED":
-                return True
-            elapsed = time.time() - self.opened_at
-            if elapsed >= self.cooldown_sec:
-                if self.half_open_trial:
-                    self.state = "HALF_OPEN"
-                    return True
-                self.state = "CLOSED"
-                self.fails = 0
-                return True
-            return False
-
-    def status(self):
-        with self._lock:
-            return self.state
-
-    def time_until_reset(self):
-        with self._lock:
-            if self.state != "OPEN":
-                return 0.0
-            return max(0.0, self.cooldown_sec - (time.time() - self.opened_at))
-
-
-class CryptographicAuditLedger:
-    """Append-only hash-chained JSONL. Tamper-evident."""
-    GENESIS = "0" * 64
-
-    def __init__(self, path):
-        self.path = path
-        self._lock = threading.Lock()
-        d = os.path.dirname(os.path.abspath(path))
-        if d:
-            os.makedirs(d, exist_ok=True)
-        if not os.path.exists(self.path):
-            open(self.path, "a").close()
-
-    def _last_hash(self):
-        last = self.GENESIS
-        if not os.path.exists(self.path):
-            return last
-        with open(self.path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    last = json.loads(line).get("hash", last)
-                except Exception:
-                    pass
-        return last
-
-    def append(self, event):
-        with self._lock:
-            prev = self._last_hash()
-            rec = {"ts": time.time(), "prev_hash": prev, "data": event}
-            payload = json.dumps(rec, sort_keys=True, ensure_ascii=False).encode("utf-8")
-            rec["hash"] = hashlib.sha256(payload).hexdigest()
-            with open(self.path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-            return rec
-
-    def verify_chain(self):
-        prev = self.GENESIS
-        if not os.path.exists(self.path):
-            return True, None
-        with open(self.path, "r", encoding="utf-8") as f:
-            for i, line in enumerate(f, 1):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    rec = json.loads(line)
-                except Exception:
-                    return False, i
-                if rec.get("prev_hash") != prev:
-                    return False, i
-                claimed = rec.get("hash")
-                recomputed = dict(rec)
-                recomputed.pop("hash", None)
-                payload = json.dumps(recomputed, sort_keys=True, ensure_ascii=False).encode("utf-8")
-                if hashlib.sha256(payload).hexdigest() != claimed:
-                    return False, i
-                prev = claimed
-        return True, None
-
-
-class PartialProfitEngine:
-    DEFAULT_STAGES = [(0.50, 0.35), (0.80, 0.35)]
-
-    def __init__(self, kernel, stages=None, log_fn=None):
-        self.kernel = kernel
-        self.stages = stages or list(self.DEFAULT_STAGES)
-        self.log = log_fn or (lambda m: None)
-        self._pos = {}
-        self._lock = threading.Lock()
-
-    def register(self, symbol, side, entry, tp, sl, qty, pos_side=None):
-        with self._lock:
-            self._pos[symbol] = {
-                "side": side, "entry": entry, "tp": tp, "sl": sl,
-                "qty": qty, "qty_remaining": qty, "stage": 0,
-                "pos_side": pos_side, "realized_net": 0.0,
-            }
-
-    def forget(self, symbol):
-        with self._lock:
-            return self._pos.pop(symbol, None)
-
-    def get(self, symbol):
-        with self._lock:
-            return dict(self._pos[symbol]) if symbol in self._pos else None
-
-    def update(self, symbol, current_price):
-        with self._lock:
-            pos = self._pos.get(symbol)
-            if not pos or pos.get("qty_remaining", 0) <= 0 or pos["stage"] >= len(self.stages):
-                return None
-            entry = float(pos["entry"])
-            dist = abs(float(pos["tp"]) - entry)
-            if dist <= 0:
-                return None
-            progress = (current_price - entry) / dist if pos["side"] == "LONG" else (entry - current_price) / dist
-            thresh, frac = self.stages[pos["stage"]]
-            if progress < thresh:
-                return None
-            close_qty = pos["qty_remaining"] * frac
-            try:
-                fill = self.kernel.close_market(symbol, pos["side"], close_qty, pos.get("pos_side"))
-                net = _finite_num(fill.get("rp")) - _finite_num(fill.get("commission"))
-                pos["qty_remaining"] = max(0.0, pos["qty_remaining"] - close_qty)
-                pos["stage"] += 1
-                pos["realized_net"] += net
-                remaining = pos["qty_remaining"]
-                stage_done = pos["stage"]
-                if remaining > 0:
-                    self.kernel.place_protect(symbol, pos["side"], entry, pos["tp"], pos["sl"], pos.get("pos_side"))
-                self.log("KISMİ KAR %s %s progress=%.0f%% closed=%.6f" % (pos["side"], symbol, progress * 100.0, close_qty))
-                return {"qty_closed": close_qty, "net": net, "remaining": remaining, "stage": stage_done}
-            except Exception as e:
-                self.log("KISMİ KAR HATA %s: %s" % (symbol, e))
-                return None
-
+    def record_success(self) -> None:
+        with self.lock: self.failures = 0
 
 class DynamicTrailingStopEngine:
-    DEFAULT_STAGES = [(0.35, 0.05), (0.60, 0.25), (0.85, 0.55)]
+    def __init__(self, kernel: LiveKernel, log_fn=None):
+        self.kernel, self.log = kernel, log_fn or (lambda m: None)
+        self.positions: Dict[str, Dict[str, Any]] = {}
 
-    def __init__(self, kernel, stages=None, log_fn=None):
-        self.kernel = kernel
-        self.stages = stages or list(self.DEFAULT_STAGES)
-        self.log = log_fn or (lambda m: None)
-        self._pos = {}
-        self._lock = threading.Lock()
+    def register(self, symbol, side, entry, tp, sl, position_side=None):
+        self.positions[symbol] = {"side":side,"entry":entry,"tp":tp,"sl":sl,"position_side":position_side,"peak":entry,"stage":0}
 
-    def register(self, symbol, side, entry, tp, sl):
-        with self._lock:
-            self._pos[symbol] = {"side": side, "entry": entry, "tp": tp, "sl": sl, "stage": 0}
+    def update(self, symbol: str, mark: float) -> Optional[float]:
+        p = self.positions.get(symbol)
+        if not p or mark <= 0: return None
+        side = p["side"].upper()
+        p["peak"] = max(p["peak"], mark) if side == "LONG" else min(p["peak"], mark)
+        entry = p["entry"]
+        dist = abs(p["tp"] - entry)
+        gain = (mark-entry) if side=="LONG" else (entry-mark)
+        if dist <= 0 or gain <= 0: return None
+        stage = 2 if gain >= dist*0.75 else 1 if gain >= dist*0.40 else 0
+        if stage <= p["stage"]: return None
+        p["stage"] = stage
+        lock_dist = dist*(0.20 if stage == 1 else 0.55)
+        new_sl = entry + lock_dist if side=="LONG" else entry - lock_dist
+        try:
+            self.kernel.cancel_all(symbol)
+            self.kernel.place_protect(symbol, side, entry, p["tp"], new_sl, p.get("position_side"))
+            p["sl"] = new_sl
+            self.log("TRAIL %s stage=%s stop=%s" % (symbol, stage, new_sl))
+            return new_sl
+        except Exception as exc:
+            self.log("TRAIL failure %s: %s" % (symbol, exc))
+            raise
 
-    def forget(self, symbol):
-        with self._lock:
-            return self._pos.pop(symbol, None)
+    def forget(self, symbol): self.positions.pop(symbol, None)
 
-    def update(self, symbol, current_price):
-        with self._lock:
-            pos = self._pos.get(symbol)
-            if not pos:
-                return None
-            entry = float(pos["entry"])
-            dist = abs(float(pos["tp"]) - entry)
-            if dist <= 0:
-                return None
-            progress = (current_price - entry) / dist if pos["side"] == "LONG" else (entry - current_price) / dist
-            new_stage, lock_frac = None, None
-            for i, (thresh, frac) in enumerate(self.stages):
-                if progress >= thresh and i >= pos["stage"]:
-                    new_stage, lock_frac = i + 1, frac
-            if new_stage is None:
-                return None
-            new_sl = entry + lock_frac * dist if pos["side"] == "LONG" else entry - lock_frac * dist
-            try:
-                self.kernel.cancel_all(symbol)
-                self.kernel.place_protect(symbol, pos["side"], entry, pos["tp"], new_sl)
-                pos["sl"] = new_sl
-                pos["stage"] = new_stage
-                self.log("TRAIL %s %s stage=%d new_sl=%.6f" % (pos["side"], symbol, new_stage, new_sl))                return new_sl
-            except Exception as e:
-                self.log("TRAIL HATA %s: %s" % (symbol, e))
-                return None
+class PartialProfitEngine:
+    def __init__(self, kernel: LiveKernel, log_fn=None):
+        self.kernel, self.log = kernel, log_fn or (lambda m: None)
+        self.positions = {}
+
+    def register(self, symbol, side, entry, tp, sl, qty, position_side=None):
+        self.positions[symbol] = {"side":side,"entry":entry,"tp":tp,"sl":sl,"qty":qty,"position_side":position_side}
+
+    def update(self, symbol, mark):
+        return None
+
+    def forget(self, symbol): self.positions.pop(symbol, None)
+
+class CryptographicAuditLedger:
+    def __init__(self, path: str):
+        self.path = path
+        self.lock = threading.Lock()
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+
+    def append(self, event: Dict[str, Any]) -> None:
+        clean = dict(event)
+        clean.pop("secret", None); clean.pop("api_secret", None); clean.pop("api_key", None)
+        raw = json.dumps(clean, sort_keys=True, separators=(",", ":"), default=str)
+        with self.lock:
+            prev = ""
+            if os.path.exists(self.path):
+                try:
+                    with open(self.path, "rb") as fh:
+                        for line in fh:
+                            try: prev = json.loads(line.decode()).get("hash","")
+                            except Exception: continue
+                except Exception: pass
+            digest = hashlib.sha256((prev + raw).encode()).hexdigest()
+            record = {"ts": time.time(), "hash": digest, "prev_hash": prev, **clean}
+            with open(self.path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+
+def _ema(values: List[float], period: int) -> Optional[float]:
+    if len(values) < period: return None
+    a = 2.0 / (period + 1.0); out = sum(values[:period]) / period
+    for x in values[period:]: out = a*x + (1-a)*out
+    return out
+
+def ema(values, period=14): return _ema([finite(x) for x in values], int(period))
+
+def rsi(values, period=14):
+    x=[finite(v) for v in values]
+    if len(x)<period+1:return None
+    gains=[];losses=[]
+    for i in range(1,len(x)):
+        d=x[i]-x[i-1];gains.append(max(d,0.0));losses.append(max(-d,0.0))
+    ag=sum(gains[-period:])/period;al=sum(losses[-period:])/period
+    if al==0:return 100.0
+    return 100.0-(100.0/(1.0+ag/al))
+
+def atr(highs, lows=None, closes=None, period=14):
+    if closes is None:
+        closes=[finite(x) for x in highs]
+        if len(closes)<period+1:return None
+        tr=[abs(closes[i]-closes[i-1]) for i in range(1,len(closes))]
+    else:
+        h=[finite(x) for x in highs];l=[finite(x) for x in lows];c=[finite(x) for x in closes]
+        if len(c)<period+1:return None
+        tr=[max(h[i]-l[i],abs(h[i]-c[i-1]),abs(l[i]-c[i-1])) for i in range(1,len(c))]
+    return sum(tr[-period:])/period

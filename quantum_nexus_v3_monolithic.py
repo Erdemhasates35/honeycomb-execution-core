@@ -59,7 +59,7 @@ OLLAMA_MODEL = ENV.get("OLLAMA_MODEL", "llama3.1")
 GROQ_KEY     = ENV.get("GROQ_API_KEY", "")
 GROQ_MODEL   = ENV.get("GROQ_MODEL", "llama-3.1-70b-versatile")
 OR_KEY       = ENV.get("OPENROUTER_API_KEY", "")
-OR_MODEL     = ENV.get("OPENROUTER_MODEL", "meta-llama/llama-3.1-70b-instruct:free")
+OR_MODEL     = ENV.get("OPENROUTER_MODEL", "openrouter/free")
 GEMINI_KEY   = ENV.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = ENV.get("GEMINI_MODEL", "gemini-1.5-flash")
 
@@ -797,7 +797,7 @@ button.stop{background:var(--red);color:#fff} button:disabled{opacity:.4}
 <button onclick="fetch('/api/start').then(r=>r.json()).then(d=>{alert(d.msg);load()})" id="btnStart">▶ MOTORU BASLAT</button>
 <button onclick="fetch('/api/stop').then(r=>r.json()).then(d=>{alert(d.msg);load()})" id="btnStop" class="stop">■ DURDUR</button>
 <button onclick="load()">↻ YENILE</button>
-</div>
+rr</div>
 <div class="panel"><h3 style="margin-top:0;color:var(--green)">Acik Pozisyonlar</h3><div id="poses"></div></div>
 <div class="panel"><h3 style="margin-top:0;color:var(--green)">Son Islemler</h3><div id="journal"></div></div>
 <div class="panel"><h3 style="margin-top:0;color:var(--green)">Canli Loglar</h3><div class="log" id="log"></div></div>
@@ -814,9 +814,9 @@ async function load(){
     document.getElementById("btnStart").disabled=d.running;
     document.getElementById("btnStop").disabled=!d.running;
     document.getElementById("poses").innerHTML=d.positions.length?d.positions.map(p=>
-        `<div class="pos \( {p.side=='SHORT'?'short':''}"><b> \){p.side}</b> \( {p.symbol} | Giris: \){p.entry.toFixed(4)} | TP:\( {p.tp.toFixed(4)} | SL: \){p.sl.toFixed(4)} | Lev:\( {p.leverage.toFixed(1)}x | Guven: \){p.confidence.toFixed(0)}</div>`).join(""):"<i>Acik pozisyon yok</i>";
+        `<div class="pos ( {p.side=='SHORT'?'short':''}"><b> ){p.side}</b> ( {p.symbol} | Giris: ){p.entry.toFixed(4)} | TP:( {p.tp.toFixed(4)} | SL: ){p.sl.toFixed(4)} | Lev:( {p.leverage.toFixed(1)}x | Guven: ){p.confidence.toFixed(0)}</div>`).join(""):"<i>Acik pozisyon yok</i>";
     document.getElementById("journal").innerHTML=d.journal.length?d.journal.map(j=>
-        `<div style="font-size:11px;margin:3px 0;padding:4px;background:#0d1114;border-radius:4px">${j.side} ${j.symbol} | \( {j.reason} | Net: \){j.net_pnl.toFixed(2)}$ | Bakiye:\( {j.balance.toFixed(2)} \)</div>`).join(""):"<i>Henüz islem yok</i>";
+        `<div style="font-size:11px;margin:3px 0;padding:4px;background:#0d1114;border-radius:4px">${j.side} ${j.symbol} | ( {j.reason} | Net: ){j.net_pnl.toFixed(2)}$ | Bakiye:( {j.balance.toFixed(2)} )</div>`).join(""):"<i>Henüz islem yok</i>";
     document.getElementById("log").innerHTML=d.logs.map(l=>`<div>${l}</div>`).join("");
 }
 load(); setInterval(load, 3000);
@@ -875,7 +875,7 @@ def summary():
 
 def main_loop():
     engine.log(f"QN v3 BASLADI | Sermaye:{CAPITAL_USD:.2f}$ | Mod:{MODE} | Semboller:{','.join(LIVE_SYMBOLS)}")
-    idle = 0
+rr    idle = 0
     last_swarm = 0
     last_funding = 0
 
@@ -892,7 +892,7 @@ def main_loop():
                 if ops:
                     engine.log(f"FUNDING ARB: {len(ops)} firsat bulundu")
                     for op in ops[:2]:
-                        engine.log(f"  {op['symbol']}: rate {op['rate']:.4f}% | gunluk \~{op['expected']:.2f}%")
+                        engine.log(f"  {op['symbol']}: rate {op['rate']:.4f}% | gunluk ~{op['expected']:.2f}%")
                 last_funding = time.time()
 
             if engine.open_count >= 2:

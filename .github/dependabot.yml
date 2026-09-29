@@ -1,0 +1,143 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # ---------------------------------------------
+  # 1. NPM (JavaScript/TypeScript Ekosistemi) – Security First + Cooldown
+  # ---------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "daily"
+      time: "02:00"                    # Security öncelikli
+      timezone: "Europe/Istanbul"
+    open-pull-request-limit: 10
+    versioning-strategy: "increase"
+    rebase-strategy: "auto"
+    pull-request-branch-name:
+      separator: "-"
+    commit-message:
+      prefix: "chore(deps-npm):"
+      include: "scope"
+    target-branch: "main"
+    assignees:
+      - "Ertugrul-Koc"
+    reviewers:
+      - "Ertugrul-Koc"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    allow:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]   # Sadece security major’lar
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
+      semver-minor-days: 2
+      semver-patch-days: 1
+    groups:
+      npm-security-and-patches:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+          - "minor"
+          - "security"
+      npm-security-majors:
+        update-types: ["security"]
+        patterns: ["*"]
+    labels:
+      - "automerge-candidate"
+      - "ast-validation-required"
+      - "telemetry:update-latency"
+      - "telemetry:conflict-rate"
+      - "security-first"
+
+  # ---------------------------------------------
+  # 2. PIP (Python Ekosistemi) – Asimetrik + Cross-Sync
+  # ---------------------------------------------
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "04:00"
+      timezone: "Europe/Istanbul"
+    open-pull-request-limit: 10
+    versioning-strategy: "increase"
+    rebase-strategy: "auto"
+    pull-request-branch-name:
+      separator: "-"
+    commit-message:
+      prefix: "chore(deps-py):"
+      include: "scope"
+    target-branch: "main"
+    assignees:
+      - "Ertugrul-Koc"
+    reviewers:
+      - "Ertugrul-Koc"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    allow:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
+      semver-minor-days: 2
+      semver-patch-days: 1
+    groups:
+      python-core-deps:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+          - "minor"
+          - "security"
+      cross-ecosystem-security:
+        update-types: ["security"]
+        patterns: ["*"]
+    labels:
+      - "cross-ecosystem-sync"
+      - "predictive-intelligence-scan"
+      - "telemetry:update-latency"
+      - "security-first"
+
+  # ---------------------------------------------
+  # 3. DOCKER (Altyapı ve Konteyner) – Hafta Sonu İzolasyonu + Widen + Security
+  # ---------------------------------------------
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "05:00"
+      timezone: "Europe/Istanbul"
+    open-pull-request-limit: 5
+    versioning-strategy: "widen-ranges"
+    rebase-strategy: "auto"
+    pull-request-branch-name:
+      separator: "-"
+    commit-message:
+      prefix: "chore(deps-infra):"
+      include: "scope"
+    target-branch: "main"
+    assignees:
+      - "Ertugrul-Koc"
+    reviewers:
+      - "Ertugrul-Koc"
+    groups:
+      infrastructure-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+          - "security"
+    labels:
+      - "infrastructure"
+      - "autonomous-rollback-watch"
+      - "telemetry:update-latency"
+      - "security-first"

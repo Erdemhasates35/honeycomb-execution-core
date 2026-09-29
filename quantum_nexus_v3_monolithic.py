@@ -797,7 +797,7 @@ button.stop{background:var(--red);color:#fff} button:disabled{opacity:.4}
 <button onclick="fetch('/api/start').then(r=>r.json()).then(d=>{alert(d.msg);load()})" id="btnStart">▶ MOTORU BASLAT</button>
 <button onclick="fetch('/api/stop').then(r=>r.json()).then(d=>{alert(d.msg);load()})" id="btnStop" class="stop">■ DURDUR</button>
 <button onclick="load()">↻ YENILE</button>
-rr</div>
+rrr</div>
 <div class="panel"><h3 style="margin-top:0;color:var(--green)">Acik Pozisyonlar</h3><div id="poses"></div></div>
 <div class="panel"><h3 style="margin-top:0;color:var(--green)">Son Islemler</h3><div id="journal"></div></div>
 <div class="panel"><h3 style="margin-top:0;color:var(--green)">Canli Loglar</h3><div class="log" id="log"></div></div>
@@ -875,7 +875,7 @@ def summary():
 
 def main_loop():
     engine.log(f"QN v3 BASLADI | Sermaye:{CAPITAL_USD:.2f}$ | Mod:{MODE} | Semboller:{','.join(LIVE_SYMBOLS)}")
-rr    idle = 0
+rrr    idle = 0
     last_swarm = 0
     last_funding = 0
 

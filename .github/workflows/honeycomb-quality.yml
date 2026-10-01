@@ -63,7 +63,7 @@ jobs:
           import py_compile
           import sys
           root = pathlib.Path(os.environ.get("GITHUB_WORKSPACE", ".")).resolve()
-          excluded = {".git", "node_modules", "__pycache__", "backups", ".honeycomb_tools"}
+          excluded = {".git", "node_modules", "__pycache__", "backups", ".honeycomb_tools", ".honeycomb_runtime"}
           files = [
               p for p in root.rglob("*.py")
               if not any(part == "backups" or part == ".honeycomb_tools" or part.startswith(".honeycomb_recovery_DISABLED_") or part.endswith("_backups") for part in p.relative_to(root).parts)

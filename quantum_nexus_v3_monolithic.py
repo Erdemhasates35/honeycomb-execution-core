@@ -875,7 +875,7 @@ def summary():
 
 def main_loop():
     engine.log(f"QN v3 BASLADI | Sermaye:{CAPITAL_USD:.2f}$ | Mod:{MODE} | Semboller:{','.join(LIVE_SYMBOLS)}")
-rrr    idle = 0
+    idle = 0
     last_swarm = 0
     last_funding = 0
 

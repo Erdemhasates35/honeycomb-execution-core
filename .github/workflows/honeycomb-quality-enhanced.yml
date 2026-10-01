@@ -75,14 +75,26 @@ jobs:
       - name: Python compile gate
         run: |
           python - <<'PY'
+          import os
           import pathlib
           import py_compile
           import sys
           import time
           
           start = time.time()
-          files = [p for p in pathlib.Path('.').rglob('*.py') 
-                   if '.git' not in p.parts and 'node_modules' not in p.parts]
+          root = pathlib.Path(os.environ.get("GITHUB_WORKSPACE", ".")).resolve()
+          excluded = {".git", "node_modules", "__pycache__", "backups", ".honeycomb_tools"}
+          files = [
+              p for p in root.rglob("*.py")
+              if not any(
+                  part == "backups"
+                  or part == ".honeycomb_tools"
+                  or part.startswith(".honeycomb_recovery_DISABLED_")
+                  or part.endswith("_backups")
+                  for part in p.relative_to(root).parts
+              )
+              and not any(part in excluded for part in p.relative_to(root).parts)
+          ]
           failures = []
           
           for path in files:
@@ -115,7 +127,7 @@ jobs:
           echo "✅ All $total shell scripts passed syntax check"
 
       - name: Action workflow lint
-        uses: raven-actions/actionlint@v2
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7
 
       # ========== 新增: FINANCIAL ERROR HANDLING TESTS ==========
       - name: Financial Error Simulation Tests

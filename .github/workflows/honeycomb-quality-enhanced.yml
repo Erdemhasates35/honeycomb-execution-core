@@ -266,6 +266,7 @@ jobs:
                   print(f"  ⚠️ DB check skipped: {e}")
           else:
               print(f"\n[DB] Database will be created on first run (expected)")
+          DB_INTEGRITY
 
       # ========== 新增: SECURITY CHECKS ==========
       - name: Secret Leak Detection

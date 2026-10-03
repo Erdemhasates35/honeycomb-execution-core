@@ -67,8 +67,8 @@ try:
 except Exception:
     TL_USD_RATE = 0.0  # kur girilmemis -- TL donusumu loglarda gosterilmeyecek
 
-SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]
-FALLBACK = {"BTCUSDT": 64000.0, "ETHUSDT": 1870.0, "SOLUSDT": 76.0, "BNBUSDT": 600.0}
+SYMBOLS = [s.strip().upper() for s in ENV.get("TESTNET_SYMBOLS", "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,XRPUSDT").split(",") if s.strip()]
+FALLBACK = {"BTCUSDT": 64000.0, "ETHUSDT": 1870.0, "SOLUSDT": 76.0, "BNBUSDT": 600.0, "XRPUSDT": 0.55}
 DEFAULT_FILTER = {"stepSize": 0.001, "minQty": 0.001, "minNotional": 5.0, "tickSize": 0.01}
 SYMBOL_FILTERS = {}
 last_px = dict(FALLBACK)
@@ -292,20 +292,24 @@ def place_market(symbol, side, qty, position_side=None, reduce_only=False, clien
     return binance_request("POST", "/fapi/v1/order", params, allow_retry=False)
 
 def fetch_px(symbol):
-    """Testnet fiyat endpoint'i -- gercek testnet emir defteri fiyatidir, canli borsa fiyati DEGILDIR."""
+    """Only a live Binance Testnet price is valid for an order decision."""
     try:
         url = BASE_URL + "/fapi/v1/ticker/price?symbol=" + symbol
         req = urllib.request.Request(url, headers={"Connection": "close", "User-Agent": "hc-testnet"})
         with urllib.request.urlopen(req, timeout=3) as r:
             px = float(json.loads(r.read().decode("utf-8"))["price"])
+            if px <= 0:
+                raise ValueError("non-positive testnet price")
             last_px[symbol] = px
             return px, "testnet-canli"
-    except Exception:
-        return last_px.get(symbol, FALLBACK[symbol]), "yedek"
+    except Exception as e:
+        log("GUNCEL TESTNET FIYAT YOK %s: %s" % (symbol, e))
+        return None, "yok"
 
-def fetch_klines(symbol, limit=50):
+def fetch_klines(symbol, interval=None, limit=100):
+    interval = interval or ENV.get("TESTNET_INTERVAL_KLINE", "1m")
     try:
-        url = BASE_URL + "/fapi/v1/klines?symbol=%s&interval=1m&limit=%d" % (symbol, limit)
+        url = BASE_URL + "/fapi/v1/klines?symbol=%s&interval=%s&limit=%d" % (symbol, interval, limit)
         req = urllib.request.Request(url, headers={"User-Agent": "hc-testnet"})
         with urllib.request.urlopen(req, timeout=4) as r:
             data = json.loads(r.read().decode("utf-8"))
@@ -340,7 +344,8 @@ def rsi(values, period=14):
     return 100.0 - (100.0 / (1.0 + rs))
 
 def get_signal(symbol):
-    closes = fetch_klines(symbol, 50)
+    timeframe = ENV.get("TESTNET_SIGNAL_INTERVAL", "1m")
+    closes = fetch_klines(symbol, timeframe, 100)
     if len(closes) < 25:
         return None, "veri yetersiz"
     e9 = ema(closes, 9)
@@ -373,6 +378,9 @@ def cb_reset():
 
 def open_pos(symbol, side, px, src, reason):
     global balance
+    if src != "testnet-canli" or px is None or px <= 0:
+        log("EMIR ENGELLENDI: guncel Binance Testnet fiyati yok | %s" % symbol)
+        return
     with lock:
         if any(p.get("status") == "OPEN" for p in positions.values()):
             return
@@ -491,7 +499,8 @@ def close_pos(pos, px, reason, src):
         raw = (pos["entry"] - px) * qty
         move = (pos["entry"] - px) / pos["entry"] * 100
     fees = pos["open_fee"] + close_fee
-    net = raw - close_fee
+    # Include both entry and exit costs in net PnL.
+    net = raw - fees
 
     with lock:
         balance += pos["margin"] + net

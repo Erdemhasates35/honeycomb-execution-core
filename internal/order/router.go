@@ -123,8 +123,6 @@ func (r *Router) Open(req OpenRequest) OrderResult {
 
 func (r *Router) Close(req CloseRequest) OrderResult {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	var target *Position
 	for _, p := range r.positions {
 		if p.Symbol == req.Symbol && p.Status == "OPEN" {
@@ -132,18 +130,21 @@ func (r *Router) Close(req CloseRequest) OrderResult {
 			break
 		}
 	}
+	if target != nil {
+		target.Status = "CLOSED"
+	}
+	r.mu.Unlock()
+
 	if target == nil {
 		return OrderResult{Success: false, Message: "position_not_found", Mode: r.cfg.Mode}
 	}
 
-	target.Status = "CLOSED"
 	r.log(fmt.Sprintf("%s close %s id=%s", r.cfg.Mode, req.Symbol, target.ID))
-
 	return OrderResult{
-		Success:  true,
-		OrderID:  target.ID,
-		Message:  "position_closed",
-		Mode:     r.cfg.Mode,
+		Success: true,
+		OrderID: target.ID,
+		Message: "position_closed",
+		Mode: r.cfg.Mode,
 		Position: target,
 	}
 }

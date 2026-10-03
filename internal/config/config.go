@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	Mode string // paper | live
+	Mode string
 	HTTPPort string
 	MaxDrawdownPercent float64
 	MaxSlippageTolerance float64
@@ -74,39 +74,29 @@ func loadDotEnv(path string) error {
 			continue
 		}
 		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		if key == "" {
-			continue
-		}
-		value = strings.Trim(value, "'\"")
-		if _, exists := os.LookupEnv(key); !exists {
-			_ = os.Setenv(key, value)
+		value := strings.Trim(strings.TrimSpace(parts[1]), "'\"")
+		if key != "" {
+			if _, exists := os.LookupEnv(key); !exists {
+				_ = os.Setenv(key, value)
+			}
 		}
 	}
 	return nil
 }
 
 func getEnv(k, def string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
-	}
+	if v := os.Getenv(k); v != "" { return v }
 	return def
 }
-
 func getEnvFloat(k string, def float64) float64 {
 	if v := os.Getenv(k); v != "" {
-		if f, err := strconv.ParseFloat(v, 64); err == nil {
-			return f
-		}
+		if f, err := strconv.ParseFloat(v, 64); err == nil { return f }
 	}
 	return def
 }
-
 func getEnvInt(k string, def int) int {
 	if v := os.Getenv(k); v != "" {
-		if i, err := strconv.Atoi(v); err == nil {
-			return i
-		}
+		if i, err := strconv.Atoi(v); err == nil { return i }
 	}
 	return def
 }

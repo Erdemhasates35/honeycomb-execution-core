@@ -87,7 +87,7 @@ func main() {
 	}
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
-		o s.Exit(1)
+		os.Exit(1)
 	}
 }
 

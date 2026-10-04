@@ -597,7 +597,7 @@ def manage_positions() -> None:
                 with lock:
                     stats["closes"] += 1
                     stats["gross_pnl"] += raw
-                    stats["total_fees"] += close_fee
+                    stats["total_fees"] += pos["open_fee"] + close_fee
                     stats["net_pnl"] += net
                     if net > 0:
                         stats["wins"] += 1

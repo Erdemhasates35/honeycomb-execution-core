@@ -7,15 +7,19 @@ class LiveExecutionAdapter implements ExecutionAdapter {
   readonly mode = 'LIVE' as const;
   readonly market: FuturesMarket;
   private readonly engine: BinanceFuturesEngineCatE;
+  private readonly testnet: boolean;
   private readonly fills: Fill[] = [];
   constructor(options: { apiKey: string; apiSecret: string; market: FuturesMarket; testnet?: boolean }) {
     this.market = options.market;
+    this.testnet = options.testnet ?? false;
     this.engine = new BinanceFuturesEngineCatE({ apiKey: options.apiKey, apiSecret: options.apiSecret, testnet: options.testnet ?? false, marketType: options.market });
   }
   async initialize(): Promise<void> { await this.engine.initialize(); }
   async markPrice(symbol: string): Promise<number> {
     const prefix = this.market === 'COIN_M' ? 'dapi' : 'fapi';
-    const base = this.market === 'COIN_M' ? 'https://dapi.binance.com' : 'https://fapi.binance.com';
+    const base = this.testnet
+      ? 'https://testnet.binancefuture.com'
+      : (this.market === 'COIN_M' ? 'https://dapi.binance.com' : 'https://fapi.binance.com');
     const response = await fetch(`${base}/${prefix}/v1/ticker/price?symbol=${encodeURIComponent(symbol)}`);
     if (!response.ok) throw new Error(`LIVE ticker failed: HTTP ${response.status}`);
     const data = await response.json() as { price?: string };
@@ -27,7 +31,9 @@ class LiveExecutionAdapter implements ExecutionAdapter {
     const result = await this.engine.executeOrder({ symbol: intent.symbol, side: intent.side === 'LONG' ? 'BUY' : 'SELL', type: 'MARKET', quantity: intent.quantity, reduceOnly: intent.reduceOnly });
     const payload = result as { avgPrice?: string; price?: string; orderId?: string | number };
     const price = Number(payload?.avgPrice ?? payload?.price ?? intent.referencePrice ?? await this.markPrice(intent.symbol));
-    const fill: Fill = { orderId: String(payload?.orderId ?? `LIVE-${Date.now()}`), symbol: intent.symbol, side: intent.side, quantity: intent.quantity, price, fee: 0, settlementAsset: this.market === 'COIN_M' ? 'COIN' : 'USDT', timestamp: Date.now(), mode: this.mode, market: this.market };
+    const feeRate = Number(process.env.FEE_RATE ?? '0.0004');
+    const fee = Number.isFinite(feeRate) && feeRate >= 0 ? price * intent.quantity * feeRate : 0;
+    const fill: Fill = { orderId: String(payload?.orderId ?? `LIVE-${Date.now()}`), symbol: intent.symbol, side: intent.side, quantity: intent.quantity, price, fee, settlementAsset: this.market === 'COIN_M' ? 'COIN' : 'USDT', timestamp: Date.now(), mode: this.mode, market: this.market };
     this.fills.push(fill);
     return fill;
   }

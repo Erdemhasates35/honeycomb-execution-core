@@ -247,7 +247,7 @@ def check_closed_positions() -> None:
             exit_px = meta["entry"]
         close_fee = exit_px * meta["qty"] * FEE_RATE
         raw = (exit_px - meta["entry"]) * meta["qty"] if meta["side"] == "LONG" else (meta["entry"] - exit_px) * meta["qty"]
-        net = raw - close_fee + meta.get("realized_partial_net", 0.0)
+        net = raw - close_fee - meta.get("open_fee", 0.0) + meta.get("realized_partial_net", 0.0)
         rec = {"symbol": symbol, "side": meta["side"], "entry": meta["entry"], "exit": exit_px,
                "net_pnl": round(net, 6), "hold_sec": round(time.time() - meta["ts"], 1),
                "regime": meta["regime"], "closed_ts": int(time.time())}

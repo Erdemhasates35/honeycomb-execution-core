@@ -774,7 +774,7 @@ def manage_positions() -> None:
                     raw = (exit_px - entry) * qty
                 else:
                     raw = (entry - exit_px) * qty
-                net = raw - close_fee
+                net = raw - float(positions.get(symbol, {}).get("open_fee", 0.0)) - close_fee
                 with lock:
                     stats["closes"] += 1
                     stats["gross_pnl"] += raw

@@ -650,7 +650,7 @@ def close_pos(pos, px, reason, src):
         raw = (pos["entry"] - px) * qty
         move = (pos["entry"] - px) / pos["entry"] * 100
     fees = pos["open_fee"] + close_fee
-    net = raw - close_fee
+    net = raw - fees
 
     with lock:
         balance += pos["margin"] + net

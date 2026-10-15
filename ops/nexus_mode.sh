@@ -1,13 +1,13 @@
 #!/bin/sh
-# Mod seçer. Anahtarlar .env içinde kalır. Bu dosyada sır yoktur.
+# Her yerden çalışır. Klasör yoksa klonlar. Sır yok.
 MODE=${1:-testnet}
 ROOT="$HOME/honeycomb/honeycomb-execution-core"
-if [ ! -d "$ROOT" ]; then
-  mkdir -p "$HOME/honeycomb"
+mkdir -p "$HOME/honeycomb" "$HOME/.honeycomb"
+if [ ! -d "$ROOT/.git" ]; then
   git clone --depth 1 https://github.com/Erdemhasates35/honeycomb-execution-core.git "$ROOT" || exit 1
 fi
 cd "$ROOT" || exit 1
-mkdir -p "$HOME/.honeycomb"
+git pull --ff-only || true
 export HONEYCOMB_LOCK_PATH="$HOME/.honeycomb/sf.lock"
 if [ "$MODE" = "live" ]; then
   export EXECUTION_MODE=LIVE

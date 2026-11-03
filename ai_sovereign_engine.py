@@ -187,7 +187,8 @@ class OrderExecutor:
         except Exception as e: logger.error("LEV FAIL %s: %s",sym,e); return False
     def place_market(self,sym,side,qty):
         if not LIVE_ARMED and not USE_TESTNET:
-            logger.warning("LIVE_ARMED=0 → emir yok"); return {"orderId":"SIM","status":"FILLED","avgPrice":0}
+            logger.warning("LIVE_ARMED=0 → emir yok")
+            return None
         try: return self.k.http("POST","/fapi/v1/order",{"symbol":sym,"side":side,"type":"MARKET","quantity":qty})
         except Exception as e: logger.error("MARKET FAIL: %s",e); return None
     def place_protect(self,sym,direction,qty,tp,sl):
@@ -209,7 +210,12 @@ def get_balance():
         acc=kernel.http("GET","/fapi/v2/account",{})
         usdt=next((a for a in (acc.get("assets") or []) if a.get("asset")=="USDT"),None)
         return float(usdt.get("availableBalance") or usdt.get("walletBalance") or 0) if usdt else 0.0
-    except Exception as e: logger.error("BALANCE ERR: %s",e); return 0.0
+    except Exception as e:
+        logger.error("BALANCE ERR: %s", e)
+        msg = str(e)
+        if "-2015" in msg or "Invalid API-key" in msg or "HTTP 401" in msg:
+            raise SystemExit("IMZA REDDEDILDI. Anahtar, IP veya futures izni. Dongu durdu.")
+        return 0.0
 
 def get_md(symbol):
     ticker=kernel.http("GET","/fapi/v1/ticker/price",{"symbol":symbol},signed=False)
@@ -228,6 +234,9 @@ def get_md(symbol):
 def run_cycle():
     bal=get_balance()
     logger.info("CYCLE bal=%.4f armed=%s mode=%s",bal,LIVE_ARMED,"TESTNET" if USE_TESTNET else "LIVE")
+    if bal<=0:
+        logger.error("BAKIYE 0. Emir yok.")
+        return
     for sym in SYMBOLS:
         try:
             positions=kernel.http("GET","/fapi/v2/positionRisk",{"symbol":sym})

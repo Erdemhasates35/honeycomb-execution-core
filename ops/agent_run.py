@@ -55,7 +55,9 @@ def signed() -> bool:
 
 def cmd_list() -> int:
     print("GELIR: borsa gerçekleşen PnL. Bu liste rakam yazmaz.")
-    print(f"ENV: {'var' if (ROOT / '.env').is_file() else 'YOK'}  IMZA: {'var' if signed() else 'yok'}")
+    mode = os.environ.get("HONEYCOMB_MODE") or os.environ.get("USE_TESTNET") or "env-yok"
+    armed = os.environ.get("LIVE_ARMED", "0")
+    print(f"ENV: {'var' if (ROOT / '.env').is_file() else 'YOK'}  IMZA: {'var' if signed() else 'yok'}  MOD: {mode}  ARMED: {armed}")
     for aid, fn, need, note in AGENTS:
         ok = (ROOT / fn).is_file()
         print(f"{aid:12} {'DOSYA' if ok else 'YOK':5} {'IMZA' if need else 'ACIK':4}  {note}")

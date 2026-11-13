@@ -48,3 +48,8 @@ ExpectedNet = Gross - Fee - Funding - Slippage - Spread - LatencyCost - ExecRisk
 IF ExpectedNet > MinEdge AND RiskState in {GREEN, YELLOW} → ALLOW
 ELSE → REJECT
 ```
+
+
+## Execution adapter status (verified 2026-11-13)
+
+The Go HTTP router currently has no connected live exchange execution adapter and no live order-book/edge provider. It must fail closed and must not report a successful open/close or create a local position without a venue acknowledgement. The default paper mode also requires an explicit paper adapter; it is not silently simulated by the Go router. Live execution is not certified by this repository state.

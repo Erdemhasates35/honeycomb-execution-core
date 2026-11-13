@@ -1,13 +1,11 @@
 package order
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/Erdemhasates35/honeycomb-execution-core/internal/config"
-	"github.com/Erdemhasates35/honeycomb-execution-core/internal/edge"
-	"github.com/Erdemhasates35/honeycomb-execution-core/internal/risk"
+		"github.com/Erdemhasates35/honeycomb-execution-core/internal/risk"
 )
 
 type Router struct {
@@ -61,90 +59,28 @@ func (r *Router) Open(req OpenRequest) OrderResult {
 		return OrderResult{Success: false, Message: "risk_state_blocks_new_orders", Mode: r.cfg.Mode}
 	}
 
-	if req.Size <= 0 || req.Leverage <= 0 || req.Leverage > r.cfg.MaxLeverage {
-		return OrderResult{Success: false, Message: "invalid_size_or_leverage", Mode: r.cfg.Mode}
+	if req.Symbol == "" || req.Size <= 0 || req.Leverage <= 0 || req.Leverage > r.cfg.MaxLeverage ||
+		(req.Side != SideLong && req.Side != SideShort) {
+		return OrderResult{Success: false, Message: "invalid_order_request", Mode: r.cfg.Mode}
 	}
 
-	// Edge kontrolü — canlı orderbook bağlanınca gerçek değerler gelecek
-	edgeIn := edge.Input{
-		GrossPercent:    0.20,
-		FeePercent:      0.08,
-		FundingPercent:  0.02,
-		SlippagePercent: 0.04,
-		SpreadPercent:   0.02,
-		LatencyCostPct:  0.01,
-		ExecRiskPercent: 0.02,
-	}
-	res := edge.Calculate(edgeIn, r.cfg.MinEdgePercent)
-	if !res.Allowed {
-		r.log(fmt.Sprintf("REJECT open: edge=%.4f reason=%s", res.ExpectedNet, res.Reason))
-		return OrderResult{Success: false, Message: res.Reason, Mode: r.cfg.Mode}
-	}
-
-	id := fmt.Sprintf("pos_%d", time.Now().UnixNano())
-	pos := &Position{
-		ID:       id,
-		Symbol:   req.Symbol,
-		Side:     req.Side,
-		Size:     req.Size,
-		Leverage: req.Leverage,
-		Entry:    0,
-		Exchange: req.Exchange,
-		Mode:     r.cfg.Mode,
-		OpenedAt: time.Now().UTC(),
-		Status:   "OPEN",
-	}
-
+	// Fail closed: this Go router currently has no live venue adapter and no
+	// connected, timestamped order-book/edge provider. Never manufacture an
+	// edge estimate or report an order as successful without a venue receipt.
 	if r.cfg.Mode == "live" {
-		if r.cfg.BinanceAPIKey == "" && r.cfg.BitgetAPIKey == "" {
-			r.log("LIVE rejected: no exchange API keys configured")
-			return OrderResult{Success: false, Message: "live_mode_requires_api_keys", Mode: "live"}
-		}
-		// Gerçek signed REST emir buraya bağlanır (Binance/Bitget client).
-		// Key doğrulandıktan sonra aktif edilir — şu an güvenli iskelet.
-		r.log(fmt.Sprintf("LIVE open requested %s %s size=%.6f (keys present)", req.Side, req.Symbol, req.Size))
-	} else {
-		r.log(fmt.Sprintf("PAPER open %s %s size=%.6f lev=%.0fx", req.Side, req.Symbol, req.Size, req.Leverage))
+		r.log("LIVE rejected: venue execution adapter and live edge provider are unavailable")
+		return OrderResult{Success: false, Message: "live_execution_adapter_unavailable", Mode: "live"}
 	}
 
-	r.mu.Lock()
-	r.positions[id] = pos
-	r.mu.Unlock()
-	r.risk.RecordSuccess()
-
-	return OrderResult{
-		Success:  true,
-		OrderID:  id,
-		Message:  "position_opened",
-		Mode:     r.cfg.Mode,
-		Position: pos,
-	}
+	r.log("PAPER rejected: explicit paper execution adapter is not connected to this Go router")
+	return OrderResult{Success: false, Message: "paper_execution_adapter_unavailable", Mode: r.cfg.Mode}
 }
 
 func (r *Router) Close(req CloseRequest) OrderResult {
-	r.mu.Lock()
-	var target *Position
-	for _, p := range r.positions {
-		if p.Symbol == req.Symbol && p.Status == "OPEN" {
-			target = p
-			break
-		}
+	if r.cfg.Mode == "live" {
+		r.log("LIVE close rejected: venue execution adapter is unavailable")
+		return OrderResult{Success: false, Message: "live_execution_adapter_unavailable", Mode: "live"}
 	}
-	if target != nil {
-		target.Status = "CLOSED"
-	}
-	r.mu.Unlock()
-
-	if target == nil {
-		return OrderResult{Success: false, Message: "position_not_found", Mode: r.cfg.Mode}
-	}
-
-	r.log(fmt.Sprintf("%s close %s id=%s", r.cfg.Mode, req.Symbol, target.ID))
-	return OrderResult{
-		Success: true,
-		OrderID: target.ID,
-		Message: "position_closed",
-		Mode: r.cfg.Mode,
-		Position: target,
-	}
+	r.log("PAPER close rejected: explicit paper execution adapter is not connected to this Go router")
+	return OrderResult{Success: false, Message: "paper_execution_adapter_unavailable", Mode: r.cfg.Mode}
 }

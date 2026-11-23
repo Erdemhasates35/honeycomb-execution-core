@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { BinanceFuturesEngineCatE } from '../BinanceFuturesEngineCatE.js';
+import { normalizeBinanceOrderFill } from './binance_fill.js';
 import { PaperExecutionAdapter } from './paper_execution_adapter.js';
 import { TestExecutionAdapter } from './test_execution_adapter.js';
 import type { ExecutionAdapter, ExecutionMode, ExecutionSnapshot, FuturesMarket, Fill, OrderIntent } from './types.js';
@@ -28,12 +30,11 @@ class LiveExecutionAdapter implements ExecutionAdapter {
     return price;
   }
   async place(intent: OrderIntent): Promise<Fill> {
-    const result = await this.engine.executeOrder({ symbol: intent.symbol, side: intent.side === 'LONG' ? 'BUY' : 'SELL', type: 'MARKET', quantity: intent.quantity, reduceOnly: intent.reduceOnly });
-    const payload = result as { avgPrice?: string; price?: string; orderId?: string | number };
-    const price = Number(payload?.avgPrice ?? payload?.price ?? intent.referencePrice ?? await this.markPrice(intent.symbol));
+    if (!Number.isFinite(intent.quantity) || intent.quantity <= 0) throw new Error('LIVE quantity must be finite and greater than zero');
+    const clientOrderId = intent.clientOrderId ?? `hc-${randomUUID().replace(/-/g, '').slice(0, 32)}`;
+    const result = await this.engine.executeOrder({ symbol: intent.symbol, side: intent.side === 'LONG' ? 'BUY' : 'SELL', type: 'MARKET', quantity: intent.quantity, reduceOnly: intent.reduceOnly, clientOrderId });
     const feeRate = Number(process.env.FEE_RATE ?? '0.0004');
-    const fee = Number.isFinite(feeRate) && feeRate >= 0 ? price * intent.quantity * feeRate : 0;
-    const fill: Fill = { orderId: String(payload?.orderId ?? `LIVE-${Date.now()}`), symbol: intent.symbol, side: intent.side, quantity: intent.quantity, price, fee, settlementAsset: this.market === 'COIN_M' ? 'COIN' : 'USDT', timestamp: Date.now(), mode: this.mode, market: this.market };
+    const fill = normalizeBinanceOrderFill(result as import('./binance_fill.js').BinanceOrderResult, { ...intent, clientOrderId }, this.market, feeRate);
     this.fills.push(fill);
     return fill;
   }

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Honeycomb Live Kernel — dual-venue HMAC. No ghost fills. Exchange protect. Fill ledger."""
 from __future__ import annotations
-import fcntl, hashlib, hmac, json, os, threading, time, urllib.error, urllib.parse, urllib.request
+import fcntl, hashlib, hmac, json, math, os, threading, time, urllib.error, urllib.parse, urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
 VENUES = {
@@ -344,8 +344,9 @@ class LiveKernel:
         if status in ("NEW", "PARTIALLY_FILLED"):
             try:
                 self._http("DELETE", self.v["order"], {"symbol": symbol, "orderId": order_id}, signed=True, weight=1, is_order=True)
-            finally:
-                order = self._http("GET", self.v["order"], {"symbol": symbol, "orderId": order_id}, signed=True, weight=1)
+            except Exception:
+                pass
+            order = self._http("GET", self.v["order"], {"symbol": symbol, "orderId": order_id}, signed=True, weight=1)
             status = str(order.get("status") or "").upper()
         if status not in ("FILLED", "CANCELED"):
             raise RuntimeError("order %s ended in unreconciled status %s" % (order_id, status or "UNKNOWN"))
@@ -353,7 +354,7 @@ class LiveKernel:
         if not math.isfinite(expected_qty) or expected_qty <= 0:
             raise RuntimeError("order %s has no exchange-confirmed executed quantity" % order_id)
         for attempt in range(5):
-            trades = self._http("GET", self.v["userTrades"], {"symbol": symbol, "limit": 100}, signed=True, weight=5)
+            trades = self._http("GET", self.v["userTrades"], {"symbol": symbol, "limit": 1000}, signed=True, weight=5)
             matched = [t for t in trades if str(t.get("orderId")) == str(order_id)]
             if matched:
                 notional = sum(float(t["price"]) * float(t["qty"]) for t in matched)

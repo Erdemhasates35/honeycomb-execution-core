@@ -38,6 +38,7 @@ export function normalizeBinanceOrderFill(result: BinanceOrderResult, intent: Or
     fee,
     feeEstimated: true,
     status,
+    clientOrderId: intent.clientOrderId,
     settlementAsset: market === 'COIN_M' ? 'COIN' : 'USDT',
     timestamp: Number.isFinite(result.updateTime) && Number(result.updateTime) > 0 ? Number(result.updateTime) : Date.now(),
     mode: 'LIVE',

@@ -221,6 +221,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   }
 
   async markPrice(symbol: string): Promise<number> {
+    if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
     const prefix = this.market === "COIN_M" ? "dapi" : "fapi";
     const base = this.mode === "TESTNET"
       ? "https://testnet.binancefuture.com"
@@ -685,6 +686,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   }
 
   async place(intent: OrderIntent): Promise<Fill> {
+    if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
     if (!Number.isFinite(intent.quantity) || intent.quantity <= 0) throw new Error("Order quantity must be finite and positive");
     if (!this.accountId) throw new Error("Execution adapter is not initialized");
     if (this.hedgeMode && !intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide !== intent.side) throw new Error("Hedge-mode entry positionSide must match order side");
@@ -875,6 +877,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   }
 
   async close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null> {
+    if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
     const positions = await this.engine.getPositionRisk(symbol);
     const active = positions.find((position) => Number(position.positionAmt) !== 0);
     if (!active) return null;

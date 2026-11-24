@@ -242,7 +242,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       }
       const latest = ordered[ordered.length - 1].time;
       cursor = latest + 1;
-      if (records.length < 1000 || latest < cursor - 1) {
+      if (records.length < 1000) {
         cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
         break;
       }

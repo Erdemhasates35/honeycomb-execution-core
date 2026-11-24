@@ -24,7 +24,7 @@ export function calculateAtr(candles: Candle[], period = 14): number {
 }
 
 export function evaluateAtrVolatility(candles: Candle[], config: AtrVolatilityConfig): StrategySignal {
-  if (candles.length < config.slowEmaPeriod || config.fastEmaPeriod >= config.slowEmaPeriod || config.stopAtr<=0 || config.targetAtr<=0) throw new Error("ATR strategy configuration or history is invalid");
+  if (![config.atrPeriod,config.fastEmaPeriod,config.slowEmaPeriod,config.stopAtr,config.targetAtr,config.minTrendSeparationBps,config.maxVolatilityBps].every(Number.isFinite) || !Number.isInteger(config.atrPeriod) || !Number.isInteger(config.fastEmaPeriod) || !Number.isInteger(config.slowEmaPeriod) || config.atrPeriod<2 || config.fastEmaPeriod<1 || config.fastEmaPeriod>=config.slowEmaPeriod || config.stopAtr<=0 || config.targetAtr<=0 || config.minTrendSeparationBps<0 || config.maxVolatilityBps<=0 || candles.length < Math.max(config.slowEmaPeriod,config.atrPeriod+1)) throw new Error("ATR strategy configuration or history is invalid");
   const closes=candles.map(candle=>candle.close);
   const close=closes[closes.length-1];
   assertPositive(close,"latestClose");

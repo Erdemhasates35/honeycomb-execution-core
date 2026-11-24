@@ -24,10 +24,9 @@ export function evaluateCrossVenueBasis(left:VenueQuote,right:VenueQuote,config:
     assertPositive(quote.ask,"venueAsk");
     if(quote.ask<quote.bid||quote.feeBps<0||quote.slippageBps<0||quote.latencyMs<0)throw new Error("Cross venue quote is invalid");
   }
-  const leftMid=(left.bid+left.ask)/2;
-  const rightMid=(right.bid+right.ask)/2;
   const buyLeftGross=(right.bid-left.ask)/((right.bid+left.ask)/2)*10000;
   const buyRightGross=(left.bid-right.ask)/((left.bid+right.ask)/2)*10000;
+  if (!Number.isFinite(config.minNetEdgeBps) || !Number.isFinite(config.latencyPenaltyBpsPerSecond) || config.latencyPenaltyBpsPerSecond < 0) throw new Error("Cross venue cost policy is invalid");
   const leftLatency=left.latencyMs/1000*config.latencyPenaltyBpsPerSecond;
   const rightLatency=right.latencyMs/1000*config.latencyPenaltyBpsPerSecond;
   const buyLeftNet=buyLeftGross-left.feeBps-right.feeBps-left.slippageBps-right.slippageBps-leftLatency-rightLatency;

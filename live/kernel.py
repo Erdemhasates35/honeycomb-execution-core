@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Honeycomb Live Kernel — dual-venue HMAC. No ghost fills. Exchange protect. Fill ledger."""
 from __future__ import annotations
-import fcntl, hashlib, hmac, json, os, threading, time, urllib.error, urllib.parse, urllib.request
+import fcntl, hashlib, hmac, json, math, os, threading, time, urllib.error, urllib.parse, urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
 VENUES = {
@@ -183,7 +183,8 @@ class LiveKernel:
         data = body.encode("utf-8") if method != "GET" else None
         headers = {"X-MBX-APIKEY": self.key, "Content-Type": "application/x-www-form-urlencoded"}
         last_err = None
-        for attempt in range(retries):
+        attempts = 1 if is_order and method == "POST" else retries
+        for attempt in range(attempts):
             try:
                 req = urllib.request.Request(url, data=data, headers=headers, method=method)
                 with urllib.request.urlopen(req, timeout=12) as resp:
@@ -335,21 +336,39 @@ class LiveKernel:
         except Exception as e:
             self.log("cancel_all %s: %s" % (symbol, e))
 
-    def resolve_fill(self, symbol, order_id, fallback_avg, qty):
-        time.sleep(0.15)
-        try:
-            trades = self._http("GET", self.v["userTrades"], {"symbol": symbol, "limit": 20}, signed=True, weight=5)
+    def resolve_fill(self, symbol, order_id, fallback_avg=None, qty=None):
+        if order_id is None or str(order_id).strip() == "":
+            raise RuntimeError("order reconciliation requires the exchange orderId")
+        order = self._http("GET", self.v["order"], {"symbol": symbol, "orderId": order_id}, signed=True, weight=1)
+        status = str(order.get("status") or "").upper()
+        if status in ("NEW", "PARTIALLY_FILLED"):
+            try:
+                self._http("DELETE", self.v["order"], {"symbol": symbol, "orderId": order_id}, signed=True, weight=1, is_order=True)
+            except Exception:
+                pass
+            order = self._http("GET", self.v["order"], {"symbol": symbol, "orderId": order_id}, signed=True, weight=1)
+            status = str(order.get("status") or "").upper()
+        if status not in ("FILLED", "CANCELED"):
+            raise RuntimeError("order %s ended in unreconciled status %s" % (order_id, status or "UNKNOWN"))
+        expected_qty = float(order.get("executedQty") or 0.0)
+        if not math.isfinite(expected_qty) or expected_qty <= 0:
+            raise RuntimeError("order %s has no exchange-confirmed executed quantity" % order_id)
+        for attempt in range(5):
+            trades = self._http("GET", self.v["userTrades"], {"symbol": symbol, "limit": 1000}, signed=True, weight=5)
             matched = [t for t in trades if str(t.get("orderId")) == str(order_id)]
             if matched:
                 notional = sum(float(t["price"]) * float(t["qty"]) for t in matched)
                 qsum = sum(float(t["qty"]) for t in matched)
-                avg = notional / qsum if qsum else fallback_avg
-                commission = sum(float(t.get("commission") or 0) for t in matched)
-                rp = sum(float(t.get("realizedPnl") or 0) for t in matched)
-                return {"avg": avg, "qty": qsum, "commission": commission, "rp": rp, "source": "userTrades"}
-        except Exception as e:
-            self.log("resolve_fill userTrades: %s" % e)
-        return {"avg": fallback_avg, "qty": qty, "commission": 0.0, "rp": 0.0, "source": "orderAck"}
+                if qsum > 0 and abs(qsum - expected_qty) <= max(1e-10, expected_qty * 1e-8):
+                    avg = notional / qsum
+                    if not math.isfinite(avg) or avg <= 0:
+                        raise RuntimeError("order %s has invalid exchange trade prices" % order_id)
+                    commission = sum(float(t.get("commission") or 0) for t in matched)
+                    rp = sum(float(t.get("realizedPnl") or 0) for t in matched)
+                    return {"avg": avg, "qty": qsum, "commission": commission, "rp": rp, "source": "userTrades", "status": status}
+            if attempt < 4:
+                time.sleep(0.2)
+        raise RuntimeError("order %s execution quantity could not be reconciled to userTrades" % order_id)
 
     def open_market(self, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
         side = str(side).upper().strip()
@@ -393,7 +412,7 @@ class LiveKernel:
                 tp, sl = entry * (1 - tp_pct / 100.0), entry * (1 + sl_pct / 100.0)
             self.place_protect(symbol, side, entry, tp, sl, pos_side)
             self.log("OPEN %s %s entry=%.6f qty=%s oid=%s slip=%.1fbps" % (side, symbol, entry, qty, oid, slip_bps))
-            return {"symbol": symbol, "side": side, "entry": entry, "qty": qty, "tp": tp, "sl": sl,
+            return {"symbol": symbol, "side": side, "entry": entry, "qty": fill["qty"], "tp": tp, "sl": sl,
                     "oid": oid, "commission": fill["commission"], "slip_bps": slip_bps, "pos_side": pos_side}
         finally:
             self.flock.release()

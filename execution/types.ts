@@ -19,6 +19,9 @@ export interface Fill {
   quantity: number;
   price: number;
   fee: number;
+  feeEstimated?: boolean;
+  status?: 'FILLED' | 'PARTIALLY_FILLED';
+  clientOrderId?: string;
   settlementAsset: string;
   timestamp: number;
   mode: ExecutionMode;

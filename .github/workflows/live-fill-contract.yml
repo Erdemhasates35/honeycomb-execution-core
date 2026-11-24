@@ -1,0 +1,27 @@
+name: Live fill contract
+on:
+  push:
+    branches:
+      - fix/live-fill-reconciliation-no-retry
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: python -m unittest discover -s tests -p 'test_live_fill_contract.py' -v
+      - run: python -m compileall -q live tests/test_live_fill_contract.py

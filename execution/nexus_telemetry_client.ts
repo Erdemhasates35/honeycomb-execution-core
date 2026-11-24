@@ -106,7 +106,7 @@ export class NexusTelemetryClient {
     });
   }
 
-  async getExecutionConfig(input: { riskProfileCode: string; strategyCode: string; mode: "paper" | "testnet" | "live" }): Promise<NexusExecutionConfig> {
+  async getExecutionConfig(input: { riskProfileCode: string; strategyCode: string; mode: "paper" | "testnet" | "live"; accountId?: string; instrumentId?: string; symbol?: string }): Promise<NexusExecutionConfig> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
@@ -123,6 +123,9 @@ export class NexusTelemetryClient {
             risk_profile_code: input.riskProfileCode,
             strategy_code: input.strategyCode,
             mode: input.mode,
+            account_id: input.accountId ?? null,
+            instrument_id: input.instrumentId ?? null,
+            symbol: input.symbol ?? null,
           },
         }),
         signal: controller.signal,

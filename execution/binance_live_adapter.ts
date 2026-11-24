@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade } from "../BinanceFuturesEngineCatE.js";
+import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade, type BinanceUserTrade } from "../BinanceFuturesEngineCatE.js";
 import { reconcileBinanceUserTrades } from "./binance_fill.js";
 import { NexusTelemetryClient } from "./nexus_telemetry_client.js";
 import { RiskEngine, parseRiskLimits, type RiskContext } from "./risk_engine.js";
@@ -59,6 +59,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly estimatedFundingBps: number;
   private readonly fills: Fill[] = [];
   private readonly instrumentIds = new Map<string,string>();
+  private readonly contractSizes = new Map<string,number>();
   private accountId = "";
   private balance = 0;
   private positions: Position[] = [];
@@ -149,6 +150,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       metadata: { contractType: item.contractType ?? null, status: item.status, market: this.market },
     });
     this.instrumentIds.set(symbol, registered.id);
+    this.contractSizes.set(symbol, Number(item.contractSize ?? 1));
     return registered.id;
   }
 
@@ -165,23 +167,28 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return price;
   }
 
-  private riskContext(): RiskContext {
-    const positionsNotional = this.positions.reduce((sum, position) => sum + Math.abs(position.quantity * position.entryPrice), 0);
-    const peakEquity = this.riskContextOverrides.peakEquity ?? this.balance;
+  private riskContext(symbol: string, price: number): RiskContext {
+    const positionsNotional = this.positions.reduce((sum, position) => {
+      const contractSize = this.contractSizes.get(position.symbol) ?? 1;
+      return sum + (this.market === 'COIN_M' ? Math.abs(position.quantity * contractSize) : Math.abs(position.quantity * position.entryPrice * contractSize));
+    }, 0);
+    const contractSize = this.contractSizes.get(symbol) ?? 1;
+    const equity = this.market === 'COIN_M' ? this.balance * price : this.balance;
+    const peakEquity = this.riskContextOverrides.peakEquity ?? equity;
     const dailyRealizedPnl = this.riskContextOverrides.dailyRealizedPnl ?? 0;
     const openOrders = this.riskContextOverrides.openOrders ?? this.positions.length;
     const portfolioNotional = this.riskContextOverrides.portfolioNotional ?? positionsNotional;
     const context: RiskContext = {
-      equity: this.balance,
+      equity,
       peakEquity,
-      availableBalance: this.balance,
+      availableBalance: equity,
       dailyRealizedPnl,
       openOrders,
       portfolioNotional,
       estimatedSlippageBps: this.riskContextOverrides.estimatedSlippageBps ?? this.estimatedSlippageBps,
       estimatedFeeBps: this.riskContextOverrides.estimatedFeeBps ?? this.estimatedFeeBps,
       estimatedFundingBps: this.riskContextOverrides.estimatedFundingBps ?? this.estimatedFundingBps,
-      contractMultiplier: 1,
+      contractMultiplier: this.market === 'COIN_M' ? contractSize / price : contractSize,
     };
     return context;
   }
@@ -271,7 +278,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       stopPrice: intent.stopLossPrice === undefined ? undefined : String(intent.stopLossPrice),
       metadata: { market: this.market, leverage: intent.leverage ?? 1, takeProfitPrice: intent.takeProfitPrice ?? null, reduceOnly: intent.reduceOnly ?? false },
     });
-    const decision = this.riskEngine.evaluate(intent, price, this.riskContext());
+    const decision = this.riskEngine.evaluate(intent, price, this.riskContext(intent.symbol, price));
     await this.telemetry.recordRiskDecision({
       intentId: intentResult.id,
       profileCode: riskProfileCode,

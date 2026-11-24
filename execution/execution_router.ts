@@ -1,74 +1,80 @@
-import { randomUUID } from 'node:crypto';
-import { BinanceFuturesEngineCatE } from '../BinanceFuturesEngineCatE.js';
-import { normalizeBinanceOrderFill } from './binance_fill.js';
-import { PaperExecutionAdapter } from './paper_execution_adapter.js';
-import { TestExecutionAdapter } from './test_execution_adapter.js';
-import type { ExecutionAdapter, ExecutionMode, ExecutionSnapshot, FuturesMarket, Fill, OrderIntent } from './types.js';
+import { BinanceLiveExecutionAdapter } from "./binance_live_adapter.js";
+import { NexusTelemetryClient } from "./nexus_telemetry_client.js";
+import { PaperExecutionAdapter } from "./paper_execution_adapter.js";
+import { TestExecutionAdapter } from "./test_execution_adapter.js";
+import type { ExecutionAdapter, ExecutionMode, ExecutionSnapshot, FuturesMarket, Fill, OrderIntent } from "./types.js";
 
-class LiveExecutionAdapter implements ExecutionAdapter {
-  readonly mode = 'LIVE' as const;
-  readonly market: FuturesMarket;
-  private readonly engine: BinanceFuturesEngineCatE;
-  private readonly testnet: boolean;
-  private readonly fills: Fill[] = [];
-  constructor(options: { apiKey: string; apiSecret: string; market: FuturesMarket; testnet?: boolean }) {
-    this.market = options.market;
-    this.testnet = options.testnet ?? false;
-    this.engine = new BinanceFuturesEngineCatE({ apiKey: options.apiKey, apiSecret: options.apiSecret, testnet: options.testnet ?? false, marketType: options.market });
-  }
-  async initialize(): Promise<void> { await this.engine.initialize(); }
-  async markPrice(symbol: string): Promise<number> {
-    const prefix = this.market === 'COIN_M' ? 'dapi' : 'fapi';
-    const base = this.testnet
-      ? 'https://testnet.binancefuture.com'
-      : (this.market === 'COIN_M' ? 'https://dapi.binance.com' : 'https://fapi.binance.com');
-    const response = await fetch(`${base}/${prefix}/v1/ticker/price?symbol=${encodeURIComponent(symbol)}`);
-    if (!response.ok) throw new Error(`LIVE ticker failed: HTTP ${response.status}`);
-    const data = await response.json() as { price?: string };
-    const price = Number(data.price);
-    if (!Number.isFinite(price) || price <= 0) throw new Error(`Invalid LIVE price for ${symbol}`);
-    return price;
-  }
-  async place(intent: OrderIntent): Promise<Fill> {
-    if (!Number.isFinite(intent.quantity) || intent.quantity <= 0) throw new Error('LIVE quantity must be finite and greater than zero');
-    const clientOrderId = intent.clientOrderId ?? `hc-${randomUUID().replace(/-/g, '').slice(0, 32)}`;
-    const result = await this.engine.executeOrder({ symbol: intent.symbol, side: intent.side === 'LONG' ? 'BUY' : 'SELL', type: 'MARKET', quantity: intent.quantity, reduceOnly: intent.reduceOnly, clientOrderId });
-    const feeRate = Number(process.env.FEE_RATE ?? '0.0004');
-    const fill = normalizeBinanceOrderFill(result as import('./binance_fill.js').BinanceOrderResult, { ...intent, clientOrderId }, this.market, feeRate);
-    this.fills.push(fill);
-    return fill;
-  }
-  async close(symbol: string, referencePrice?: number): Promise<Fill | null> {
-    const positions = await this.engine.getPositionRisk(symbol);
-    const active = positions.find((p) => Number(p.positionAmt) !== 0);
-    if (!active) return null;
-    return this.place({ symbol, side: Number(active.positionAmt) > 0 ? 'SHORT' : 'LONG', quantity: Math.abs(Number(active.positionAmt)), referencePrice, reduceOnly: true });
-  }
-  snapshot(): ExecutionSnapshot { return { mode: this.mode, market: this.market, balance: 0, positions: [], fills: [...this.fills] }; }
-  async terminate(): Promise<void> { this.engine.terminate(); }
+export interface RouterConfig {
+  mode?: ExecutionMode;
+  market?: FuturesMarket;
+  initialBalance?: number;
+  apiKey?: string;
+  apiSecret?: string;
+  testnet?: boolean;
+  paperFeeRate?: number;
+  paperSlippageBps?: number;
+  telemetry?: NexusTelemetryClient;
+  accountLabel?: string;
+  strategyCode?: string;
+  riskProfileCode?: string;
+  executorId?: string;
+  settlementAsset?: string;
+  riskLimitsJson?: string;
+  riskContextJson?: string;
 }
-
-export interface RouterConfig { mode?: ExecutionMode; market?: FuturesMarket; initialBalance?: number; apiKey?: string; apiSecret?: string; testnet?: boolean; paperFeeRate?: number; paperSlippageBps?: number; }
 
 export class ExecutionRouter implements ExecutionAdapter {
   readonly mode: ExecutionMode;
   readonly market: FuturesMarket;
   private readonly adapter: ExecutionAdapter;
+
   constructor(config: RouterConfig = {}) {
-    this.mode = (config.mode ?? process.env.EXECUTION_MODE ?? 'PAPER').toUpperCase() as ExecutionMode;
-    this.market = (config.market ?? process.env.FUTURES_MARKET ?? 'COIN_M').toUpperCase() as FuturesMarket;
-    if (!['TEST', 'PAPER', 'LIVE'].includes(this.mode)) throw new Error(`Unsupported EXECUTION_MODE=${this.mode}`);
-    if (!['COIN_M', 'USDT_M'].includes(this.market)) throw new Error(`Unsupported FUTURES_MARKET=${this.market}`);
-    if (this.mode === 'TEST') this.adapter = new TestExecutionAdapter({ market: this.market, initialBalance: config.initialBalance });
-    else if (this.mode === 'PAPER') this.adapter = new PaperExecutionAdapter({ market: this.market, initialBalance: config.initialBalance, feeRate: config.paperFeeRate, slippageBps: config.paperSlippageBps });
-    else {
-      if (process.env.LIVE_ARMED !== '1') throw new Error('LIVE requires LIVE_ARMED=1');
-      const apiKey = config.apiKey ?? process.env.BINANCE_API_KEY ?? '';
-      const apiSecret = config.apiSecret ?? process.env.BINANCE_API_SECRET ?? process.env.BINANCE_SECRET ?? '';
-      if (!apiKey || !apiSecret) throw new Error('LIVE requires Binance credentials from environment');
-      this.adapter = new LiveExecutionAdapter({ apiKey, apiSecret, market: this.market, testnet: config.testnet });
+    this.mode = (config.mode ?? process.env.EXECUTION_MODE ?? "PAPER").toUpperCase() as ExecutionMode;
+    this.market = (config.market ?? process.env.FUTURES_MARKET ?? "COIN_M").toUpperCase() as FuturesMarket;
+    if (!["TEST","PAPER","TESTNET","LIVE"].includes(this.mode)) throw new Error(`Unsupported EXECUTION_MODE=${this.mode}`);
+    if (!["COIN_M","USDT_M"].includes(this.market)) throw new Error(`Unsupported FUTURES_MARKET=${this.market}`);
+    if (config.testnet === true && this.mode !== "TESTNET") throw new Error("testnet=true requires EXECUTION_MODE=TESTNET");
+
+    if (this.mode === "TEST") {
+      this.adapter = new TestExecutionAdapter({ market: this.market, initialBalance: config.initialBalance });
+      return;
     }
+    if (this.mode === "PAPER") {
+      this.adapter = new PaperExecutionAdapter({ market: this.market, initialBalance: config.initialBalance, feeRate: config.paperFeeRate, slippageBps: config.paperSlippageBps });
+      return;
+    }
+
+    const telemetry = config.telemetry ?? NexusTelemetryClient.fromEnv();
+    const shared = {
+      market: this.market,
+      telemetry,
+      accountLabel: config.accountLabel,
+      strategyCode: config.strategyCode,
+      riskProfileCode: config.riskProfileCode,
+      executorId: config.executorId,
+      settlementAsset: config.settlementAsset,
+      riskLimitsJson: config.riskLimitsJson,
+      riskContextJson: config.riskContextJson,
+    };
+
+    if (this.mode === "TESTNET") {
+      if (process.env.TESTNET_ARMED !== "1") throw new Error("TESTNET requires TESTNET_ARMED=1");
+      const apiKey = config.apiKey ?? process.env.BINANCE_TESTNET_API_KEY ?? "";
+      const apiSecret = config.apiSecret ?? process.env.BINANCE_TESTNET_API_SECRET ?? "";
+      if (!apiKey || !apiSecret) throw new Error("TESTNET requires separate Binance testnet credentials");
+      this.adapter = new BinanceLiveExecutionAdapter({ ...shared, mode: "TESTNET", apiKey, apiSecret });
+      return;
+    }
+
+    if (process.env.LIVE_ARMED !== "1") throw new Error("LIVE requires LIVE_ARMED=1");
+    const apiKey = config.apiKey ?? process.env.BINANCE_API_KEY ?? "";
+    const apiSecret = config.apiSecret ?? process.env.BINANCE_API_SECRET ?? process.env.BINANCE_SECRET ?? "";
+    if (!apiKey || !apiSecret) throw new Error("LIVE requires Binance production credentials");
+    if (!config.riskProfileCode && !process.env.NEXUS_RISK_PROFILE_CODE) throw new Error("LIVE requires an enabled NEXUS_RISK_PROFILE_CODE");
+    if (!config.executorId && !process.env.NEXUS_EXECUTOR_ID) throw new Error("LIVE requires NEXUS_EXECUTOR_ID");
+    this.adapter = new BinanceLiveExecutionAdapter({ ...shared, mode: "LIVE", apiKey, apiSecret });
   }
+
   initialize(): Promise<void> { return this.adapter.initialize(); }
   place(intent: OrderIntent): Promise<Fill> { return this.adapter.place(intent); }
   close(symbol: string, referencePrice?: number): Promise<Fill | null> { return this.adapter.close(symbol, referencePrice); }

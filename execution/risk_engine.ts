@@ -71,6 +71,7 @@ export class RiskEngine {
     const multiplier = context.contractMultiplier ?? 1;
     const numericValues = [quantity,entryPrice,leverage,multiplier,context.equity,context.peakEquity,context.availableBalance,context.dailyRealizedPnl,context.portfolioNotional,context.estimatedSlippageBps,context.estimatedFeeBps,context.estimatedFundingBps];
     if (numericValues.some((value) => !finite(value))) return deny("non_finite_risk_input");
+    if (!intent.reduceOnly && intent.leverage === undefined) return deny("explicit_leverage_required");
     if (quantity <= 0 || entryPrice <= 0 || leverage < 1 || multiplier <= 0) return deny("invalid_order_geometry");
     if (context.equity <= 0 || context.peakEquity <= 0 || context.availableBalance < 0) return deny("invalid_account_equity");
     if (!Number.isInteger(context.openOrders) || context.openOrders < 0) return deny("invalid_open_order_count");

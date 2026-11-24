@@ -210,6 +210,42 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         feePaid: 0,
         settlementAsset: this.settlementAsset,
       }));
+    const observedAt = new Date().toISOString();
+    const walletBalance = Number(balanceRow.walletBalance ?? balanceRow.balance ?? available);
+    const lockedBalance = Math.max(0, walletBalance - available);
+    const unrealizedPnl = rawPositions.reduce((sum, position) => sum + Number(position.unRealizedProfit ?? 0), 0);
+    await this.telemetry.record("balance", {
+      account_id: this.accountId,
+      asset: this.settlementAsset,
+      wallet_balance: String(walletBalance),
+      available_balance: String(available),
+      locked_balance: String(lockedBalance),
+      unrealized_pnl: String(unrealizedPnl),
+      observed_at: observedAt,
+      source: "binance_account_balance",
+      metadata: { mode: this.mode, market: this.market },
+    });
+    for (const position of rawPositions.filter((item) => Number(item.positionAmt) !== 0)) {
+      const instrumentId = await this.ensureInstrument(position.symbol);
+      const amount = Math.abs(Number(position.positionAmt));
+      await this.telemetry.record("position", {
+        account_id: this.accountId,
+        instrument_id: instrumentId,
+        position_side: position.positionSide === "BOTH" ? (Number(position.positionAmt) > 0 ? "long" : "short") : String(position.positionSide).toLowerCase(),
+        quantity: String(amount),
+        entry_price: position.entryPrice,
+        mark_price: position.markPrice,
+        liquidation_price: position.liquidationPrice || null,
+        leverage: position.leverage,
+        initial_margin: position.isolatedMargin || null,
+        maintenance_margin: null,
+        realized_pnl: "0",
+        unrealized_pnl: position.unRealizedProfit,
+        observed_at: observedAt,
+        source: "binance_position_risk",
+        metadata: { marginType: position.marginType, positionSide: position.positionSide, mode: this.mode },
+      });
+    }
   }
 
   async place(intent: OrderIntent): Promise<Fill> {
@@ -310,7 +346,21 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       throw error;
     }
 
-    const trades = await this.engine.getUserTrades(intent.symbol, orderId);
+    let trades: BinanceUserTrade[];
+    try {
+      trades = await this.engine.getUserTrades(intent.symbol, orderId);
+    } catch (error) {
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        venueOrderId: String(orderId),
+        eventUid: `binance:${this.market}:${orderId}:user-trades-unavailable:${Date.now()}`,
+        eventType: "fill_ledger_unavailable",
+        exchangeStatus: "UNKNOWN",
+        cumulativeQuantity: finalOrder.executedQty,
+        payload: { error: error instanceof Error ? error.message : "user trades unavailable" },
+      });
+      throw error;
+    }
     const eventUid = `binance:${this.market}:${orderId}:${finalOrder.status}:${finalOrder.executedQty}:${finalOrder.updateTime ?? Date.now()}`;
     if (Number(finalOrder.executedQty) === 0) {
       await this.telemetry.recordOrderEvent({
@@ -354,7 +404,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     });
 
     for (const trade of reconciled.trades) {
-      await this.telemetry.recordFill({
+      const fillRecord = await this.telemetry.recordFill({
         intentId: intentResult.id,
         orderEventId: orderEvent.id,
         accountId: this.accountId,
@@ -369,6 +419,32 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         executedAt: new Date(trade.time).toISOString(),
         source: "binance_userTrades",
       });
+      if (trade.realizedPnl && Number(trade.realizedPnl) !== 0) {
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          intentId: intentResult.id,
+          fillId: fillRecord.id,
+          entryType: "realized_pnl",
+          asset: this.settlementAsset,
+          amount: trade.realizedPnl,
+          sourceReference: `binance:${this.market}:${intent.symbol}:${trade.id}:realized_pnl`,
+          occurredAt: new Date(trade.time).toISOString(),
+          metadata: { orderId, market: this.market },
+        });
+      }
+      if (Number(trade.commission) > 0) {
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          intentId: intentResult.id,
+          fillId: fillRecord.id,
+          entryType: "fee",
+          asset: trade.commissionAsset,
+          amount: trade.commission.startsWith("-") ? trade.commission : "-" + trade.commission,
+          sourceReference: `binance:${this.market}:${intent.symbol}:${trade.id}:fee`,
+          occurredAt: new Date(trade.time).toISOString(),
+          metadata: { orderId, liquidityRole: trade.maker ? "maker" : "taker" },
+        });
+      }
     }
 
     this.fills.push(reconciled.fill);

@@ -1,4 +1,4 @@
-import type { OrderIntent, OrderSide } from "./types.js";
+import type { OrderIntent } from "./types.js";
 
 export interface RiskLimits {
   maxRiskPerTrade: number;

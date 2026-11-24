@@ -74,6 +74,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly protectionOrders = new Map<string,ProtectionRef>();
   private readonly orderUpdateHandler = (event: Record<string,unknown>) => { void this.handleProtectionUpdate(event); };
   private accountId = "";
+  private hedgeMode = false;
   private balance = 0;
   private positions: Position[] = [];
 
@@ -120,6 +121,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
 
   async initialize(): Promise<void> {
     await this.engine.initialize();
+    this.hedgeMode = (await this.engine.getPositionMode()).dualSidePosition;
     this.engine.on("orderUpdate", this.orderUpdateHandler);
     const account = await this.telemetry.registerVenueAccount({
       venue: "binance",
@@ -462,7 +464,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
           type: protection.type,
           quantity,
           stopPrice: protection.stopPrice,
-          reduceOnly: true,
+          reduceOnly: this.hedgeMode ? undefined : true,
+          positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
           workingType: "MARK_PRICE",
           priceProtect: true,
           clientOrderId,
@@ -538,6 +541,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       clientOrderId,
       idempotencyKey: intent.idempotencyKey ?? clientOrderId,
       side: intent.side === "LONG" ? "buy" : "sell",
+      positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
       quantity: String(intent.quantity),
       requestedMode,
       riskProfileCode,
@@ -595,7 +599,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         side: intent.side === "LONG" ? "BUY" : "SELL",
         type: "MARKET",
         quantity: intent.quantity,
-        reduceOnly: intent.reduceOnly,
+        reduceOnly: this.hedgeMode ? undefined : intent.reduceOnly,
+        positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
         clientOrderId,
       }) as BinanceOrderStatus;
     } catch (error) {
@@ -712,6 +717,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return this.place({
       symbol,
       side: Number(active.positionAmt) > 0 ? "SHORT" : "LONG",
+      positionSide: this.hedgeMode ? (String(active.positionSide).toUpperCase() === "LONG" ? "LONG" : "SHORT") : undefined,
       quantity: Math.abs(Number(active.positionAmt)),
       leverage: Number(active.leverage),
       referencePrice,

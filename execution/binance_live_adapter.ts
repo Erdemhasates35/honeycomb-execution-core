@@ -354,6 +354,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     await this.persistTrades(intentId, event.id, instrumentId, intent.symbol, reconciled.trades, exitSide === "LONG" ? "buy" : "sell", orderId);
     this.fills.push(reconciled.fill);
     await this.refreshSnapshot();
+    const remainingPositions = await this.engine.getPositionRisk(intent.symbol);
+    if (remainingPositions.some((position) => Math.abs(Number(position.positionAmt)) > 1e-10)) throw new Error("Emergency flatten did not fully close the exchange position");
   }
 
   private async reconcileProtectiveExit(intent: OrderIntent, intentId: string, instrumentId: string, role: string, orderId: number, finalOrder: BinanceOrderStatus, requestedQuantity: number): Promise<void> {
@@ -374,9 +376,13 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     });
     await this.persistTrades(intentId, event.id, instrumentId, intent.symbol, reconciled.trades, exitSide === "LONG" ? "buy" : "sell", orderId);
     this.fills.push(reconciled.fill);
-    const remaining = Math.max(0, requestedQuantity - reconciled.fill.quantity);
-    if (remaining > Math.max(1e-10, requestedQuantity * 1e-8)) {
-      await this.emergencyFlatten(intent, intentId, instrumentId, remaining, "protective_order_partial_execution");
+    const positions = await this.engine.getPositionRisk(intent.symbol);
+    const active = positions.find((position) => Number(position.positionAmt) !== 0);
+    if (active) {
+      const remaining = Math.abs(Number(active.positionAmt));
+      if (remaining > Math.max(1e-10, requestedQuantity * 1e-8)) {
+        await this.emergencyFlatten(intent, intentId, instrumentId, remaining, "protective_order_partial_execution");
+      }
     }
   }
 

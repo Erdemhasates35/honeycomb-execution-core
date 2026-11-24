@@ -10,7 +10,9 @@ export type NexusTelemetryKind =
   | "pnl"
   | "heartbeat"
   | "reconciliation"
-  | "discrepancy";
+  | "discrepancy"
+  | "authorize_live"
+  | "submission_result";
 
 export interface NexusTelemetryConfig {
   endpoint: string;

@@ -6,6 +6,9 @@ export type FuturesMarket = 'COIN_M' | 'USDT_M';
 export interface BinanceFuturesConfig { apiKey:string; apiSecret:string; testnet?:boolean; marketType?:FuturesMarket; recvWindow?:number; maxRetries?:number; }
 export interface OrderRequest { symbol:string; side:'BUY'|'SELL'; type:'LIMIT'|'MARKET'|'STOP'|'TAKE_PROFIT'|'STOP_MARKET'|'TAKE_PROFIT_MARKET'|'TRAILING_STOP_MARKET'; quantity:string|number; price?:string|number; stopPrice?:string|number; timeInForce?:'GTC'|'IOC'|'FOK'|'GTX'; reduceOnly?:boolean; closePosition?:boolean; positionSide?:'BOTH'|'LONG'|'SHORT'; workingType?:'MARK_PRICE'|'CONTRACT_PRICE'; priceProtect?:boolean; clientOrderId?:string; }
 export interface BinanceIncomeRecord { symbol?: string; incomeType: string; income: string; asset: string; time: number; tranId: number | string; tradeId?: number | string; }
+export interface BinanceOrderBook { lastUpdateId: number; bids: Array<[string,string]>; asks: Array<[string,string]>; }
+export interface BinancePremiumIndex { symbol: string; markPrice: string; indexPrice: string; lastFundingRate: string; nextFundingTime: number; time: number; }
+export interface BinanceCommissionRate { symbol: string; makerCommissionRate: string; takerCommissionRate: string; }
 export interface BinanceExchangeFilter { filterType?: string; tickSize?: string; stepSize?: string; minQty?: string; notional?: string; minNotional?: string; }
 export interface BinanceExchangeSymbol { symbol: string; status: string; contractType?: string; baseAsset: string; quoteAsset: string; marginAsset?: string; contractSize?: string; filters: BinanceExchangeFilter[]; }
 export interface BinanceExchangeInfo { symbols: BinanceExchangeSymbol[]; }
@@ -33,6 +36,18 @@ export class BinanceFuturesEngineCatE extends EventEmitter {
   public async getOrder(symbol:string,orderId:number):Promise<BinanceOrderStatus>{return this.request('GET',this.endpoint('/v1/order'),{symbol,orderId},true);}
   public async getUserTrades(symbol:string,orderId:number):Promise<BinanceUserTrade[]>{return this.request('GET',this.endpoint('/v1/userTrades'),{symbol,orderId,limit:1000},true);}
   public async getIncomeHistory(params:{incomeType?:string;startTime?:number;endTime?:number;limit?:number}={}):Promise<BinanceIncomeRecord[]>{return this.request('GET',this.endpoint('/v1/income'),params,true);}
+  public async getOpenOrders(symbol?:string):Promise<BinanceOrderStatus[]>{return this.request('GET',this.endpoint('/v1/openOrders'),symbol?{symbol}: {},true);}
+  public async getOrderBook(symbol:string,limit=20):Promise<BinanceOrderBook>{return this.request('GET',this.endpoint('/v1/depth'),{symbol,limit},false);}
+  public async getPremiumIndex(symbol:string):Promise<BinancePremiumIndex>{return this.request('GET',this.endpoint('/v1/premiumIndex'),{symbol},false);}
+  public async getCommissionRate(symbol:string):Promise<BinanceCommissionRate>{return this.request('GET',this.endpoint('/v1/commissionRate'),{symbol},true);}
+  public async getSpotPrice(symbol:string):Promise<number>{
+    const response=await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+encodeURIComponent(symbol));
+    if(!response.ok)throw new Error('Binance spot price request failed: HTTP '+response.status);
+    const data=await response.json() as {price?:string};
+    const price=Number(data.price);
+    if(!Number.isFinite(price)||price<=0)throw new Error('Invalid Binance spot price for '+symbol);
+    return price;
+  }
   public async getPositionRisk(symbol?:string):Promise<PositionRisk[]>{return this.request('GET',this.endpoint(this.marketType==='COIN_M'?'/v1/positionRisk':'/v2/positionRisk'),symbol?{symbol}: {},true);}
   public async getAccountBalance(){return this.request('GET',this.endpoint(this.marketType==='COIN_M'?'/v1/balance':'/v2/balance'),{},true);}
   private async startUserDataStream():Promise<void>{if(this.isTerminated||this.isConnecting)return; this.isConnecting=true; try{const res=await this.request<{listenKey:string}>('POST',this.endpoint('/v1/listenKey'),{},false); this.listenKey=res.listenKey; this.cleanUpWebSocket(); this.userWs=new WebSocket(`${this.wsUrl}/${this.listenKey}`); this.userWs.on('open',()=>{this.isConnecting=false; this.reconnectAttempts=0; this.emit('connected'); if(this.keepAliveInterval)clearInterval(this.keepAliveInterval); this.keepAliveInterval=setInterval(()=>this.keepAliveUserDataStream().catch(err=>this.emit('error',err)),25*60*1000);}); this.userWs.on('message',data=>{try{const parsed=JSON.parse(data.toString()); if(parsed.e==='ORDER_TRADE_UPDATE')this.emit('orderUpdate',parsed.o); else if(parsed.e==='ACCOUNT_UPDATE')this.emit('accountUpdate',parsed.a); else if(parsed.e==='MARGIN_CALL')this.emit('marginCall',parsed); else this.emit('rawEvent',parsed);}catch(err){this.emit('error',new Error(`WebSocket Message Parse Error: ${(err as Error).message}`));}}); this.userWs.on('close',(code,reason)=>{this.isConnecting=false; this.emit('disconnected',{code,reason:reason.toString()}); this.cleanUpKeepAlive(); if(!this.isTerminated)this.scheduleReconnect();}); this.userWs.on('error',err=>this.emit('error',err));}catch(error){this.isConnecting=false; this.emit('error',new Error(`DataStream Start Failed: ${(error as Error).message}`)); this.scheduleReconnect();}}

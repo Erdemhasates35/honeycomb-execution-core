@@ -50,7 +50,7 @@ export function parseRiskLimits(raw: string): RiskLimits {
   for (const key of keys) {
     if (typeof value[key] !== "number" || !Number.isFinite(value[key] as number)) throw new Error("Missing or invalid risk limit: " + key);
   }
-  const limits = value as RiskLimits;
+  const limits = value as unknown as RiskLimits;
   if (limits.maxRiskPerTrade <= 0 || limits.maxRiskPerTrade > 0.05) throw new Error("maxRiskPerTrade must be in (0, 0.05]");
   if (limits.maxDailyLoss <= 0 || limits.maxDailyLoss > 0.25) throw new Error("maxDailyLoss must be in (0, 0.25]");
   if (limits.maxDrawdown <= 0 || limits.maxDrawdown > 0.5) throw new Error("maxDrawdown must be in (0, 0.5]");

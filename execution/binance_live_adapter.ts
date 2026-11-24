@@ -13,6 +13,16 @@ interface BalanceRow {
   withdrawAvailable?: string;
 }
 
+interface ProtectionRef {
+  symbol: string;
+  intentId: string;
+  instrumentId: string;
+  role: string;
+  siblingOrderId: number;
+  quantity: number;
+  intent: OrderIntent;
+}
+
 interface RiskContextOverrides {
   peakEquity?: number;
   dailyRealizedPnl?: number;
@@ -61,6 +71,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly instrumentIds = new Map<string,string>();
   private readonly contractSizes = new Map<string,number>();
   private readonly instrumentSettlementAssets = new Map<string,string>();
+  private readonly protectionOrders = new Map<string,ProtectionRef>();
+  private readonly orderUpdateHandler = (event: Record<string,unknown>) => { void this.handleProtectionUpdate(event); };
   private accountId = "";
   private balance = 0;
   private positions: Position[] = [];
@@ -108,6 +120,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
 
   async initialize(): Promise<void> {
     await this.engine.initialize();
+    this.engine.on("orderUpdate", this.orderUpdateHandler);
     const account = await this.telemetry.registerVenueAccount({
       venue: "binance",
       accountLabel: this.accountLabel,
@@ -367,6 +380,61 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     }
   }
 
+  private async handleProtectionUpdate(event: Record<string,unknown>): Promise<void> {
+    const orderId = String(event.i ?? event.orderId ?? "");
+    const status = String(event.X ?? event.status ?? "").toUpperCase();
+    const protection = this.protectionOrders.get(orderId);
+    if (!protection || !["FILLED","PARTIALLY_FILLED","CANCELED","EXPIRED","REJECTED"].includes(status)) return;
+    this.protectionOrders.delete(orderId);
+    this.protectionOrders.delete(String(protection.siblingOrderId));
+    let siblingStatus = "UNKNOWN";
+    try {
+      await this.engine.cancelOrder(protection.symbol, protection.siblingOrderId);
+      const sibling = await this.engine.getOrder(protection.symbol, protection.siblingOrderId);
+      siblingStatus = sibling.status;
+      if (Number(sibling.executedQty) > 0) {
+        await this.reconcileProtectiveExit(protection.intent, protection.intentId, protection.instrumentId, "sibling", protection.siblingOrderId, sibling, protection.quantity);
+      }
+    } catch {
+      try {
+        const sibling = await this.engine.getOrder(protection.symbol, protection.siblingOrderId);
+        siblingStatus = sibling.status;
+        if (Number(sibling.executedQty) > 0) {
+          await this.reconcileProtectiveExit(protection.intent, protection.intentId, protection.instrumentId, "sibling", protection.siblingOrderId, sibling, protection.quantity);
+        }
+      } catch {}
+    }
+    try {
+      const finalOrder = await this.engine.getOrder(protection.symbol, Number(orderId));
+      if (Number(finalOrder.executedQty) > 0) {
+        await this.reconcileProtectiveExit(protection.intent, protection.intentId, protection.instrumentId, protection.role, Number(orderId), finalOrder, protection.quantity);
+      } else {
+        const positions = await this.engine.getPositionRisk(protection.symbol);
+        const active = positions.find((position) => Number(position.positionAmt) !== 0);
+        if (active) await this.emergencyFlatten(protection.intent, protection.intentId, protection.instrumentId, Math.abs(Number(active.positionAmt)), "protection_order_terminated_without_fill");
+      }
+      await this.telemetry.recordOrderEvent({
+        intentId: protection.intentId,
+        venueOrderId: orderId,
+        eventUid: `binance:${this.market}:${orderId}:protection-update:${status}:${Date.now()}`,
+        eventType: "protection_order_lifecycle_update",
+        exchangeStatus: finalOrder.status,
+        cumulativeQuantity: finalOrder.executedQty,
+        payload: { role: protection.role, siblingOrderId: protection.siblingOrderId, siblingStatus },
+      });
+      await this.refreshSnapshot();
+    } catch (error) {
+      await this.telemetry.recordOrderEvent({
+        intentId: protection.intentId,
+        venueOrderId: orderId,
+        eventUid: `binance:${this.market}:${orderId}:protection-handler-error:${Date.now()}`,
+        eventType: "critical_protection_handler_error",
+        exchangeStatus: "UNKNOWN",
+        payload: { error: error instanceof Error ? error.message : "protection lifecycle handler failed" },
+      });
+    }
+  }
+
   private async placeProtectiveOrders(intent: OrderIntent, intentId: string, quantity: number): Promise<void> {
     if (intent.reduceOnly) return;
     if (!Number.isFinite(intent.stopLossPrice) || !Number.isFinite(intent.takeProfitPrice)) throw new Error("Protective stop-loss and take-profit prices are mandatory");
@@ -417,6 +485,10 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
           exchangeTimestamp: new Date(confirmed.updateTime ?? Date.now()).toISOString(),
           payload: { role: protection.role, type: protection.type, stopPrice: protection.stopPrice, reduceOnly: true, workingType: "MARK_PRICE" },
         });
+      }
+      if (placed.length === 2) {
+        this.protectionOrders.set(String(placed[0].orderId), { symbol: intent.symbol, intentId, instrumentId: this.instrumentIds.get(intent.symbol)!, role: placed[0].role, siblingOrderId: placed[1].orderId, quantity, intent });
+        this.protectionOrders.set(String(placed[1].orderId), { symbol: intent.symbol, intentId, instrumentId: this.instrumentIds.get(intent.symbol)!, role: placed[1].role, siblingOrderId: placed[0].orderId, quantity, intent });
       }
     } catch (error) {
       for (const order of placed) {
@@ -643,5 +715,5 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return { mode: this.mode, market: this.market, balance: this.balance, positions: [...this.positions], fills: [...this.fills] };
   }
 
-  async terminate(): Promise<void> { this.engine.terminate(); }
+  async terminate(): Promise<void> { this.engine.off("orderUpdate", this.orderUpdateHandler); this.engine.terminate(); }
 }

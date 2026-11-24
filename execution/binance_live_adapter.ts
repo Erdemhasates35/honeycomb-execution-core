@@ -459,7 +459,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return reconciled.fill;
   }
 
-  async close(symbol: string, referencePrice?: number): Promise<Fill | null> {
+  async close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null> {
     const positions = await this.engine.getPositionRisk(symbol);
     const active = positions.find((position) => Number(position.positionAmt) !== 0);
     if (!active) return null;
@@ -469,6 +469,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       quantity: Math.abs(Number(active.positionAmt)),
       referencePrice,
       reduceOnly: true,
+      guardApprovalDigest,
     });
   }
 

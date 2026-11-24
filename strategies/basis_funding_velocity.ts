@@ -44,10 +44,11 @@ export function evaluateBasisFundingVelocity(input: BasisFundingInput, config: B
     : fundingBps <= -config.minFundingBps && basisBps <= -config.minBasisBps
       ? "LONG"
       : "FLAT";
-  const grossEdgeBps = Math.abs(fundingBps)+Math.abs(basisBps)*config.basisCaptureFraction+Math.abs(fundingVelocityBps)*config.velocityLookaheadPeriods;
+  const favorableFundingVelocityBps = side === "SHORT" ? Math.max(0,fundingVelocityBps) : side === "LONG" ? Math.max(0,-fundingVelocityBps) : 0;
+  const grossEdgeBps = Math.abs(fundingBps)+Math.abs(basisBps)*config.basisCaptureFraction+favorableFundingVelocityBps*config.velocityLookaheadPeriods;
   const expectedEdgeBps = grossEdgeBps-input.estimatedRoundTripCostBps;
   if (side === "FLAT") {
-    return { strategyCode:"basis_funding_velocity",side,confidence:0,expectedEdgeBps,entryPrice:input.markPrice,stopLossPrice:null,takeProfitPrice:null,reasonCodes:["funding_basis_alignment_missing"],metadata:{symbol:input.symbol,basisBps,fundingBps,fundingVelocityBps,grossEdgeBps,estimatedRoundTripCostBps:input.estimatedRoundTripCostBps} };
+    return { strategyCode:"basis_funding_velocity",side,confidence:0,expectedEdgeBps,entryPrice:input.markPrice,stopLossPrice:null,takeProfitPrice:null,reasonCodes:["funding_basis_alignment_missing"],metadata:{symbol:input.symbol,basisBps,fundingBps,fundingVelocityBps,favorableFundingVelocityBps,grossEdgeBps,estimatedRoundTripCostBps:input.estimatedRoundTripCostBps} };
   }
   if (expectedEdgeBps < config.minExpectedEdgeBps) {
     return { strategyCode:"basis_funding_velocity",side:"FLAT",confidence:0,expectedEdgeBps,entryPrice:input.markPrice,stopLossPrice:null,takeProfitPrice:null,reasonCodes:["net_edge_below_threshold"],metadata:{symbol:input.symbol,basisBps,fundingBps,fundingVelocityBps,grossEdgeBps,estimatedRoundTripCostBps:input.estimatedRoundTripCostBps} };

@@ -4,7 +4,7 @@ import WebSocket from 'ws';
 
 export type FuturesMarket = 'COIN_M' | 'USDT_M';
 export interface BinanceFuturesConfig { apiKey:string; apiSecret:string; testnet?:boolean; marketType?:FuturesMarket; recvWindow?:number; maxRetries?:number; }
-export interface OrderRequest { symbol:string; side:'BUY'|'SELL'; type:'LIMIT'|'MARKET'|'STOP'|'TAKE_PROFIT'|'TRAILING_STOP_MARKET'; quantity:string|number; price?:string|number; stopPrice?:string|number; timeInForce?:'GTC'|'IOC'|'FOK'|'GTX'; reduceOnly?:boolean; closePosition?:boolean; workingType?:'MARK_PRICE'|'CONTRACT_PRICE'; clientOrderId?:string; }
+export interface OrderRequest { symbol:string; side:'BUY'|'SELL'; type:'LIMIT'|'MARKET'|'STOP'|'TAKE_PROFIT'|'STOP_MARKET'|'TAKE_PROFIT_MARKET'|'TRAILING_STOP_MARKET'; quantity:string|number; price?:string|number; stopPrice?:string|number; timeInForce?:'GTC'|'IOC'|'FOK'|'GTX'; reduceOnly?:boolean; closePosition?:boolean; workingType?:'MARK_PRICE'|'CONTRACT_PRICE'; priceProtect?:boolean; clientOrderId?:string; }
 export interface BinanceExchangeFilter { filterType?: string; tickSize?: string; stepSize?: string; minQty?: string; notional?: string; minNotional?: string; }
 export interface BinanceExchangeSymbol { symbol: string; status: string; contractType?: string; baseAsset: string; quoteAsset: string; marginAsset?: string; contractSize?: string; filters: BinanceExchangeFilter[]; }
 export interface BinanceExchangeInfo { symbols: BinanceExchangeSymbol[]; }

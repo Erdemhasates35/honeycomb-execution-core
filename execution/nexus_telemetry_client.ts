@@ -165,7 +165,7 @@ export class NexusTelemetryClient {
       client_order_id: input.clientOrderId,
       idempotency_key: input.idempotencyKey,
       side: input.side,
-      position_side: input.positionSide ?? null,
+      position_side: input.positionSide?.toLowerCase() ?? null,
       order_type: "market",
       quantity: input.quantity,
       requested_mode: input.requestedMode,

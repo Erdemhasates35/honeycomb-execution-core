@@ -191,68 +191,54 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return price;
   }
 
-  private riskContext(symbol: string, price: number): RiskContext {
+  private async riskContext(intent: OrderIntent, price: number): Promise<RiskContext> {
     const positionsNotional = this.positions.reduce((sum, position) => {
       const contractSize = this.contractSizes.get(position.symbol) ?? 1;
-      return sum + (this.market === 'COIN_M' ? Math.abs(position.quantity * contractSize) : Math.abs(position.quantity * position.entryPrice * contractSize));
+      return sum + (this.market === "COIN_M" ? Math.abs(position.quantity * contractSize) : Math.abs(position.quantity * position.entryPrice * contractSize));
     }, 0);
-    const contractSize = this.contractSizes.get(symbol) ?? 1;
-    const equity = this.market === 'COIN_M' ? this.balance * price : this.balance;
-    const peakEquity = this.riskContextOverrides.peakEquity ?? equity;
-    const dailyRealizedPnl = this.riskContextOverrides.dailyRealizedPnl ?? 0;
-    const openOrders = this.riskContextOverrides.openOrders ?? this.positions.length;
-    const portfolioNotional = this.riskContextOverrides.portfolioNotional ?? positionsNotional;
-    const context: RiskContext = {
-      equity,
-      peakEquity,
-      availableBalance: equity,
-      dailyRealizedPnl,
-      openOrders,
-      portfolioNotional,
-      estimatedSlippageBps: this.riskContextOverrides.estimatedSlippageBps ?? this.estimatedSlippageBps,
-      estimatedFeeBps: this.riskContextOverrides.estimatedFeeBps ?? this.estimatedFeeBps,
-      estimatedFundingBps: this.riskContextOverrides.estimatedFundingBps ?? this.estimatedFundingBps,
-      contractMultiplier: this.market === 'COIN_M' ? contractSize / price : contractSize,
-    };
-    return context;
-  }
-
-  private async syncFundingIncome(): Promise<void> {
-    let cursor = this.lastIncomeSyncTime;
-    for (let page = 0; page < 10; page++) {
-      const records = await this.engine.getIncomeHistory({ incomeType: "FUNDING_FEE", startTime: cursor, limit: 1000 });
-      if (records.length === 0) {
-        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
-        break;
-      }
-      const ordered = [...records].sort((a,b) => a.time - b.time);
-      for (const record of ordered) {
-        const sourceReference = `binance:${this.market}:${record.tranId}:funding`;
-        let amountUsd: string | undefined;
-        if (record.asset === "USDT") amountUsd = record.income;
-        else if (record.symbol) {
-          const price = await this.markPrice(record.symbol);
-          amountUsd = String(Number(record.income) * price);
-        }
-        await this.telemetry.recordPnl({
-          accountId: this.accountId,
-          entryType: "funding",
-          asset: record.asset,
-          amount: record.income,
-          sourceReference,
-          occurredAt: new Date(record.time).toISOString(),
-          amountUsd,
-          metadata: { symbol: record.symbol ?? null, incomeType: record.incomeType, tradeId: record.tradeId ?? null, transactionId: String(record.tranId) },
-        });
-      }
-      const latest = ordered[ordered.length - 1].time;
-      cursor = latest + 1;
-      if (records.length < 1000) {
-        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
-        break;
-      }
+    const contractSize = this.contractSizes.get(intent.symbol) ?? 1;
+    const orderBook = await this.engine.getOrderBook(intent.symbol, 20);
+    const levels = intent.side === "LONG" ? orderBook.asks : orderBook.bids;
+    let remaining = intent.quantity;
+    let quoteValue = 0;
+    for (const [rawPrice, rawQuantity] of levels) {
+      const levelPrice = Number(rawPrice);
+      const levelQuantity = Number(rawQuantity);
+      if (!Number.isFinite(levelPrice) || levelPrice <= 0 || !Number.isFinite(levelQuantity) || levelQuantity <= 0) throw new Error("Exchange order book contains invalid levels");
+      const take = Math.min(remaining, levelQuantity);
+      quoteValue += take * levelPrice;
+      remaining -= take;
+      if (remaining <= Math.max(1e-12, intent.quantity * 1e-10)) break;
     }
-    this.lastIncomeSyncTime = cursor;
+    if (remaining > Math.max(1e-12, intent.quantity * 1e-10)) throw new Error("Order book depth is insufficient for the requested order size");
+    const vwap = quoteValue / intent.quantity;
+    const measuredSlippageBps = Math.abs(vwap - price) / price * 10000;
+    const [premium, commission] = await Promise.all([
+      this.engine.getPremiumIndex(intent.symbol),
+      this.engine.getCommissionRate(intent.symbol),
+    ]);
+    const fundingRate = Number(premium.lastFundingRate);
+    const takerRate = Number(commission.takerCommissionRate);
+    if (!Number.isFinite(fundingRate) || !Number.isFinite(takerRate) || takerRate < 0) throw new Error("Exchange funding or commission data is invalid");
+    const estimatedSlippageBps = Math.max(measuredSlippageBps, this.estimatedSlippageBps, this.riskContextOverrides.estimatedSlippageBps ?? 0);
+    const estimatedFeeBps = Math.max(takerRate * 10000, this.estimatedFeeBps, this.riskContextOverrides.estimatedFeeBps ?? 0);
+    const estimatedFundingBps = Math.max(Math.abs(fundingRate) * 10000, this.estimatedFundingBps, this.riskContextOverrides.estimatedFundingBps ?? 0);
+    const context: RiskContext = {
+      equity: this.equityUsd,
+      peakEquity: Math.max(this.peakEquityUsd, this.riskContextOverrides.peakEquity ?? 0),
+      availableBalance: this.availableBalanceUsd,
+      dailyRealizedPnl: Math.min(this.dailyRealizedPnlUsd, this.riskContextOverrides.dailyRealizedPnl ?? this.dailyRealizedPnlUsd),
+      openOrders: Math.max(this.openOrderCount, this.riskContextOverrides.openOrders ?? 0),
+      portfolioNotional: Math.max(positionsNotional, this.riskContextOverrides.portfolioNotional ?? 0),
+      estimatedSlippageBps,
+      estimatedFeeBps,
+      estimatedFundingBps,
+      contractMultiplier: this.market === "COIN_M" ? contractSize / price : contractSize,
+    };
+    if ([context.equity,context.peakEquity,context.availableBalance,context.dailyRealizedPnl,context.openOrders,context.portfolioNotional].some(value => !Number.isFinite(value))) {
+      throw new Error("Live account risk context is incomplete");
+    }
+    return context;
   }
 
   private async calculateDailyRealizedPnlUsd(): Promise<number> {
@@ -624,7 +610,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     if (this.hedgeMode && !intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide !== intent.side) throw new Error("Hedge-mode entry positionSide must match order side");
     if (this.hedgeMode && intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide === intent.side) throw new Error("Hedge-mode reduce-only positionSide must oppose the order side");
     const instrumentId = await this.ensureInstrument(intent.symbol);
-    const price = intent.referencePrice ?? await this.markPrice(intent.symbol);
+    await this.refreshSnapshot();
+    const price = await this.markPrice(intent.symbol);
     const clientOrderId = intent.clientOrderId ?? `hc-${randomUUID().replace(/-/g,"").slice(0,32)}`;
     const strategyCode = intent.strategyCode ?? this.strategyCode;
     const riskProfileCode = intent.riskProfileCode ?? this.riskProfileCode;

@@ -59,3 +59,65 @@ test('registers venue accounts as disabled metadata, never armed', async () => {
   assert.equal(payload.record.environment, 'testnet');
   assert.equal('status' in payload.record, false);
 });
+
+test('loads versioned execution configuration from the guarded Supabase endpoint', async () => {
+  let captured: RequestInit | undefined;
+  const config = {
+    mode: 'testnet',
+    riskProfile: {
+      profileCode: 'canary_testnet_v1',
+      enabled: true,
+      maxRiskPerTrade: 0.001,
+      maxDailyLoss: 0.01,
+      maxDrawdown: 0.05,
+      maxLeverage: 2,
+      maxOpenOrders: 2,
+      maxPositionNotional: 100,
+      maxSlippageBps: 5,
+      maxFeeBps: 10,
+      maxFundingBps: 15,
+      maxConcentration: 0.1,
+      minRewardRisk: 1.5,
+      config: {},
+    },
+    strategy: {
+      strategyCode: 'basis_funding_velocity',
+      enabled: true,
+      supportedModes: ['testnet'],
+      config: {},
+      version: {
+        id: 'version-1',
+        version: '1.0.0',
+        sourceCommitSha: 'a'.repeat(40),
+        configSha256: 'b'.repeat(64),
+        validationStatus: 'validated',
+        parameterSchema: {},
+        parameters: {},
+      },
+    },
+    activeGuardPolicy: null,
+    circuitBreakers: [],
+  };
+  const client = new NexusTelemetryClient({
+    endpoint: 'https://edge.example.test/functions/v1/nexus-telemetry-ingest',
+    token: 'test-token',
+    fetcher: async (_input, init) => {
+      captured = init;
+      return new Response(JSON.stringify({ ok: true, kind: 'execution_config', data: config }), { status: 200 });
+    },
+  });
+  const result = await client.getExecutionConfig({
+    riskProfileCode: 'canary_testnet_v1',
+    strategyCode: 'basis_funding_velocity',
+    mode: 'testnet',
+  });
+  assert.equal(result.riskProfile.profileCode, 'canary_testnet_v1');
+  assert.equal(result.strategy.version.validationStatus, 'validated');
+  assert.equal((captured?.headers as Record<string,string>).authorization, 'Bearer test-token');
+  assert.equal((captured?.headers as Record<string,string>)['cache-control'], 'no-store');
+  const body = JSON.parse(String(captured?.body));
+  assert.equal(body.kind, 'execution_config');
+  assert.equal(body.record.risk_profile_code, 'canary_testnet_v1');
+  assert.equal(body.record.strategy_code, 'basis_funding_velocity');
+  assert.equal(body.record.mode, 'testnet');
+});

@@ -26,6 +26,48 @@ export interface NexusTelemetryResult {
   kind: NexusTelemetryKind;
 }
 
+export interface NexusExecutionConfig {
+  mode: "paper" | "testnet" | "live";
+  riskProfile: {
+    profileCode: string;
+    enabled: boolean;
+    maxRiskPerTrade: number;
+    maxDailyLoss: number;
+    maxDrawdown: number;
+    maxLeverage: number;
+    maxOpenOrders: number;
+    maxPositionNotional: number;
+    maxSlippageBps: number;
+    maxFeeBps: number;
+    maxFundingBps: number;
+    maxConcentration: number;
+    minRewardRisk: number;
+    config: Record<string, unknown>;
+  };
+  strategy: {
+    strategyCode: string;
+    enabled: boolean;
+    supportedModes: string[];
+    config: Record<string, unknown>;
+    version: {
+      id: string;
+      version: string;
+      sourceCommitSha: string | null;
+      configSha256: string | null;
+      validationStatus: string;
+      parameterSchema: Record<string, unknown> | null;
+      parameters: Record<string, unknown> | null;
+    };
+  };
+  activeGuardPolicy: {
+    policyVersion: string;
+    policySha256: string;
+    signerKeyId: string;
+    policyDocument: Record<string, unknown>;
+  } | null;
+  circuitBreakers: Array<{ scope: string; scope_key: string; state: string; trigger_code: string | null; reset_after: string | null }>;
+}
+
 export class NexusTelemetryError extends Error {
   readonly status: number;
   readonly kind: NexusTelemetryKind;
@@ -62,6 +104,41 @@ export class NexusTelemetryClient {
       fetcher,
       timeoutMs: Number(env.NEXUS_TELEMETRY_TIMEOUT_MS ?? "5000"),
     });
+  }
+
+  async getExecutionConfig(input: { riskProfileCode: string; strategyCode: string; mode: "paper" | "testnet" | "live" }): Promise<NexusExecutionConfig> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await this.fetcher(this.endpoint, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${this.token}`,
+          "content-type": "application/json",
+          "cache-control": "no-store",
+        },
+        body: JSON.stringify({
+          kind: "execution_config",
+          record: {
+            risk_profile_code: input.riskProfileCode,
+            strategy_code: input.strategyCode,
+            mode: input.mode,
+          },
+        }),
+        signal: controller.signal,
+      });
+      const payload = await response.json().catch(() => null) as { ok?: boolean; kind?: string; data?: NexusExecutionConfig; error?: string } | null;
+      if (!response.ok || payload?.ok !== true || payload.kind !== "execution_config" || !payload.data) {
+        throw new NexusTelemetryError("execution_config", response.status, payload?.error ?? "Execution configuration was not acknowledged");
+      }
+      return payload.data;
+    } catch (error) {
+      if (error instanceof NexusTelemetryError) throw error;
+      if (controller.signal.aborted) throw new NexusTelemetryError("execution_config", 408, "Execution configuration request timed out");
+      throw new NexusTelemetryError("execution_config", 0, error instanceof Error ? error.message : "Execution configuration transport failed");
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async record(kind: NexusTelemetryKind, record: Record<string, unknown>): Promise<NexusTelemetryResult> {

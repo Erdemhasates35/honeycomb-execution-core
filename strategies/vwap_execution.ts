@@ -1,4 +1,4 @@
-import { mean, assertPositive } from "./math.js";
+import { assertPositive } from "./math.js";
 import type { TradePrint } from "./types.js";
 
 export interface VolumeBucket {

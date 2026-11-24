@@ -12,7 +12,8 @@ export type NexusTelemetryKind =
   | "reconciliation"
   | "discrepancy"
   | "authorize_live"
-  | "submission_result";
+  | "submission_result"
+  | "execution_config";
 
 export interface NexusTelemetryConfig {
   endpoint: string;

@@ -1,15 +1,22 @@
-export type ExecutionMode = 'TEST' | 'PAPER' | 'LIVE';
+export type ExecutionMode = 'TEST' | 'PAPER' | 'TESTNET' | 'LIVE';
 export type FuturesMarket = 'COIN_M' | 'USDT_M';
 export type OrderSide = 'LONG' | 'SHORT';
 
 export interface OrderIntent {
   symbol: string;
   side: OrderSide;
+  positionSide?: 'LONG' | 'SHORT';
   quantity: number;
   leverage?: number;
   referencePrice?: number;
   reduceOnly?: boolean;
   clientOrderId?: string;
+  strategyCode?: string;
+  riskProfileCode?: string;
+  guardApprovalDigest?: string;
+  idempotencyKey?: string;
+  stopLossPrice?: number;
+  takeProfitPrice?: number;
 }
 
 export interface Fill {
@@ -20,6 +27,7 @@ export interface Fill {
   price: number;
   fee: number;
   feeEstimated?: boolean;
+  feeAsset?: string;
   status?: 'FILLED' | 'PARTIALLY_FILLED';
   clientOrderId?: string;
   settlementAsset: string;
@@ -53,7 +61,7 @@ export interface ExecutionAdapter {
   readonly market: FuturesMarket;
   initialize(): Promise<void>;
   place(intent: OrderIntent): Promise<Fill>;
-  close(symbol: string, referencePrice?: number): Promise<Fill | null>;
+  close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null>;
   markPrice(symbol: string): Promise<number>;
   snapshot(): ExecutionSnapshot;
   terminate(): Promise<void>;

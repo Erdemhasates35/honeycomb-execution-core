@@ -72,6 +72,8 @@ export function evaluateOrderBookLstm(input:{
   assertPositive(input.markPrice,"markPrice");
   assertPositive(input.atr,"atr");
   if(!input.modelId||!input.modelVersion||input.snapshots.length<2||input.probabilityThreshold<=0.5||input.probabilityThreshold>=1||input.stopAtr<=0||input.targetAtr<=0)throw new Error("Order-book LSTM inference configuration is invalid");
+  if (!Number.isFinite(input.edgeBpsPerProbabilityPoint)||input.edgeBpsPerProbabilityPoint<0) throw new Error("Order-book LSTM edge calibration is invalid");
+  if (input.snapshots.some((snapshot,index)=>index>0&&snapshot.timestamp<=input.snapshots[index-1].timestamp)) throw new Error("Order-book snapshots must be strictly time ordered");
   const sequence=input.snapshots.map(snapshot=>{
     if(![snapshot.timestamp,snapshot.midPrice,snapshot.bidDepth,snapshot.askDepth,snapshot.spreadBps,snapshot.microprice,snapshot.tradeImbalance].every(Number.isFinite)||snapshot.midPrice<=0||snapshot.bidDepth<0||snapshot.askDepth<0||snapshot.bidDepth+snapshot.askDepth<=0)throw new Error("Order-book sequence contains invalid market data");
     return [

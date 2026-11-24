@@ -3,6 +3,7 @@ import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrder
 import { reconcileBinanceUserTrades } from "./binance_fill.js";
 import { NexusTelemetryClient } from "./nexus_telemetry_client.js";
 import { RiskEngine, parseRiskLimits, type RiskContext } from "./risk_engine.js";
+import { RiskStateStore } from "./risk_state_store.js";
 import type { ExecutionAdapter, ExecutionMode, ExecutionSnapshot, Fill, FuturesMarket, OrderIntent, Position } from "./types.js";
 
 interface BalanceRow {
@@ -239,6 +240,44 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       throw new Error("Live account risk context is incomplete");
     }
     return context;
+  }
+
+  private async syncFundingIncome(): Promise<void> {
+    let cursor = this.lastIncomeSyncTime;
+    for (let page = 0; page < 10; page++) {
+      const records = await this.engine.getIncomeHistory({ incomeType: "FUNDING_FEE", startTime: cursor, limit: 1000 });
+      if (records.length === 0) {
+        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
+        break;
+      }
+      const ordered = [...records].sort((a,b) => a.time - b.time);
+      for (const record of ordered) {
+        const sourceReference = `binance:${this.market}:${record.tranId}:funding`;
+        let amountUsd: string | undefined;
+        if (record.asset === "USDT") amountUsd = record.income;
+        else if (record.symbol) {
+          const price = await this.markPrice(record.symbol);
+          amountUsd = String(Number(record.income) * price);
+        }
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          entryType: "funding",
+          asset: record.asset,
+          amount: record.income,
+          sourceReference,
+          occurredAt: new Date(record.time).toISOString(),
+          amountUsd,
+          metadata: { symbol: record.symbol ?? null, incomeType: record.incomeType, tradeId: record.tradeId ?? null, transactionId: String(record.tranId) },
+        });
+      }
+      const latest = ordered[ordered.length - 1].time;
+      cursor = latest + 1;
+      if (records.length < 1000) {
+        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
+        break;
+      }
+    }
+    this.lastIncomeSyncTime = cursor;
   }
 
   private async calculateDailyRealizedPnlUsd(): Promise<number> {

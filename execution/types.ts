@@ -5,6 +5,7 @@ export type OrderSide = 'LONG' | 'SHORT';
 export interface OrderIntent {
   symbol: string;
   side: OrderSide;
+  positionSide?: 'LONG' | 'SHORT';
   quantity: number;
   leverage?: number;
   referencePrice?: number;

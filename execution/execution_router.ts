@@ -44,10 +44,8 @@ export class ExecutionRouter implements ExecutionAdapter {
       return;
     }
 
-    const telemetry = config.telemetry ?? NexusTelemetryClient.fromEnv();
     const shared = {
       market: this.market,
-      telemetry,
       accountLabel: config.accountLabel,
       strategyCode: config.strategyCode,
       riskProfileCode: config.riskProfileCode,
@@ -62,7 +60,8 @@ export class ExecutionRouter implements ExecutionAdapter {
       const apiKey = config.apiKey ?? process.env.BINANCE_TESTNET_API_KEY ?? "";
       const apiSecret = config.apiSecret ?? process.env.BINANCE_TESTNET_API_SECRET ?? "";
       if (!apiKey || !apiSecret) throw new Error("TESTNET requires separate Binance testnet credentials");
-      this.adapter = new BinanceLiveExecutionAdapter({ ...shared, mode: "TESTNET", apiKey, apiSecret });
+      const telemetry = config.telemetry ?? NexusTelemetryClient.fromEnv();
+      this.adapter = new BinanceLiveExecutionAdapter({ ...shared, telemetry, mode: "TESTNET", apiKey, apiSecret });
       return;
     }
 
@@ -72,7 +71,8 @@ export class ExecutionRouter implements ExecutionAdapter {
     if (!apiKey || !apiSecret) throw new Error("LIVE requires Binance production credentials");
     if (!config.riskProfileCode && !process.env.NEXUS_RISK_PROFILE_CODE) throw new Error("LIVE requires an enabled NEXUS_RISK_PROFILE_CODE");
     if (!config.executorId && !process.env.NEXUS_EXECUTOR_ID) throw new Error("LIVE requires NEXUS_EXECUTOR_ID");
-    this.adapter = new BinanceLiveExecutionAdapter({ ...shared, mode: "LIVE", apiKey, apiSecret });
+    const telemetry = config.telemetry ?? NexusTelemetryClient.fromEnv();
+    this.adapter = new BinanceLiveExecutionAdapter({ ...shared, telemetry, mode: "LIVE", apiKey, apiSecret });
   }
 
   initialize(): Promise<void> { return this.adapter.initialize(); }

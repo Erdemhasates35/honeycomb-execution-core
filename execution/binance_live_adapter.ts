@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade, type BinanceUserTrade } from "../BinanceFuturesEngineCatE.js";
+import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade } from "../BinanceFuturesEngineCatE.js";
 import { reconcileBinanceUserTrades } from "./binance_fill.js";
 import { NexusTelemetryClient } from "./nexus_telemetry_client.js";
 import { RiskEngine, parseRiskLimits, type RiskContext } from "./risk_engine.js";

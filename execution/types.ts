@@ -60,7 +60,7 @@ export interface ExecutionAdapter {
   readonly market: FuturesMarket;
   initialize(): Promise<void>;
   place(intent: OrderIntent): Promise<Fill>;
-  close(symbol: string, referencePrice?: number): Promise<Fill | null>;
+  close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null>;
   markPrice(symbol: string): Promise<number>;
   snapshot(): ExecutionSnapshot;
   terminate(): Promise<void>;

@@ -149,6 +149,7 @@ export class NexusTelemetryClient {
     clientOrderId: string;
     idempotencyKey: string;
     side: "buy" | "sell";
+    positionSide?: "LONG" | "SHORT";
     quantity: string;
     requestedMode: "testnet" | "live";
     riskProfileCode?: string;
@@ -164,6 +165,7 @@ export class NexusTelemetryClient {
       client_order_id: input.clientOrderId,
       idempotency_key: input.idempotencyKey,
       side: input.side,
+      position_side: input.positionSide ?? null,
       order_type: "market",
       quantity: input.quantity,
       requested_mode: input.requestedMode,

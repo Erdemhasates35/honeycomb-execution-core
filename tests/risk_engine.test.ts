@@ -53,9 +53,9 @@ test('rejects leverage and daily loss limit violations', () => {
 
 test('rejects invalid reward/risk and protective direction', () => {
   const engine = new RiskEngine(limits);
-  const reward = engine.evaluate({ symbol: 'BTCUSDT', side: 'LONG', quantity: 1, stopLossPrice: 99, takeProfitPrice: 101 }, 100, context);
+  const reward = engine.evaluate({ symbol: 'BTCUSDT', side: 'LONG', quantity: 1, leverage: 2, stopLossPrice: 99, takeProfitPrice: 101 }, 100, context);
   assert.equal(reward.reasonCode, 'minimum_reward_risk_not_met');
-  const direction = engine.evaluate({ symbol: 'BTCUSDT', side: 'LONG', quantity: 1, stopLossPrice: 101, takeProfitPrice: 104 }, 100, context);
+  const direction = engine.evaluate({ symbol: 'BTCUSDT', side: 'LONG', quantity: 1, leverage: 2, stopLossPrice: 101, takeProfitPrice: 104 }, 100, context);
   assert.equal(direction.reasonCode, 'protective_price_direction_invalid');
 });
 

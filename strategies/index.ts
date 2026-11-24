@@ -10,3 +10,4 @@ export * from "./hawkes_toxic_flow.js";
 export * from "./cross_venue_basis.js";
 export * from "./fractional_kelly_allocator.js";
 export * from "./event_sourced_reconciliation.js";
+export * from "./portfolio_orchestrator.js";

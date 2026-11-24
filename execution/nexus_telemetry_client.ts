@@ -99,9 +99,12 @@ export class NexusTelemetryClient {
   }
 
   static fromEnv(env: NodeJS.ProcessEnv = process.env, fetcher: typeof fetch = fetch): NexusTelemetryClient {
+    const supabaseUrl = (env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");
+    const endpoint = env.NEXUS_TELEMETRY_URL ?? (supabaseUrl ? supabaseUrl + "/functions/v1/nexus-telemetry-ingest" : "");
+    const token = env.NEXUS_TELEMETRY_TOKEN ?? env.SUPABASE_SERVICE_ROLE_KEY ?? "";
     return new NexusTelemetryClient({
-      endpoint: env.NEXUS_TELEMETRY_URL ?? "",
-      token: env.NEXUS_TELEMETRY_TOKEN ?? "",
+      endpoint,
+      token,
       fetcher,
       timeoutMs: Number(env.NEXUS_TELEMETRY_TIMEOUT_MS ?? "5000"),
     });

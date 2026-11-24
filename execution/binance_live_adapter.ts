@@ -343,6 +343,30 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     await this.refreshSnapshot();
   }
 
+  private async reconcileProtectiveExit(intent: OrderIntent, intentId: string, instrumentId: string, role: string, orderId: number, finalOrder: BinanceOrderStatus, requestedQuantity: number): Promise<void> {
+    const trades = await this.engine.getUserTrades(intent.symbol, orderId);
+    const exitSide = intent.side === "LONG" ? "SHORT" : "LONG";
+    const exitIntent: OrderIntent = { ...intent, side: exitSide, quantity: Number(finalOrder.executedQty), reduceOnly: true };
+    const reconciled = reconcileBinanceUserTrades(finalOrder, trades, exitIntent, this.market, this.mode);
+    const event = await this.telemetry.recordOrderEvent({
+      intentId,
+      venueOrderId: String(orderId),
+      eventUid: `binance:${this.market}:${orderId}:protection-filled:${finalOrder.executedQty}`,
+      eventType: "protection_order_filled",
+      exchangeStatus: finalOrder.status,
+      cumulativeQuantity: finalOrder.executedQty,
+      averageFillPrice: reconciled.fill.price.toString(),
+      exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+      payload: { role, tradeCount: trades.length },
+    });
+    await this.persistTrades(intentId, event.id, instrumentId, intent.symbol, reconciled.trades, exitSide === "LONG" ? "buy" : "sell", orderId);
+    this.fills.push(reconciled.fill);
+    const remaining = Math.max(0, requestedQuantity - reconciled.fill.quantity);
+    if (remaining > Math.max(1e-10, requestedQuantity * 1e-8)) {
+      await this.emergencyFlatten(intent, intentId, instrumentId, remaining, "protective_order_partial_execution");
+    }
+  }
+
   private async placeProtectiveOrders(intent: OrderIntent, intentId: string, quantity: number): Promise<void> {
     if (intent.reduceOnly) return;
     if (!Number.isFinite(intent.stopLossPrice) || !Number.isFinite(intent.takeProfitPrice)) throw new Error("Protective stop-loss and take-profit prices are mandatory");
@@ -369,7 +393,19 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         const orderId = Number(response.orderId);
         if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error(protection.role + " order returned no valid exchange order ID");
         placed.push({ orderId, role: protection.role });
-        const confirmed = await this.engine.getOrder(intent.symbol, orderId);
+        let confirmed = await this.engine.getOrder(intent.symbol, orderId);
+        if (confirmed.status === "PARTIALLY_FILLED") {
+          try { await this.engine.cancelOrder(intent.symbol, orderId); } catch {}
+          confirmed = await this.engine.getOrder(intent.symbol, orderId);
+        }
+        if (confirmed.status === "FILLED" || (confirmed.status === "CANCELED" && Number(confirmed.executedQty) > 0)) {
+          await this.reconcileProtectiveExit(intent, intentId, this.instrumentIds.get(intent.symbol)!, protection.role, orderId, confirmed, quantity);
+          for (const sibling of placed) {
+            if (sibling.orderId === orderId) continue;
+            try { await this.engine.cancelOrder(intent.symbol, sibling.orderId); } catch {}
+          }
+          return;
+        }
         if (confirmed.status !== "NEW") throw new Error(protection.role + " order was not confirmed NEW: " + confirmed.status);
         await this.telemetry.recordOrderEvent({
           intentId,

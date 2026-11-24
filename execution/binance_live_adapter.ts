@@ -75,6 +75,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly orderUpdateHandler = (event: Record<string,unknown>) => { void this.handleProtectionUpdate(event); };
   private accountId = "";
   private hedgeMode = false;
+  private lastIncomeSyncTime = Date.now() - 7 * 24 * 60 * 60 * 1000;
   private balance = 0;
   private positions: Position[] = [];
 
@@ -131,6 +132,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       capabilities: { market: this.market, userDataStream: true, executionMode: this.mode.toLowerCase() },
     });
     this.accountId = account.id;
+    await this.syncFundingIncome();
     await this.refreshSnapshot();
   }
 
@@ -210,6 +212,41 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return context;
   }
 
+  private async syncFundingIncome(): Promise<void> {
+    let cursor = this.lastIncomeSyncTime;
+    for (let page = 0; page < 10; page++) {
+      const records = await this.engine.getIncomeHistory({ incomeType: "FUNDING_FEE", startTime: cursor, limit: 1000 });
+      if (records.length === 0) break;
+      const ordered = [...records].sort((a,b) => a.time - b.time);
+      for (const record of ordered) {
+        const sourceReference = `binance:${this.market}:${record.tranId}:funding`;
+        let amountUsd: string | undefined;
+        if (record.asset === "USDT") amountUsd = record.income;
+        else if (record.symbol) {
+          const price = await this.markPrice(record.symbol);
+          amountUsd = String(Number(record.income) * price);
+        }
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          entryType: "funding",
+          asset: record.asset,
+          amount: record.income,
+          sourceReference,
+          occurredAt: new Date(record.time).toISOString(),
+          amountUsd,
+          metadata: { symbol: record.symbol ?? null, incomeType: record.incomeType, tradeId: record.tradeId ?? null, transactionId: String(record.tranId) },
+        });
+      }
+      const latest = ordered[ordered.length - 1].time;
+      if (records.length < 1000 || latest < cursor) {
+        cursor = Math.max(cursor, latest + 1);
+        break;
+      }
+      cursor = latest + 1;
+    }
+    this.lastIncomeSyncTime = Math.max(cursor, Date.now() - 60 * 60 * 1000);
+  }
+
   private async refreshSnapshot(): Promise<void> {
     const [rawBalances, rawPositions] = await Promise.all([
       this.engine.getAccountBalance(),
@@ -221,6 +258,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     const available = Number(balanceRow.availableBalance ?? balanceRow.withdrawAvailable ?? balanceRow.balance ?? balanceRow.walletBalance);
     if (!Number.isFinite(available) || available < 0) throw new Error("Exchange returned an invalid available balance");
     this.balance = available;
+    await this.syncFundingIncome();
     this.positions = rawPositions
       .filter((position) => Number(position.positionAmt) !== 0)
       .map((position) => ({

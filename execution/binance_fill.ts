@@ -18,6 +18,7 @@ export interface BinanceUserTrade {
   commissionAsset: string;
   time: number;
   maker: boolean;
+  buyer?: boolean;
   realizedPnl?: string;
 }
 

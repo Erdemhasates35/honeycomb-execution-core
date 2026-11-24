@@ -127,3 +127,25 @@ test('loads versioned execution configuration from the guarded Supabase endpoint
   assert.equal(body.record.instrument_id, '123e4567-e89b-42d3-a456-426614174001');
   assert.equal(body.record.symbol, 'BTCUSDT');
 });
+
+test('derives the telemetry endpoint from Supabase URL and uses only a server-side service key fallback', async () => {
+  let capturedUrl = '';
+  let capturedAuthorization = '';
+  const client = NexusTelemetryClient.fromEnv({
+    NEXT_PUBLIC_SUPABASE_URL: 'https://project.example.supabase.co/',
+    SUPABASE_SERVICE_ROLE_KEY: 'server-only-test-secret',
+  }, async (input, init) => {
+    capturedUrl = String(input);
+    capturedAuthorization = String((init?.headers as Record<string,string>).authorization);
+    return new Response(JSON.stringify({ ok: true, kind: 'execution_config', data: {
+      mode: 'testnet',
+      riskProfile: { profileCode: 'p', enabled: true, maxRiskPerTrade: 0.01, maxDailyLoss: 0.02, maxDrawdown: 0.05, maxLeverage: 2, maxOpenOrders: 2, maxPositionNotional: 100, maxSlippageBps: 5, maxFeeBps: 10, maxFundingBps: 15, maxConcentration: 0.1, minRewardRisk: 1.5, config: {} },
+      strategy: { strategyCode: 's', enabled: true, supportedModes: ['testnet'], config: {}, version: { id: 'v', version: '1', sourceCommitSha: null, configSha256: null, validationStatus: 'validated', parameterSchema: null, parameters: null } },
+      activeGuardPolicy: null,
+      circuitBreakers: [],
+    }}), { status: 200 });
+  });
+  await client.getExecutionConfig({ riskProfileCode: 'p', strategyCode: 's', mode: 'testnet' });
+  assert.equal(capturedUrl, 'https://project.example.supabase.co/functions/v1/nexus-telemetry-ingest');
+  assert.equal(capturedAuthorization, 'Bearer server-only-test-secret');
+});

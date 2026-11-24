@@ -67,7 +67,7 @@ export class ExecutionRouter implements ExecutionAdapter {
 
     if (process.env.LIVE_ARMED !== "1") throw new Error("LIVE requires LIVE_ARMED=1");
     const apiKey = config.apiKey ?? process.env.BINANCE_API_KEY ?? "";
-    const apiSecret = config.apiSecret ?? process.env.BINANCE_API_SECRET ?? process.env.BINANCE_SECRET ?? "";
+    const apiSecret = config.apiSecret ?? process.env.BINANCE_API_SECRET ?? process.env.BINANCE_SECRET ?? process.env.BINANCE_SECRET_KEY ?? "";
     if (!apiKey || !apiSecret) throw new Error("LIVE requires Binance production credentials");
     if (!config.riskProfileCode && !process.env.NEXUS_RISK_PROFILE_CODE) throw new Error("LIVE requires an enabled NEXUS_RISK_PROFILE_CODE");
     if (!config.executorId && !process.env.NEXUS_EXECUTOR_ID) throw new Error("LIVE requires NEXUS_EXECUTOR_ID");

@@ -49,7 +49,7 @@ test('reconciles actual exchange trades and commissions for a canceled partial o
     'TESTNET',
   );
   assert.equal(result.fill.quantity, 0.004);
-  assert.equal(result.fill.fee, 0.00003);
+  assert.ok(Math.abs(result.fill.fee - 0.00003) < 1e-12);
   assert.equal(result.fill.feeAsset, 'BNB');
   assert.equal(result.fill.feeEstimated, false);
   assert.equal(result.fill.status, 'PARTIALLY_FILLED');

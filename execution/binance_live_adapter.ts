@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade } from "../BinanceFuturesEngineCatE.js";
 import { reconcileBinanceUserTrades } from "./binance_fill.js";
 import { NexusTelemetryClient } from "./nexus_telemetry_client.js";
@@ -84,6 +85,12 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       this.riskContextOverrides = riskContextJson ? JSON.parse(riskContextJson) as RiskContextOverrides : {};
     } catch {
       throw new Error("NEXUS_RISK_CONTEXT_JSON is invalid JSON");
+    }
+    if (this.mode === "LIVE") {
+      const requiredContext = ["peakEquity","dailyRealizedPnl","openOrders","portfolioNotional","estimatedSlippageBps","estimatedFeeBps","estimatedFundingBps"] as const;
+      for (const key of requiredContext) {
+        if (typeof this.riskContextOverrides[key] !== "number" || !Number.isFinite(this.riskContextOverrides[key])) throw new Error("LIVE risk context is missing a current numeric " + key);
+      }
     }
     this.estimatedSlippageBps = options.estimatedSlippageBps ?? Number(process.env.NEXUS_ESTIMATED_SLIPPAGE_BPS ?? "5");
     this.estimatedFeeBps = options.estimatedFeeBps ?? Number(process.env.NEXUS_ESTIMATED_FEE_BPS ?? "10");
@@ -210,7 +217,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     if (!this.accountId) throw new Error("Execution adapter is not initialized");
     const instrumentId = await this.ensureInstrument(intent.symbol);
     const price = intent.referencePrice ?? await this.markPrice(intent.symbol);
-    const clientOrderId = intent.clientOrderId ?? `hc-${crypto.randomUUID().replace(/-/g,"").slice(0,32)}`;
+    const clientOrderId = intent.clientOrderId ?? `hc-${randomUUID().replace(/-/g,"").slice(0,32)}`;
     const strategyCode = intent.strategyCode ?? this.strategyCode;
     const riskProfileCode = intent.riskProfileCode ?? this.riskProfileCode;
     const requestedMode = this.mode === "TESTNET" ? "testnet" : "live";
@@ -304,8 +311,36 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     }
 
     const trades = await this.engine.getUserTrades(intent.symbol, orderId);
-    const reconciled = reconcileBinanceUserTrades(finalOrder, trades, { ...intent, clientOrderId }, this.market, this.mode);
     const eventUid = `binance:${this.market}:${orderId}:${finalOrder.status}:${finalOrder.executedQty}:${finalOrder.updateTime ?? Date.now()}`;
+    if (Number(finalOrder.executedQty) === 0) {
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        venueOrderId: String(orderId),
+        eventUid,
+        eventType: "order_terminal_without_fill",
+        exchangeStatus: finalOrder.status,
+        cumulativeQuantity: "0",
+        exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+        payload: { tradeCount: trades.length, market: this.market },
+      });
+      throw new Error("Binance order reached a terminal state without an executed fill");
+    }
+    let reconciled;
+    try {
+      reconciled = reconcileBinanceUserTrades(finalOrder, trades, { ...intent, clientOrderId }, this.market, this.mode);
+    } catch (error) {
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        venueOrderId: String(orderId),
+        eventUid: eventUid + ":reconciliation-failed",
+        eventType: "fill_reconciliation_failed",
+        exchangeStatus: "UNKNOWN",
+        cumulativeQuantity: finalOrder.executedQty,
+        exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+        payload: { error: error instanceof Error ? error.message : "fill reconciliation failed", tradeCount: trades.length },
+      });
+      throw error;
+    }
     const orderEvent = await this.telemetry.recordOrderEvent({
       intentId: intentResult.id,
       venueOrderId: String(orderId),

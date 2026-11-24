@@ -64,6 +64,13 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly settlementAsset: string;
   private readonly riskEngine: RiskEngine;
   private readonly riskContextOverrides: RiskContextOverrides;
+  private readonly riskStateStore: RiskStateStore;
+  private equityUsd = Number.NaN;
+  private availableBalanceUsd = Number.NaN;
+  private peakEquityUsd = Number.NaN;
+  private dailyRealizedPnlUsd = Number.NaN;
+  private openOrderCount = Number.NaN;
+  private lastDailyPnlRefreshAt = 0;
   private readonly estimatedSlippageBps: number;
   private readonly estimatedFeeBps: number;
   private readonly estimatedFundingBps: number;
@@ -96,18 +103,16 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     if (!riskLimitsJson) throw new Error("NEXUS_RISK_PROFILE_JSON is required for TESTNET and LIVE");
     this.riskEngine = new RiskEngine(parseRiskLimits(riskLimitsJson));
     const riskContextJson = options.riskContextJson ?? process.env.NEXUS_RISK_CONTEXT_JSON;
-    if (this.mode === "LIVE" && !riskContextJson) throw new Error("LIVE requires NEXUS_RISK_CONTEXT_JSON with current high-water mark and daily realized PnL");
     try {
       this.riskContextOverrides = riskContextJson ? JSON.parse(riskContextJson) as RiskContextOverrides : {};
-    } catch {
+      for (const [key,value] of Object.entries(this.riskContextOverrides)) {
+        if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value))) throw new Error("NEXUS_RISK_CONTEXT_JSON contains an invalid numeric override: " + key);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("NEXUS_RISK_CONTEXT_JSON")) throw error;
       throw new Error("NEXUS_RISK_CONTEXT_JSON is invalid JSON");
     }
-    if (this.mode === "LIVE") {
-      const requiredContext = ["peakEquity","dailyRealizedPnl","openOrders","portfolioNotional","estimatedSlippageBps","estimatedFeeBps","estimatedFundingBps"] as const;
-      for (const key of requiredContext) {
-        if (typeof this.riskContextOverrides[key] !== "number" || !Number.isFinite(this.riskContextOverrides[key])) throw new Error("LIVE risk context is missing a current numeric " + key);
-      }
-    }
+    this.riskStateStore = new RiskStateStore();
     this.estimatedSlippageBps = options.estimatedSlippageBps ?? Number(process.env.NEXUS_ESTIMATED_SLIPPAGE_BPS ?? "5");
     this.estimatedFeeBps = options.estimatedFeeBps ?? Number(process.env.NEXUS_ESTIMATED_FEE_BPS ?? "10");
     this.estimatedFundingBps = options.estimatedFundingBps ?? Number(process.env.NEXUS_ESTIMATED_FUNDING_BPS ?? "0");

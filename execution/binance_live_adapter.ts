@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade, type OrderRequest } from "../BinanceFuturesEngineCatE.js";
 import { reconcileBinanceUserTrades } from "./binance_fill.js";
-import { NexusTelemetryClient } from "./nexus_telemetry_client.js";
+import { NexusTelemetryClient, type NexusExecutionConfig } from "./nexus_telemetry_client.js";
 import { RiskEngine, parseRiskLimits, type RiskContext } from "./risk_engine.js";
 import { RiskStateStore } from "./risk_state_store.js";
 import type { ExecutionAdapter, ExecutionMode, ExecutionSnapshot, Fill, FuturesMarket, OrderIntent, Position } from "./types.js";
@@ -63,7 +63,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly riskProfileCode?: string;
   private readonly executorId?: string;
   private readonly settlementAsset: string;
-  private readonly riskEngine: RiskEngine;
+  private riskEngine!: RiskEngine;
+  private executionConfig?: NexusExecutionConfig;
   private readonly riskContextOverrides: RiskContextOverrides;
   private readonly riskStateStore: RiskStateStore;
   private equityUsd = Number.NaN;
@@ -99,10 +100,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     if (!this.accountLabel) throw new Error("NEXUS_ACCOUNT_LABEL is required");
     if (!this.strategyCode) throw new Error("NEXUS_STRATEGY_CODE is required");
     if (!this.settlementAsset) throw new Error("NEXUS_SETTLEMENT_ASSET is required for COIN_M");
-    if (this.mode === "LIVE" && (!this.riskProfileCode || !this.executorId)) throw new Error("LIVE requires NEXUS_RISK_PROFILE_CODE and NEXUS_EXECUTOR_ID");
-    const riskLimitsJson = options.riskLimitsJson ?? process.env.NEXUS_RISK_PROFILE_JSON ?? "";
-    if (!riskLimitsJson) throw new Error("NEXUS_RISK_PROFILE_JSON is required for TESTNET and LIVE");
-    this.riskEngine = new RiskEngine(parseRiskLimits(riskLimitsJson));
+    if (!this.riskProfileCode) throw new Error("NEXUS_RISK_PROFILE_CODE is required for TESTNET and LIVE");
+    if (this.mode === "LIVE" && !this.executorId) throw new Error("LIVE requires NEXUS_EXECUTOR_ID");
     const riskContextJson = options.riskContextJson ?? process.env.NEXUS_RISK_CONTEXT_JSON;
     try {
       this.riskContextOverrides = riskContextJson ? JSON.parse(riskContextJson) as RiskContextOverrides : {};
@@ -129,6 +128,30 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   async initialize(): Promise<void> {
     await this.engine.initialize();
     this.hedgeMode = (await this.engine.getPositionMode()).dualSidePosition;
+    const mode = this.mode.toLowerCase() as "testnet" | "live";
+    const executionConfig = await this.telemetry.getExecutionConfig({
+      riskProfileCode: this.riskProfileCode!,
+      strategyCode: this.strategyCode,
+      mode,
+    });
+    if (executionConfig.mode !== mode || !executionConfig.riskProfile.enabled || !executionConfig.strategy.enabled || !executionConfig.strategy.supportedModes.includes(mode)) throw new Error("Supabase execution configuration is not enabled for this mode");
+    if (!executionConfig.strategy.version.id || !["validated","approved"].includes(executionConfig.strategy.version.validationStatus)) throw new Error("Strategy version has not passed validation");
+    if (this.mode === "LIVE" && !executionConfig.activeGuardPolicy) throw new Error("LIVE requires an active signed Guard policy");
+    const limits = {
+      maxRiskPerTrade: executionConfig.riskProfile.maxRiskPerTrade,
+      maxDailyLoss: executionConfig.riskProfile.maxDailyLoss,
+      maxDrawdown: executionConfig.riskProfile.maxDrawdown,
+      maxLeverage: executionConfig.riskProfile.maxLeverage,
+      maxOpenOrders: executionConfig.riskProfile.maxOpenOrders,
+      maxPositionNotional: executionConfig.riskProfile.maxPositionNotional,
+      maxSlippageBps: executionConfig.riskProfile.maxSlippageBps,
+      maxFeeBps: executionConfig.riskProfile.maxFeeBps,
+      maxFundingBps: executionConfig.riskProfile.maxFundingBps,
+      maxConcentration: executionConfig.riskProfile.maxConcentration,
+      minRewardRisk: executionConfig.riskProfile.minRewardRisk,
+    };
+    this.riskEngine = new RiskEngine(parseRiskLimits(JSON.stringify(limits)));
+    this.executionConfig = executionConfig;
     this.engine.on("orderUpdate", this.orderUpdateHandler);
     const account = await this.telemetry.registerVenueAccount({
       venue: "binance",

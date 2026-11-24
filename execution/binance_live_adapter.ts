@@ -125,18 +125,20 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     });
   }
 
-  async initialize(): Promise<void> {
-    await this.engine.initialize();
-    this.hedgeMode = (await this.engine.getPositionMode()).dualSidePosition;
+  private async loadExecutionConfig(instrumentId?: string, symbol?: string): Promise<void> {
     const mode = this.mode.toLowerCase() as "testnet" | "live";
     const executionConfig = await this.telemetry.getExecutionConfig({
       riskProfileCode: this.riskProfileCode!,
       strategyCode: this.strategyCode,
       mode,
+      accountId: this.accountId || undefined,
+      instrumentId,
+      symbol,
     });
     if (executionConfig.mode !== mode || !executionConfig.riskProfile.enabled || !executionConfig.strategy.enabled || !executionConfig.strategy.supportedModes.includes(mode)) throw new Error("Supabase execution configuration is not enabled for this mode");
     if (!executionConfig.strategy.version.id || !["validated","approved"].includes(executionConfig.strategy.version.validationStatus)) throw new Error("Strategy version has not passed validation");
     if (this.mode === "LIVE" && !executionConfig.activeGuardPolicy) throw new Error("LIVE requires an active signed Guard policy");
+    if (executionConfig.circuitBreakers.length > 0) throw new Error("An applicable circuit breaker is open");
     const limits = {
       maxRiskPerTrade: executionConfig.riskProfile.maxRiskPerTrade,
       maxDailyLoss: executionConfig.riskProfile.maxDailyLoss,
@@ -152,6 +154,11 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     };
     this.riskEngine = new RiskEngine(parseRiskLimits(JSON.stringify(limits)));
     this.executionConfig = executionConfig;
+  }
+
+  async initialize(): Promise<void> {
+    await this.engine.initialize();
+    this.hedgeMode = (await this.engine.getPositionMode()).dualSidePosition;
     this.engine.on("orderUpdate", this.orderUpdateHandler);
     const account = await this.telemetry.registerVenueAccount({
       venue: "binance",
@@ -161,6 +168,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       capabilities: { market: this.market, userDataStream: true, executionMode: this.mode.toLowerCase() },
     });
     this.accountId = account.id;
+    await this.loadExecutionConfig();
     await this.syncFundingIncome();
     await this.refreshSnapshot();
   }
@@ -672,6 +680,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     if (this.hedgeMode && !intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide !== intent.side) throw new Error("Hedge-mode entry positionSide must match order side");
     if (this.hedgeMode && intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide === intent.side) throw new Error("Hedge-mode reduce-only positionSide must oppose the order side");
     const instrumentId = await this.ensureInstrument(intent.symbol);
+    await this.loadExecutionConfig(instrumentId,intent.symbol);
     await this.refreshSnapshot();
     const price = await this.markPrice(intent.symbol);
     const clientOrderId = intent.clientOrderId ?? `hc-${randomUUID().replace(/-/g,"").slice(0,32)}`;

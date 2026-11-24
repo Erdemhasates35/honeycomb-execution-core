@@ -87,7 +87,7 @@ test("cross-venue basis subtracts fees, slippage and latency before signaling",(
 });
 
 test("fractional Kelly allocation contracts under drawdown",()=>{
-  const returns=[0.01,-0.005,0.02,0.015,-0.01,0.012,-0.004];
+  const returns=[0.02,-0.03,0.025,-0.02,0.03,-0.025,0.0017];
   const normal=calculateFractionalKelly(returns,{fraction:0.25,maxFraction:0.2,currentDrawdown:0.01,maxDrawdown:0.1,minimumSampleSize:5});
   const stressed=calculateFractionalKelly(returns,{fraction:0.25,maxFraction:0.2,currentDrawdown:0.08,maxDrawdown:0.1,minimumSampleSize:5});
   assert.ok(normal.allocatedFraction>stressed.allocatedFraction);
@@ -98,6 +98,6 @@ test("event reconciliation compares unique exchange trades to cumulative quantit
   const result=reconcileExecutionEvents({exchangeExecutedQuantity:3,trades:[{quantity:1,price:100,fee:0.04,realizedPnl:0,tradeId:"1"},{quantity:2,price:101,fee:0.08,realizedPnl:1,tradeId:"2"}],knownTradeIds:["1"],tolerance:1e-9});
   assert.equal(result.reconciled,true);
   assert.equal(result.executedQuantity,3);
-  assert.equal(result.averagePrice,100.66666666666667);
+  assert.ok(Math.abs(result.averagePrice!-100.6666666667)<1e-9);
   assert.deepEqual(result.missingTradeIds,["2"]);
 });

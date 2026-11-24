@@ -154,6 +154,7 @@ export class NexusTelemetryClient {
     riskProfileCode?: string;
     reduceOnly?: boolean;
     postOnly?: boolean;
+    stopPrice?: string;
     metadata?: Record<string, unknown>;
   }): Promise<NexusTelemetryResult> {
     return this.record("order_intent", {
@@ -169,6 +170,7 @@ export class NexusTelemetryClient {
       risk_profile_code: input.riskProfileCode ?? null,
       reduce_only: input.reduceOnly ?? false,
       post_only: input.postOnly ?? false,
+      stop_price: input.stopPrice ?? null,
       metadata: input.metadata ?? {},
     });
   }

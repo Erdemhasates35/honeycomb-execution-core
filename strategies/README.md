@@ -20,3 +20,5 @@ These functions calculate signals, execution plans, quotes, sizing fractions or 
 The LSTM module performs inference only. It does not contain fabricated weights or claim a trained model. It rejects malformed artifacts and must remain disabled until a signed model artifact has been trained on real market observations, validated out of sample and registered with its hash.
 
 VWAP slicing, market making and cross-venue basis require execution capabilities beyond a single market-order path. Their mathematical components are implemented, but they must remain disabled until the relevant order types, paired-leg atomicity, cancel/replace lifecycle and reconciliation are integrated and tested on the target venue.
+
+The portfolio orchestrator combines only catalog-enabled directional signals, deducts round-trip costs once, requires directional consensus, applies toxicity/reconciliation/circuit-breaker/drawdown gates, and caps notional by Kelly allocation, stop distance, available balance, leverage and configured limits. It produces an auditable order candidate; the execution adapter remains the only component allowed to submit an order.

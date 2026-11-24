@@ -393,6 +393,9 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     if (!protection || !["FILLED","PARTIALLY_FILLED","CANCELED","EXPIRED","REJECTED"].includes(status)) return;
     this.protectionOrders.delete(orderId);
     this.protectionOrders.delete(String(protection.siblingOrderId));
+    if (status === "PARTIALLY_FILLED") {
+      try { await this.engine.cancelOrder(protection.symbol, Number(orderId)); } catch {}
+    }
     let siblingStatus = "UNKNOWN";
     try {
       await this.engine.cancelOrder(protection.symbol, protection.siblingOrderId);

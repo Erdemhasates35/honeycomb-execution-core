@@ -25,12 +25,16 @@ export function buildVwapExecutionPlan(input: {
 }): VwapExecutionPlan {
   assertPositive(input.targetQuantity,"targetQuantity");
   if (input.trades.length===0 || input.buckets.length===0 || input.maxParticipationRate<=0 || input.maxParticipationRate>1 || input.limitOffsetBps<0) throw new Error("VWAP execution inputs are invalid");
+  if(input.trades.some(trade=>!Number.isFinite(trade.price)||trade.price<=0||!Number.isFinite(trade.quantity)||trade.quantity<=0||!Number.isFinite(trade.timestamp)))throw new Error("VWAP trade history is invalid");
   const totalQuantity=input.trades.reduce((sum,trade)=>sum+trade.quantity,0);
   const totalNotional=input.trades.reduce((sum,trade)=>sum+trade.price*trade.quantity,0);
   if (!Number.isFinite(totalQuantity)||totalQuantity<=0||!Number.isFinite(totalNotional)||totalNotional<=0) throw new Error("VWAP trade history is invalid");
   const vwap=totalNotional/totalQuantity;
-  const participationRate=input.targetQuantity/totalQuantity;
+  const bucketVolume=input.buckets.reduce((sum,bucket)=>sum+bucket.volume,0);
+  if (!Number.isFinite(bucketVolume)||bucketVolume<=0||Math.abs(bucketVolume-totalQuantity)>Math.max(1e-8,totalQuantity*0.05)) throw new Error("VWAP trade and volume-bucket histories are inconsistent");
+  const participationRate=input.targetQuantity/bucketVolume;
   const limitPrice=vwap*(input.side==="BUY"?1-input.limitOffsetBps/10000:1+input.limitOffsetBps/10000);
+  if (participationRate>input.maxParticipationRate) return {accepted:false,vwap,participationRate,slices:[],reasonCode:"participation_rate_above_policy"};
   const ordered=[...input.buckets].sort((a,b)=>a.startTime-b.startTime);
   if (ordered.some(bucket=>!Number.isFinite(bucket.volume)||bucket.volume<0||bucket.endTime<=bucket.startTime)) throw new Error("VWAP volume buckets are invalid");
   const slices:Array<{startTime:number;endTime:number;quantity:number;limitPrice:number}>=[];

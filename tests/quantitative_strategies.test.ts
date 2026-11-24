@@ -50,9 +50,10 @@ test("VWAP plan respects participation and reconciles slice quantity",()=>{
 });
 
 test("correlation relative value identifies a spread dislocation",()=>{
-  const right=[100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115];
-  const left=right.map((price,index)=>price*Math.exp(index===right.length-1?0.08:0));
-  const signal=evaluateCorrelationRelativeValue({leftPrices:left,rightPrices:right,minCorrelation:0.8,entryZScore:1});
+  const right=[100];
+  for(let index=1;index<30;index++) right.push(right[index-1]*Math.exp(0.002*Math.sin(index*0.7)+0.001*Math.cos(index*0.13)));
+  const left=right.map((price,index)=>price*Math.exp(index===right.length-1?0.005:0));
+  const signal=evaluateCorrelationRelativeValue({leftPrices:left,rightPrices:right,minCorrelation:0.8,entryZScore:1.5});
   assert.ok(signal.correlation>0.8);
   assert.equal(signal.side,"SHORT_LEFT_LONG_RIGHT");
 });

@@ -63,3 +63,8 @@ test('validates risk profile configuration before engine construction', () => {
   assert.deepEqual(parseRiskLimits(JSON.stringify(limits)), limits);
   assert.throws(() => parseRiskLimits('{"maxLeverage":100}'), /Missing or invalid risk limit/);
 });
+
+test('rejects implicit leverage on new exposure', () => {
+  const result = new RiskEngine(limits).evaluate({ symbol: 'BTCUSDT', side: 'LONG', quantity: 1, stopLossPrice: 98, takeProfitPrice: 104 }, 100, context);
+  assert.equal(result.reasonCode, 'explicit_leverage_required');
+});

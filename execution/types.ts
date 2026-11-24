@@ -14,6 +14,8 @@ export interface OrderIntent {
   riskProfileCode?: string;
   guardApprovalDigest?: string;
   idempotencyKey?: string;
+  stopLossPrice?: number;
+  takeProfitPrice?: number;
 }
 
 export interface Fill {

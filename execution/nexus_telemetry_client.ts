@@ -219,6 +219,34 @@ export class NexusTelemetryClient {
     });
   }
 
+  recordPnl(input: {
+    accountId: string;
+    intentId?: string;
+    fillId?: string;
+    entryType: "realized_pnl" | "fee" | "funding" | "rebate" | "borrow_interest" | "gas" | "slippage" | "transfer" | "adjustment";
+    asset: string;
+    amount: string;
+    sourceReference: string;
+    occurredAt: string;
+    usdConversionRate?: string;
+    amountUsd?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<NexusTelemetryResult> {
+    return this.record("pnl", {
+      account_id: input.accountId,
+      intent_id: input.intentId ?? null,
+      fill_id: input.fillId ?? null,
+      entry_type: input.entryType,
+      asset: input.asset,
+      amount: input.amount,
+      usd_conversion_rate: input.usdConversionRate ?? null,
+      amount_usd: input.amountUsd ?? null,
+      source_reference: input.sourceReference,
+      occurred_at: input.occurredAt,
+      metadata: input.metadata ?? {},
+    });
+  }
+
   authorizeLive(input: {
     intentId: string;
     executorId: string;

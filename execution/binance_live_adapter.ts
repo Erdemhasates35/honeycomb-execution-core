@@ -255,10 +255,48 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     this.lastIncomeSyncTime = cursor;
   }
 
+  private async calculateDailyRealizedPnlUsd(): Promise<number> {
+    const now = Date.now();
+    if (Number.isFinite(this.dailyRealizedPnlUsd) && now - this.lastDailyPnlRefreshAt < 5000) return this.dailyRealizedPnlUsd;
+    const dayStart = new Date();
+    dayStart.setUTCHours(0,0,0,0);
+    let cursor = dayStart.getTime();
+    let total = 0;
+    const includedTypes = new Set(["REALIZED_PNL","COMMISSION","FUNDING_FEE","INSURANCE_CLEAR","DELIVERED_SETTELMENT","OPTIONS_PREMIUM_FEE","OPTIONS_SETTLE_PROFIT"]);
+    const stableAssets = new Set(["USDT","USDC","BUSD","FDUSD","TUSD"]);
+    let complete = false;
+    for (let page = 0; page < 10; page++) {
+      const records = await this.engine.getIncomeHistory({ startTime: cursor, endTime: now, limit: 1000 });
+      if (records.length === 0) {
+        complete = true;
+        break;
+      }
+      const ordered = [...records].sort((a,b) => a.time - b.time);
+      for (const record of ordered) {
+        if (record.time < dayStart.getTime() || !includedTypes.has(record.incomeType)) continue;
+        const amount = Number(record.income);
+        if (!Number.isFinite(amount)) throw new Error("Binance returned invalid daily income amount");
+        const conversion = stableAssets.has(record.asset) ? 1 : await this.engine.getSpotPrice(record.asset + "USDT");
+        total += amount * conversion;
+      }
+      const latest = ordered[ordered.length - 1].time;
+      cursor = latest + 1;
+      if (records.length < 1000) {
+        complete = true;
+        break;
+      }
+    }
+    if (!complete) throw new Error("Daily realized PnL history exceeded the safe pagination limit");
+    this.dailyRealizedPnlUsd = total;
+    this.lastDailyPnlRefreshAt = now;
+    return total;
+  }
+
   private async refreshSnapshot(): Promise<void> {
-    const [rawBalances, rawPositions] = await Promise.all([
+    const [rawBalances, rawPositions, openOrders] = await Promise.all([
       this.engine.getAccountBalance(),
       this.engine.getPositionRisk(),
+      this.engine.getOpenOrders(),
     ]);
     const balances = rawBalances as BalanceRow[];
     const balanceRow = balances.find((row) => row.asset === this.settlementAsset);
@@ -266,6 +304,16 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     const available = Number(balanceRow.availableBalance ?? balanceRow.withdrawAvailable ?? balanceRow.balance ?? balanceRow.walletBalance);
     if (!Number.isFinite(available) || available < 0) throw new Error("Exchange returned an invalid available balance");
     this.balance = available;
+    const walletBalance = Number(balanceRow.walletBalance ?? balanceRow.balance ?? available);
+    const unrealizedPnl = rawPositions.reduce((sum, position) => sum + Number(position.unRealizedProfit ?? 0), 0);
+    const stableAssets = new Set(["USDT","USDC","BUSD","FDUSD","TUSD"]);
+    const conversionPrice = stableAssets.has(this.settlementAsset) ? 1 : await this.engine.getSpotPrice(this.settlementAsset + "USDT");
+    this.equityUsd = (walletBalance + unrealizedPnl) * conversionPrice;
+    this.availableBalanceUsd = available * conversionPrice;
+    if (!Number.isFinite(this.equityUsd) || this.equityUsd <= 0 || !Number.isFinite(this.availableBalanceUsd) || this.availableBalanceUsd < 0) throw new Error("Exchange account equity could not be valued in USD");
+    this.openOrderCount = openOrders.length;
+    this.dailyRealizedPnlUsd = await this.calculateDailyRealizedPnlUsd();
+    this.peakEquityUsd = await this.riskStateStore.updatePeakEquity(this.accountId, this.equityUsd);
     await this.syncFundingIncome();
     this.positions = rawPositions
       .filter((position) => Number(position.positionAmt) !== 0)
@@ -281,9 +329,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         settlementAsset: this.instrumentSettlementAssets.get(position.symbol) ?? this.settlementAsset,
       }));
     const observedAt = new Date().toISOString();
-    const walletBalance = Number(balanceRow.walletBalance ?? balanceRow.balance ?? available);
     const lockedBalance = Math.max(0, walletBalance - available);
-    const unrealizedPnl = rawPositions.reduce((sum, position) => sum + Number(position.unRealizedProfit ?? 0), 0);
     await this.telemetry.record("balance", {
       account_id: this.accountId,
       asset: this.settlementAsset,

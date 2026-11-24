@@ -152,6 +152,8 @@ export class NexusTelemetryClient {
     quantity: string;
     requestedMode: "testnet" | "live";
     riskProfileCode?: string;
+    reduceOnly?: boolean;
+    postOnly?: boolean;
     metadata?: Record<string, unknown>;
   }): Promise<NexusTelemetryResult> {
     return this.record("order_intent", {
@@ -165,6 +167,8 @@ export class NexusTelemetryClient {
       quantity: input.quantity,
       requested_mode: input.requestedMode,
       risk_profile_code: input.riskProfileCode ?? null,
+      reduce_only: input.reduceOnly ?? false,
+      post_only: input.postOnly ?? false,
       metadata: input.metadata ?? {},
     });
   }
@@ -210,6 +214,34 @@ export class NexusTelemetryClient {
       average_fill_price: input.averageFillPrice ?? null,
       exchange_timestamp: input.exchangeTimestamp ?? null,
       payload: input.payload ?? {},
+    });
+  }
+
+  authorizeLive(input: {
+    intentId: string;
+    executorId: string;
+    approvalDigest: string;
+  }): Promise<NexusTelemetryResult> {
+    return this.record("authorize_live", {
+      intent_id: input.intentId,
+      executor_id: input.executorId,
+      approval_digest: input.approvalDigest,
+    });
+  }
+
+  recordSubmissionResult(input: {
+    authorizationId: string;
+    executorId: string;
+    outcome: "submitted" | "unknown" | "failed";
+    venueOrderId?: string;
+    errorCode?: string;
+  }): Promise<NexusTelemetryResult> {
+    return this.record("submission_result", {
+      authorization_id: input.authorizationId,
+      executor_id: input.executorId,
+      outcome: input.outcome,
+      venue_order_id: input.venueOrderId ?? null,
+      error_code: input.errorCode ?? null,
     });
   }
 

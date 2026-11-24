@@ -83,6 +83,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly protectionOrders = new Map<string,ProtectionRef>();
   private readonly orderUpdateHandler = (event: Record<string,unknown>) => { void this.handleProtectionUpdate(event); };
   private accountId = "";
+  private initialized = false;
   private hedgeMode = false;
   private lastIncomeSyncTime = Date.now() - 7 * 24 * 60 * 60 * 1000;
   private balance = 0;
@@ -157,20 +158,29 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   }
 
   async initialize(): Promise<void> {
-    await this.engine.initialize();
-    this.hedgeMode = (await this.engine.getPositionMode()).dualSidePosition;
-    this.engine.on("orderUpdate", this.orderUpdateHandler);
-    const account = await this.telemetry.registerVenueAccount({
-      venue: "binance",
-      accountLabel: this.accountLabel,
-      environment: this.mode === "TESTNET" ? "testnet" : "production",
-      accountType: "futures",
-      capabilities: { market: this.market, userDataStream: true, executionMode: this.mode.toLowerCase() },
-    });
-    this.accountId = account.id;
-    await this.loadExecutionConfig();
-    await this.syncFundingIncome();
-    await this.refreshSnapshot();
+    if (this.initialized) return;
+    try {
+      await this.engine.initialize();
+      this.hedgeMode = (await this.engine.getPositionMode()).dualSidePosition;
+      this.engine.on("orderUpdate", this.orderUpdateHandler);
+      const account = await this.telemetry.registerVenueAccount({
+        venue: "binance",
+        accountLabel: this.accountLabel,
+        environment: this.mode === "TESTNET" ? "testnet" : "production",
+        accountType: "futures",
+        capabilities: { market: this.market, userDataStream: true, executionMode: this.mode.toLowerCase() },
+      });
+      this.accountId = account.id;
+      await this.loadExecutionConfig();
+      await this.syncFundingIncome();
+      await this.refreshSnapshot();
+      this.initialized = true;
+    } catch (error) {
+      this.engine.off("orderUpdate", this.orderUpdateHandler);
+      this.engine.terminate();
+      this.initialized = false;
+      throw error;
+    }
   }
 
   private async exchangeSymbol(symbol: string): Promise<BinanceExchangeSymbol> {
@@ -881,8 +891,9 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   }
 
   snapshot(): ExecutionSnapshot {
+    if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
     return { mode: this.mode, market: this.market, balance: this.balance, positions: [...this.positions], fills: [...this.fills] };
   }
 
-  async terminate(): Promise<void> { this.engine.off("orderUpdate", this.orderUpdateHandler); this.engine.terminate(); }
+  async terminate(): Promise<void> { this.engine.off("orderUpdate", this.orderUpdateHandler); this.engine.terminate(); this.initialized = false; }
 }

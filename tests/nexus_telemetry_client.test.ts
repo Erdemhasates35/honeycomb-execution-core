@@ -110,6 +110,9 @@ test('loads versioned execution configuration from the guarded Supabase endpoint
     riskProfileCode: 'canary_testnet_v1',
     strategyCode: 'basis_funding_velocity',
     mode: 'testnet',
+    accountId: '123e4567-e89b-42d3-a456-426614174000',
+    instrumentId: '123e4567-e89b-42d3-a456-426614174001',
+    symbol: 'BTCUSDT',
   });
   assert.equal(result.riskProfile.profileCode, 'canary_testnet_v1');
   assert.equal(result.strategy.version.validationStatus, 'validated');
@@ -120,4 +123,7 @@ test('loads versioned execution configuration from the guarded Supabase endpoint
   assert.equal(body.record.risk_profile_code, 'canary_testnet_v1');
   assert.equal(body.record.strategy_code, 'basis_funding_velocity');
   assert.equal(body.record.mode, 'testnet');
+  assert.equal(body.record.account_id, '123e4567-e89b-42d3-a456-426614174000');
+  assert.equal(body.record.instrument_id, '123e4567-e89b-42d3-a456-426614174001');
+  assert.equal(body.record.symbol, 'BTCUSDT');
 });

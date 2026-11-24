@@ -1,4 +1,4 @@
-import { mean, pearsonCorrelation, standardDeviation, assertPositive } from "./math.js";
+import { mean, pearsonCorrelation, standardDeviation } from "./math.js";
 
 export interface CorrelationRelativeValueSignal {
   side: "LONG_LEFT_SHORT_RIGHT" | "SHORT_LEFT_LONG_RIGHT" | "FLAT";

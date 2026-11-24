@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade } from "../BinanceFuturesEngineCatE.js";
+import { BinanceFuturesEngineCatE, type BinanceExchangeSymbol, type BinanceOrderStatus, type BinanceUserTrade, type OrderRequest } from "../BinanceFuturesEngineCatE.js";
 import { reconcileBinanceUserTrades } from "./binance_fill.js";
 import { NexusTelemetryClient } from "./nexus_telemetry_client.js";
 import { RiskEngine, parseRiskLimits, type RiskContext } from "./risk_engine.js";
@@ -492,7 +492,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     if (intent.reduceOnly) return;
     if (!Number.isFinite(intent.stopLossPrice) || !Number.isFinite(intent.takeProfitPrice)) throw new Error("Protective stop-loss and take-profit prices are mandatory");
     const exitSide = intent.side === "LONG" ? "SELL" : "BUY";
-    const protections = [
+    const protections: Array<{ role: string; type: OrderRequest["type"]; stopPrice: string }> = [
       { role: "stop_loss", type: "STOP_MARKET", stopPrice: String(intent.stopLossPrice) },
       { role: "take_profit", type: "TAKE_PROFIT_MARKET", stopPrice: String(intent.takeProfitPrice) },
     ];

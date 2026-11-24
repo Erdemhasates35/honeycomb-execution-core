@@ -32,10 +32,11 @@ export function evaluateBasisFundingVelocity(input: BasisFundingInput, config: B
   assertPositive(input.indexPrice,"indexPrice");
   assertPositive(input.atr,"atr");
   if (!Number.isFinite(input.lastFundingRate) || !Number.isFinite(input.estimatedRoundTripCostBps) || input.estimatedRoundTripCostBps < 0) throw new Error("Funding input is invalid");
-  if (input.fundingHistory.length < 3 || input.fundingHistory.some(point => !Number.isFinite(point.fundingRate) || !Number.isFinite(point.fundingTime))) {
+  if (input.fundingHistory.some((point,index) => !Number.isFinite(point.fundingRate) || !Number.isFinite(point.fundingTime) || (index>0 && point.fundingTime<=input.fundingHistory[index-1].fundingTime))) throw new Error("Funding history timestamps or rates are invalid");
+  if (input.fundingHistory.length < 3) {
     return { strategyCode:"basis_funding_velocity",side:"FLAT",confidence:0,expectedEdgeBps:0,entryPrice:input.markPrice,stopLossPrice:null,takeProfitPrice:null,reasonCodes:["insufficient_funding_history"],metadata:{symbol:input.symbol} };
   }
-  if (config.basisCaptureFraction < 0 || config.basisCaptureFraction > 1 || config.velocityLookaheadPeriods < 0 || config.stopAtr <= 0 || config.targetAtr <= 0 || config.minRewardRisk <= 0) throw new Error("Basis funding strategy configuration is invalid");
+  if (Object.values(config).some(value=>!Number.isFinite(value)) || config.minFundingBps<0 || config.minBasisBps<0 || config.basisCaptureFraction < 0 || config.basisCaptureFraction > 1 || config.velocityLookaheadPeriods < 0 || config.minExpectedEdgeBps<0 || config.stopAtr <= 0 || config.targetAtr <= 0 || config.minRewardRisk <= 0) throw new Error("Basis funding strategy configuration is invalid");
   const basisBps = (input.markPrice-input.indexPrice)/input.indexPrice*10000;
   const fundingBps = input.lastFundingRate*10000;
   const fundingVelocityBps = regressionSlope(input.fundingHistory.slice(-8).map(point => point.fundingRate*10000));

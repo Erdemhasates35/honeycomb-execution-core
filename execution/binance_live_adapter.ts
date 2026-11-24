@@ -329,7 +329,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       side: exitSide === "LONG" ? "BUY" : "SELL",
       type: "MARKET",
       quantity,
-      reduceOnly: true,
+      reduceOnly: this.hedgeMode ? undefined : true,
+      positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
       clientOrderId,
     }) as BinanceOrderStatus;
     const orderId = Number(response.orderId);
@@ -528,6 +529,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   async place(intent: OrderIntent): Promise<Fill> {
     if (!Number.isFinite(intent.quantity) || intent.quantity <= 0) throw new Error("Order quantity must be finite and positive");
     if (!this.accountId) throw new Error("Execution adapter is not initialized");
+    if (this.hedgeMode && !intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide !== intent.side) throw new Error("Hedge-mode entry positionSide must match order side");
+    if (this.hedgeMode && intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide === intent.side) throw new Error("Hedge-mode reduce-only positionSide must oppose the order side");
     const instrumentId = await this.ensureInstrument(intent.symbol);
     const price = intent.referencePrice ?? await this.markPrice(intent.symbol);
     const clientOrderId = intent.clientOrderId ?? `hc-${randomUUID().replace(/-/g,"").slice(0,32)}`;

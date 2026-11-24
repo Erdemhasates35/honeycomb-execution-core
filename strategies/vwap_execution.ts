@@ -24,7 +24,7 @@ export function buildVwapExecutionPlan(input: {
   limitOffsetBps: number;
 }): VwapExecutionPlan {
   assertPositive(input.targetQuantity,"targetQuantity");
-  if (input.trades.length===0 || input.buckets.length===0 || input.maxParticipationRate<=0 || input.maxParticipationRate>1 || input.limitOffsetBps<0) throw new Error("VWAP execution inputs are invalid");
+  if (input.trades.length===0 || input.buckets.length===0 || input.maxParticipationRate<=0 || input.maxParticipationRate>1 || input.limitOffsetBps<0||input.limitOffsetBps>=10000) throw new Error("VWAP execution inputs are invalid");
   if(input.trades.some(trade=>!Number.isFinite(trade.price)||trade.price<=0||!Number.isFinite(trade.quantity)||trade.quantity<=0||!Number.isFinite(trade.timestamp)))throw new Error("VWAP trade history is invalid");
   const totalQuantity=input.trades.reduce((sum,trade)=>sum+trade.quantity,0);
   const totalNotional=input.trades.reduce((sum,trade)=>sum+trade.price*trade.quantity,0);
@@ -35,6 +35,7 @@ export function buildVwapExecutionPlan(input: {
   const participationRate=input.targetQuantity/bucketVolume;
   const limitPrice=vwap*(input.side==="BUY"?1-input.limitOffsetBps/10000:1+input.limitOffsetBps/10000);
   if (participationRate>input.maxParticipationRate) return {accepted:false,vwap,participationRate,slices:[],reasonCode:"participation_rate_above_policy"};
+  if (!Number.isFinite(limitPrice)||limitPrice<=0) throw new Error("VWAP limit price is invalid");
   const ordered=[...input.buckets].sort((a,b)=>a.startTime-b.startTime);
   if (ordered.some(bucket=>!Number.isFinite(bucket.volume)||bucket.volume<0||bucket.endTime<=bucket.startTime)) throw new Error("VWAP volume buckets are invalid");
   const slices:Array<{startTime:number;endTime:number;quantity:number;limitPrice:number}>=[];

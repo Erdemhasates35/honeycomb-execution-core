@@ -228,6 +228,665 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return price;
   }
 
+  private async riskContext(intent: OrderIntent, price: number): Promise<RiskContext> {
+    const positionsNotional = this.positions.reduce((sum, position) => {
+      const contractSize = this.contractSizes.get(position.symbol) ?? 1;
+      return sum + (this.market === "COIN_M" ? Math.abs(position.quantity * contractSize) : Math.abs(position.quantity * position.entryPrice * contractSize));
+    }, 0);
+    const contractSize = this.contractSizes.get(intent.symbol) ?? 1;
+    const orderBook = await this.engine.getOrderBook(intent.symbol, 20);
+    const levels = intent.side === "LONG" ? orderBook.asks : orderBook.bids;
+    let remaining = intent.quantity;
+    let quoteValue = 0;
+    for (const [rawPrice, rawQuantity] of levels) {
+      const levelPrice = Number(rawPrice);
+      const levelQuantity = Number(rawQuantity);
+      if (!Number.isFinite(levelPrice) || levelPrice <= 0 || !Number.isFinite(levelQuantity) || levelQuantity <= 0) throw new Error("Exchange order book contains invalid levels");
+      const take = Math.min(remaining, levelQuantity);
+      quoteValue += take * levelPrice;
+      remaining -= take;
+      if (remaining <= Math.max(1e-12, intent.quantity * 1e-10)) break;
+    }
+    if (remaining > Math.max(1e-12, intent.quantity * 1e-10)) throw new Error("Order book depth is insufficient for the requested order size");
+    const vwap = quoteValue / intent.quantity;
+    const measuredSlippageBps = Math.abs(vwap - price) / price * 10000;
+    const [premium, commission] = await Promise.all([
+      this.engine.getPremiumIndex(intent.symbol),
+      this.engine.getCommissionRate(intent.symbol),
+    ]);
+    const fundingRate = Number(premium.lastFundingRate);
+    const takerRate = Number(commission.takerCommissionRate);
+    if (!Number.isFinite(fundingRate) || !Number.isFinite(takerRate) || takerRate < 0) throw new Error("Exchange funding or commission data is invalid");
+    const estimatedSlippageBps = Math.max(measuredSlippageBps, this.estimatedSlippageBps, this.riskContextOverrides.estimatedSlippageBps ?? 0);
+    const estimatedFeeBps = Math.max(takerRate * 10000, this.estimatedFeeBps, this.riskContextOverrides.estimatedFeeBps ?? 0);
+    const estimatedFundingBps = Math.max(Math.abs(fundingRate) * 10000, this.estimatedFundingBps, this.riskContextOverrides.estimatedFundingBps ?? 0);
+    const context: RiskContext = {
+      equity: this.equityUsd,
+      peakEquity: Math.max(this.peakEquityUsd, this.riskContextOverrides.peakEquity ?? 0),
+      availableBalance: this.availableBalanceUsd,
+      dailyRealizedPnl: Math.min(this.dailyRealizedPnlUsd, this.riskContextOverrides.dailyRealizedPnl ?? this.dailyRealizedPnlUsd),
+      openOrders: Math.max(this.openOrderCount, this.riskContextOverrides.openOrders ?? 0),
+      portfolioNotional: Math.max(positionsNotional, this.riskContextOverrides.portfolioNotional ?? 0),
+      estimatedSlippageBps,
+      estimatedFeeBps,
+      estimatedFundingBps,
+      contractMultiplier: this.market === "COIN_M" ? contractSize / price : contractSize,
+    };
+    if ([context.equity,context.peakEquity,context.availableBalance,context.dailyRealizedPnl,context.openOrders,context.portfolioNotional].some(value => !Number.isFinite(value))) {
+      throw new Error("Live account risk context is incomplete");
+    }
+    return context;
+  }
+
+  private async syncFundingIncome(): Promise<void> {
+    let cursor = this.lastIncomeSyncTime;
+    for (let page = 0; page < 10; page++) {
+      const records = await this.engine.getIncomeHistory({ incomeType: "FUNDING_FEE", startTime: cursor, limit: 1000 });
+      if (records.length === 0) {
+        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
+        break;
+      }
+      const ordered = [...records].sort((a,b) => a.time - b.time);
+      for (const record of ordered) {
+        const sourceReference = `binance:${this.market}:${record.tranId}:funding`;
+        let amountUsd: string | undefined;
+        if (record.asset === "USDT") amountUsd = record.income;
+        else if (record.symbol) {
+          const price = await this.markPrice(record.symbol);
+          amountUsd = String(Number(record.income) * price);
+        }
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          entryType: "funding",
+          asset: record.asset,
+          amount: record.income,
+          sourceReference,
+          occurredAt: new Date(record.time).toISOString(),
+          amountUsd,
+          metadata: { symbol: record.symbol ?? null, incomeType: record.incomeType, tradeId: record.tradeId ?? null, transactionId: String(record.tranId) },
+        });
+      }
+      const latest = ordered[ordered.length - 1].time;
+      cursor = latest + 1;
+      if (records.length < 1000) {
+        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
+        break;
+      }
+    }
+    this.lastIncomeSyncTime = cursor;
+  }
+
+  private async calculateDailyRealizedPnlUsd(): Promise<number> {
+    const now = Date.now();
+    if (Number.isFinite(this.dailyRealizedPnlUsd) && now - this.lastDailyPnlRefreshAt < 5000) return this.dailyRealizedPnlUsd;
+    const dayStart = new Date();
+    dayStart.setUTCHours(0,0,0,0);
+    let cursor = dayStart.getTime();
+    let total = 0;
+    const includedTypes = new Set(["REALIZED_PNL","COMMISSION","FUNDING_FEE","INSURANCE_CLEAR","DELIVERED_SETTELMENT","OPTIONS_PREMIUM_FEE","OPTIONS_SETTLE_PROFIT"]);
+    const stableAssets = new Set(["USDT","USDC","BUSD","FDUSD","TUSD"]);
+    let complete = false;
+    for (let page = 0; page < 10; page++) {
+      const records = await this.engine.getIncomeHistory({ startTime: cursor, endTime: now, limit: 1000 });
+      if (records.length === 0) {
+        complete = true;
+        break;
+      }
+      const ordered = [...records].sort((a,b) => a.time - b.time);
+      for (const record of ordered) {
+        if (record.time < dayStart.getTime() || !includedTypes.has(record.incomeType)) continue;
+        const amount = Number(record.income);
+        if (!Number.isFinite(amount)) throw new Error("Binance returned invalid daily income amount");
+        const conversion = stableAssets.has(record.asset) ? 1 : await this.engine.getSpotPrice(record.asset + "USDT");
+        total += amount * conversion;
+      }
+      const latest = ordered[ordered.length - 1].time;
+      cursor = latest + 1;
+      if (records.length < 1000) {
+        complete = true;
+        break;
+      }
+    }
+    if (!complete) throw new Error("Daily realized PnL history exceeded the safe pagination limit");
+    this.dailyRealizedPnlUsd = total;
+    this.lastDailyPnlRefreshAt = now;
+    return total;
+  }
+
+  private async refreshSnapshot(): Promise<void> {
+    const [rawBalances, rawPositions, openOrders] = await Promise.all([
+      this.engine.getAccountBalance(),
+      this.engine.getPositionRisk(),
+      this.engine.getOpenOrders(),
+    ]);
+    const balances = rawBalances as BalanceRow[];
+    const balanceRow = balances.find((row) => row.asset === this.settlementAsset);
+    if (!balanceRow) throw new Error("Settlement asset balance is unavailable: " + this.settlementAsset);
+    const available = Number(balanceRow.availableBalance ?? balanceRow.withdrawAvailable ?? balanceRow.balance ?? balanceRow.walletBalance);
+    if (!Number.isFinite(available) || available < 0) throw new Error("Exchange returned an invalid available balance");
+    this.balance = available;
+    const walletBalance = Number(balanceRow.walletBalance ?? balanceRow.balance ?? available);
+    const unrealizedPnl = rawPositions.reduce((sum, position) => sum + Number(position.unRealizedProfit ?? 0), 0);
+    const stableAssets = new Set(["USDT","USDC","BUSD","FDUSD","TUSD"]);
+    const conversionPrice = stableAssets.has(this.settlementAsset) ? 1 : await this.engine.getSpotPrice(this.settlementAsset + "USDT");
+    this.equityUsd = (walletBalance + unrealizedPnl) * conversionPrice;
+    this.availableBalanceUsd = available * conversionPrice;
+    if (!Number.isFinite(this.equityUsd) || this.equityUsd <= 0 || !Number.isFinite(this.availableBalanceUsd) || this.availableBalanceUsd < 0) throw new Error("Exchange account equity could not be valued in USD");
+    this.openOrderCount = openOrders.length;
+    this.dailyRealizedPnlUsd = await this.calculateDailyRealizedPnlUsd();
+    this.peakEquityUsd = await this.riskStateStore.updatePeakEquity(this.accountId, this.equityUsd);
+    await this.syncFundingIncome();
+    this.positions = rawPositions
+      .filter((position) => Number(position.positionAmt) !== 0)
+      .map((position) => ({
+        symbol: position.symbol,
+        side: Number(position.positionAmt) > 0 ? "LONG" : "SHORT",
+        quantity: Math.abs(Number(position.positionAmt)),
+        entryPrice: Number(position.entryPrice),
+        leverage: Number(position.leverage),
+        realizedPnl: 0,
+        unrealizedPnl: Number(position.unRealizedProfit),
+        feePaid: 0,
+        settlementAsset: this.instrumentSettlementAssets.get(position.symbol) ?? this.settlementAsset,
+      }));
+    const observedAt = new Date().toISOString();
+    const lockedBalance = Math.max(0, walletBalance - available);
+    await this.telemetry.record("balance", {
+      account_id: this.accountId,
+      asset: this.settlementAsset,
+      wallet_balance: String(walletBalance),
+      available_balance: String(available),
+      locked_balance: String(lockedBalance),
+      unrealized_pnl: String(unrealizedPnl),
+      observed_at: observedAt,
+      source: "binance_account_balance",
+      metadata: { mode: this.mode, market: this.market },
+    });
+    for (const position of rawPositions.filter((item) => Number(item.positionAmt) !== 0)) {
+      const instrumentId = await this.ensureInstrument(position.symbol);
+      const positionSettlementAsset = this.instrumentSettlementAssets.get(position.symbol) ?? this.settlementAsset;
+      if (positionSettlementAsset !== this.settlementAsset) throw new Error("Mixed settlement assets are not supported by this risk snapshot: " + position.symbol);
+      const amount = Math.abs(Number(position.positionAmt));
+      await this.telemetry.record("position", {
+        account_id: this.accountId,
+        instrument_id: instrumentId,
+        position_side: position.positionSide === "BOTH" ? (Number(position.positionAmt) > 0 ? "long" : "short") : String(position.positionSide).toLowerCase(),
+        quantity: String(amount),
+        entry_price: position.entryPrice,
+        mark_price: position.markPrice,
+        liquidation_price: position.liquidationPrice || null,
+        leverage: position.leverage,
+        initial_margin: position.isolatedMargin || null,
+        maintenance_margin: null,
+        realized_pnl: "0",
+        unrealized_pnl: position.unRealizedProfit,
+        observed_at: observedAt,
+        source: "binance_position_risk",
+        metadata: { marginType: position.marginType, positionSide: position.positionSide, mode: this.mode },
+      });
+    }
+  }
+
+  private async persistTrades(intentId: string, orderEventId: string, instrumentId: string, symbol: string, trades: BinanceUserTrade[], fallbackSide: "buy" | "sell", orderId: number): Promise<void> {
+    for (const trade of trades) {
+      const side = trade.buyer === undefined ? fallbackSide : trade.buyer ? "buy" : "sell";
+      const fillRecord = await this.telemetry.recordFill({
+        intentId,
+        orderEventId,
+        accountId: this.accountId,
+        instrumentId,
+        venueTradeId: String(trade.id),
+        side,
+        quantity: trade.qty,
+        price: trade.price,
+        feeAmount: trade.commission,
+        feeAsset: trade.commissionAsset,
+        liquidityRole: trade.maker ? "maker" : "taker",
+        executedAt: new Date(trade.time).toISOString(),
+        source: "binance_userTrades",
+      });
+      if (trade.realizedPnl && Number(trade.realizedPnl) !== 0) {
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          intentId,
+          fillId: fillRecord.id,
+          entryType: "realized_pnl",
+          asset: this.settlementAsset,
+          amount: trade.realizedPnl,
+          sourceReference: `binance:${this.market}:${symbol}:${trade.id}:realized_pnl`,
+          occurredAt: new Date(trade.time).toISOString(),
+          metadata: { orderId, market: this.market },
+        });
+      }
+      if (Number(trade.commission) > 0) {
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          intentId,
+          fillId: fillRecord.id,
+          entryType: "fee",
+          asset: trade.commissionAsset,
+          amount: trade.commission.startsWith("-") ? trade.commission : "-" + trade.commission,
+          sourceReference: `binance:${this.market}:${symbol}:${trade.id}:fee`,
+          occurredAt: new Date(trade.time).toISOString(),
+          metadata: { orderId, liquidityRole: trade.maker ? "maker" : "taker" },
+        });
+      }
+    }
+  }
+
+  private async emergencyFlatten(intent: OrderIntent, intentId: string, instrumentId: string, quantity: number, reason: string): Promise<void> {
+    const exitSide = intent.side === "LONG" ? "SHORT" : "LONG";
+    const clientOrderId = `hc-emergency-${randomUUID().replace(/-/g,"").slice(0,24)}`;
+    const response = await this.engine.executeOrder({
+      symbol: intent.symbol,
+      side: exitSide === "LONG" ? "BUY" : "SELL",
+      type: "MARKET",
+      quantity,
+      reduceOnly: this.hedgeMode ? undefined : true,
+      positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
+      clientOrderId,
+    }) as BinanceOrderStatus;
+    const orderId = Number(response.orderId);
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Emergency flatten returned no valid exchange order ID");
+    let finalOrder = await this.engine.getOrder(intent.symbol, orderId);
+    if (finalOrder.status === "NEW" || finalOrder.status === "PARTIALLY_FILLED") {
+      try { await this.engine.cancelOrder(intent.symbol, orderId); } catch {}
+      finalOrder = await this.engine.getOrder(intent.symbol, orderId);
+    }
+    const trades = await this.engine.getUserTrades(intent.symbol, orderId);
+    const exitIntent: OrderIntent = { ...intent, side: exitSide, quantity, reduceOnly: true, clientOrderId };
+    const reconciled = reconcileBinanceUserTrades(finalOrder, trades, exitIntent, this.market, this.mode);
+    const event = await this.telemetry.recordOrderEvent({
+      intentId,
+      venueOrderId: String(orderId),
+      eventUid: `binance:${this.market}:${orderId}:emergency-flatten:${finalOrder.executedQty}`,
+      eventType: "emergency_flatten_reconciled",
+      exchangeStatus: finalOrder.status,
+      cumulativeQuantity: finalOrder.executedQty,
+      averageFillPrice: reconciled.fill.price.toString(),
+      exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+      payload: { reason, tradeCount: trades.length },
+    });
+    await this.persistTrades(intentId, event.id, instrumentId, intent.symbol, reconciled.trades, exitSide === "LONG" ? "buy" : "sell", orderId);
+    this.fills.push(reconciled.fill);
+    await this.refreshSnapshot();
+    const remainingPositions = await this.engine.getPositionRisk(intent.symbol);
+    if (remainingPositions.some((position) => Math.abs(Number(position.positionAmt)) > 1e-10)) throw new Error("Emergency flatten did not fully close the exchange position");
+  }
+
+  private async reconcileProtectiveExit(intent: OrderIntent, intentId: string, instrumentId: string, role: string, orderId: number, finalOrder: BinanceOrderStatus, requestedQuantity: number): Promise<void> {
+    const trades = await this.engine.getUserTrades(intent.symbol, orderId);
+    const exitSide = intent.side === "LONG" ? "SHORT" : "LONG";
+    const exitIntent: OrderIntent = { ...intent, side: exitSide, quantity: Number(finalOrder.executedQty), reduceOnly: true };
+    const reconciled = reconcileBinanceUserTrades(finalOrder, trades, exitIntent, this.market, this.mode);
+    const event = await this.telemetry.recordOrderEvent({
+      intentId,
+      venueOrderId: String(orderId),
+      eventUid: `binance:${this.market}:${orderId}:protection-filled:${finalOrder.executedQty}`,
+      eventType: "protection_order_filled",
+      exchangeStatus: finalOrder.status,
+      cumulativeQuantity: finalOrder.executedQty,
+      averageFillPrice: reconciled.fill.price.toString(),
+      exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+      payload: { role, tradeCount: trades.length },
+    });
+    await this.persistTrades(intentId, event.id, instrumentId, intent.symbol, reconciled.trades, exitSide === "LONG" ? "buy" : "sell", orderId);
+    this.fills.push(reconciled.fill);
+    const positions = await this.engine.getPositionRisk(intent.symbol);
+    const active = positions.find((position) => Number(position.positionAmt) !== 0);
+    if (active) {
+      const remaining = Math.abs(Number(active.positionAmt));
+      if (remaining > Math.max(1e-10, requestedQuantity * 1e-8)) {
+        await this.emergencyFlatten(intent, intentId, instrumentId, remaining, "protective_order_partial_execution");
+      }
+    }
+  }
+
+  private async handleProtectionUpdate(event: Record<string,unknown>): Promise<void> {
+    const orderId = String(event.i ?? event.orderId ?? "");
+    const status = String(event.X ?? event.status ?? "").toUpperCase();
+    const protection = this.protectionOrders.get(orderId);
+    if (!protection || !["FILLED","PARTIALLY_FILLED","CANCELED","EXPIRED","REJECTED"].includes(status)) return;
+    this.protectionOrders.delete(orderId);
+    this.protectionOrders.delete(String(protection.siblingOrderId));
+    if (status === "PARTIALLY_FILLED") {
+      try { await this.engine.cancelOrder(protection.symbol, Number(orderId)); } catch {}
+    }
+    let siblingStatus = "UNKNOWN";
+    try {
+      await this.engine.cancelOrder(protection.symbol, protection.siblingOrderId);
+      const sibling = await this.engine.getOrder(protection.symbol, protection.siblingOrderId);
+      siblingStatus = sibling.status;
+      if (Number(sibling.executedQty) > 0) {
+        await this.reconcileProtectiveExit(protection.intent, protection.intentId, protection.instrumentId, "sibling", protection.siblingOrderId, sibling, protection.quantity);
+      }
+    } catch {
+      try {
+        const sibling = await this.engine.getOrder(protection.symbol, protection.siblingOrderId);
+        siblingStatus = sibling.status;
+        if (Number(sibling.executedQty) > 0) {
+          await this.reconcileProtectiveExit(protection.intent, protection.intentId, protection.instrumentId, "sibling", protection.siblingOrderId, sibling, protection.quantity);
+        }
+      } catch {}
+    }
+    try {
+      const finalOrder = await this.engine.getOrder(protection.symbol, Number(orderId));
+      if (Number(finalOrder.executedQty) > 0) {
+        await this.reconcileProtectiveExit(protection.intent, protection.intentId, protection.instrumentId, protection.role, Number(orderId), finalOrder, protection.quantity);
+      } else {
+        const positions = await this.engine.getPositionRisk(protection.symbol);
+        const active = positions.find((position) => Number(position.positionAmt) !== 0);
+        if (active) await this.emergencyFlatten(protection.intent, protection.intentId, protection.instrumentId, Math.abs(Number(active.positionAmt)), "protection_order_terminated_without_fill");
+      }
+      await this.telemetry.recordOrderEvent({
+        intentId: protection.intentId,
+        venueOrderId: orderId,
+        eventUid: `binance:${this.market}:${orderId}:protection-update:${status}:${Date.now()}`,
+        eventType: "protection_order_lifecycle_update",
+        exchangeStatus: finalOrder.status,
+        cumulativeQuantity: finalOrder.executedQty,
+        payload: { role: protection.role, siblingOrderId: protection.siblingOrderId, siblingStatus },
+      });
+      await this.refreshSnapshot();
+    } catch (error) {
+      await this.telemetry.recordOrderEvent({
+        intentId: protection.intentId,
+        venueOrderId: orderId,
+        eventUid: `binance:${this.market}:${orderId}:protection-handler-error:${Date.now()}`,
+        eventType: "critical_protection_handler_error",
+        exchangeStatus: "UNKNOWN",
+        payload: { error: error instanceof Error ? error.message : "protection lifecycle handler failed" },
+      });
+    }
+  }
+
+  private async placeProtectiveOrders(intent: OrderIntent, intentId: string, quantity: number): Promise<void> {
+    if (intent.reduceOnly) return;
+    if (!Number.isFinite(intent.stopLossPrice) || !Number.isFinite(intent.takeProfitPrice)) throw new Error("Protective stop-loss and take-profit prices are mandatory");
+    const exitSide = intent.side === "LONG" ? "SELL" : "BUY";
+    const protections: Array<{ role: string; type: OrderRequest["type"]; stopPrice: string }> = [
+      { role: "stop_loss", type: "STOP_MARKET", stopPrice: String(intent.stopLossPrice) },
+      { role: "take_profit", type: "TAKE_PROFIT_MARKET", stopPrice: String(intent.takeProfitPrice) },
+    ];
+    const placed: Array<{ orderId: number; role: string }> = [];
+    try {
+      for (const protection of protections) {
+        const clientOrderId = `hc-${protection.role === "stop_loss" ? "sl" : "tp"}-${randomUUID().replace(/-/g,"").slice(0,24)}`;
+        const response = await this.engine.executeOrder({
+          symbol: intent.symbol,
+          side: exitSide,
+          type: protection.type,
+          quantity,
+          stopPrice: protection.stopPrice,
+          reduceOnly: this.hedgeMode ? undefined : true,
+          positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
+          workingType: "MARK_PRICE",
+          priceProtect: true,
+          clientOrderId,
+        }) as BinanceOrderStatus;
+        const orderId = Number(response.orderId);
+        if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error(protection.role + " order returned no valid exchange order ID");
+        placed.push({ orderId, role: protection.role });
+        let confirmed = await this.engine.getOrder(intent.symbol, orderId);
+        if (confirmed.status === "PARTIALLY_FILLED") {
+          try { await this.engine.cancelOrder(intent.symbol, orderId); } catch {}
+          confirmed = await this.engine.getOrder(intent.symbol, orderId);
+        }
+        if (confirmed.status === "FILLED" || (confirmed.status === "CANCELED" && Number(confirmed.executedQty) > 0)) {
+          await this.reconcileProtectiveExit(intent, intentId, this.instrumentIds.get(intent.symbol)!, protection.role, orderId, confirmed, quantity);
+          for (const sibling of placed) {
+            if (sibling.orderId === orderId) continue;
+            try { await this.engine.cancelOrder(intent.symbol, sibling.orderId); } catch {}
+          }
+          return;
+        }
+        if (confirmed.status !== "NEW") throw new Error(protection.role + " order was not confirmed NEW: " + confirmed.status);
+        await this.telemetry.recordOrderEvent({
+          intentId,
+          venueOrderId: String(orderId),
+          eventUid: `binance:${this.market}:${orderId}:protection:${protection.role}`,
+          eventType: "protection_order_submitted",
+          exchangeStatus: confirmed.status,
+          cumulativeQuantity: confirmed.executedQty,
+          exchangeTimestamp: new Date(confirmed.updateTime ?? Date.now()).toISOString(),
+          payload: { role: protection.role, type: protection.type, stopPrice: protection.stopPrice, reduceOnly: true, workingType: "MARK_PRICE" },
+        });
+      }
+      if (placed.length === 2) {
+        this.protectionOrders.set(String(placed[0].orderId), { symbol: intent.symbol, intentId, instrumentId: this.instrumentIds.get(intent.symbol)!, role: placed[0].role, siblingOrderId: placed[1].orderId, quantity, intent });
+        this.protectionOrders.set(String(placed[1].orderId), { symbol: intent.symbol, intentId, instrumentId: this.instrumentIds.get(intent.symbol)!, role: placed[1].role, siblingOrderId: placed[0].orderId, quantity, intent });
+      }
+    } catch (error) {
+      for (const order of placed) {
+        try { await this.engine.cancelOrder(intent.symbol, order.orderId); } catch {}
+      }
+      try {
+        await this.emergencyFlatten(intent, intentId, this.instrumentIds.get(intent.symbol)!, quantity, error instanceof Error ? error.message : "protective order placement failed");
+      } catch (flattenError) {
+        await this.telemetry.recordOrderEvent({
+          intentId,
+          eventUid: `binance:${this.market}:${intent.symbol}:emergency-flatten-unconfirmed:${Date.now()}`,
+          eventType: "critical_unprotected_position",
+          exchangeStatus: "UNKNOWN",
+          payload: {
+            protectionError: error instanceof Error ? error.message : "protective order placement failed",
+            flattenError: flattenError instanceof Error ? flattenError.message : "emergency flatten failed",
+          },
+        });
+        throw new Error("Protective order placement failed and emergency flatten could not be confirmed");
+      }
+      throw new Error("Protective order placement failed; emergency flatten was executed and reconciled");
+    }
+  }
+
+  async place(intent: OrderIntent): Promise<Fill> {
+    if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
+    if (!Number.isFinite(intent.quantity) || intent.quantity <= 0) throw new Error("Order quantity must be finite and positive");
+    if (!this.accountId) throw new Error("Execution adapter is not initialized");
+    if (this.hedgeMode && !intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide !== intent.side) throw new Error("Hedge-mode entry positionSide must match order side");
+    if (this.hedgeMode && intent.reduceOnly && intent.positionSide !== undefined && intent.positionSide === intent.side) throw new Error("Hedge-mode reduce-only positionSide must oppose the order side");
+    const instrumentId = await this.ensureInstrument(intent.symbol);
+    await this.loadExecutionConfig(instrumentId,intent.symbol);
+    await this.refreshSnapshot();
+    const price = await this.markPrice(intent.symbol);
+    const clientOrderId = intent.clientOrderId ?? `hc-${randomUUID().replace(/-/g,"").slice(0,32)}`;
+    const strategyCode = intent.strategyCode ?? this.strategyCode;
+    const riskProfileCode = intent.riskProfileCode ?? this.riskProfileCode;
+    const requestedMode = this.mode === "TESTNET" ? "testnet" : "live";
+    const intentResult = await this.telemetry.createOrderIntent({
+      strategyCode,
+      accountId: this.accountId,
+      instrumentId,
+      clientOrderId,
+      idempotencyKey: intent.idempotencyKey ?? clientOrderId,
+      side: intent.side === "LONG" ? "buy" : "sell",
+      positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
+      quantity: String(intent.quantity),
+      requestedMode,
+      riskProfileCode,
+      reduceOnly: intent.reduceOnly,
+      stopPrice: intent.stopLossPrice === undefined ? undefined : String(intent.stopLossPrice),
+      metadata: { market: this.market, leverage: intent.leverage ?? 1, takeProfitPrice: intent.takeProfitPrice ?? null, reduceOnly: intent.reduceOnly ?? false },
+    });
+    const context = await this.riskContext(intent, price);
+    const decision = this.riskEngine.evaluate(intent, price, context);
+    await this.telemetry.recordRiskDecision({
+      intentId: intentResult.id,
+      profileCode: riskProfileCode,
+      decision: decision.decision,
+      reasonCode: decision.reasonCode,
+      explanation: decision.decision === "allow" ? "All configured risk limits passed" : "Order rejected by the local risk engine",
+      metrics: decision.metrics,
+    });
+    if (decision.decision !== "allow") throw new Error("Risk engine rejected order: " + decision.reasonCode);
+
+    if (!intent.reduceOnly) {
+      try {
+        try {
+          await this.engine.setMarginType(intent.symbol, "ISOLATED");
+        } catch (error) {
+          if (!String(error instanceof Error ? error.message : error).includes("-4046")) throw error;
+        }
+        const leverageResult = await this.engine.setLeverage(intent.symbol, intent.leverage!);
+        if (Number((leverageResult as { leverage?: number }).leverage) !== intent.leverage) throw new Error("Exchange leverage confirmation does not match requested leverage");
+      } catch (error) {
+        await this.telemetry.recordOrderEvent({
+          intentId: intentResult.id,
+          eventUid: `binance:${this.market}:${clientOrderId}:preflight-failed`,
+          eventType: "execution_preflight_failed",
+          exchangeStatus: "REJECTED",
+          payload: { error: error instanceof Error ? error.message : "margin or leverage configuration failed" },
+        });
+        throw error;
+      }
+    }
+
+    let authorizationId: string | undefined;
+    if (this.mode === "LIVE") {
+      if (!intent.guardApprovalDigest) throw new Error("LIVE requires a per-intent signed Guard approval digest");
+      const authorization = await this.telemetry.authorizeLive({
+        intentId: intentResult.id,
+        executorId: this.executorId!,
+        approvalDigest: intent.guardApprovalDigest,
+      });
+      authorizationId = authorization.id;
+    }
+
+    let order: BinanceOrderStatus;
+    try {
+      order = await this.engine.executeOrder({
+        symbol: intent.symbol,
+        side: intent.side === "LONG" ? "BUY" : "SELL",
+        type: "MARKET",
+        quantity: intent.quantity,
+        reduceOnly: this.hedgeMode ? undefined : intent.reduceOnly,
+        positionSide: this.hedgeMode ? (intent.positionSide ?? intent.side) : undefined,
+        clientOrderId,
+      }) as BinanceOrderStatus;
+    } catch (error) {
+      if (authorizationId) {
+        await this.telemetry.recordSubmissionResult({ authorizationId, executorId: this.executorId!, outcome: "unknown", errorCode: "exchange_submission_ambiguous" });
+      }
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        eventUid: `binance:${this.market}:${clientOrderId}:unknown`,
+        eventType: "submission_unknown",
+        exchangeStatus: "UNKNOWN",
+        payload: { error: error instanceof Error ? error.message : "exchange submission failed" },
+      });
+      throw error;
+    }
+
+    const orderId = Number(order.orderId);
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) {
+      if (authorizationId) await this.telemetry.recordSubmissionResult({ authorizationId, executorId: this.executorId!, outcome: "unknown", errorCode: "missing_exchange_order_id" });
+      throw new Error("Binance returned an invalid order ID");
+    }
+
+    if (authorizationId) {
+      await this.telemetry.recordSubmissionResult({ authorizationId, executorId: this.executorId!, outcome: "submitted", venueOrderId: String(order.orderId) });
+    }
+
+    let finalOrder: BinanceOrderStatus;
+    try {
+      if (order.status === "NEW" || order.status === "PARTIALLY_FILLED") {
+        try { await this.engine.cancelOrder(intent.symbol, orderId); } catch {}
+      }
+      finalOrder = await this.engine.getOrder(intent.symbol, orderId);
+      if (finalOrder.status === "NEW" || finalOrder.status === "PARTIALLY_FILLED") throw new Error("Open order remainder was not canceled");
+    } catch (error) {
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        venueOrderId: String(order.orderId),
+        eventUid: `binance:${this.market}:${orderId}:unreconciled:${Date.now()}`,
+        eventType: "order_reconciliation_failed",
+        exchangeStatus: "UNKNOWN",
+        payload: { error: error instanceof Error ? error.message : "order reconciliation failed" },
+      });
+      throw error;
+    }
+
+    let trades: BinanceUserTrade[];
+    try {
+      trades = await this.engine.getUserTrades(intent.symbol, orderId);
+    } catch (error) {
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        venueOrderId: String(orderId),
+        eventUid: `binance:${this.market}:${orderId}:user-trades-unavailable:${Date.now()}`,
+        eventType: "fill_ledger_unavailable",
+        exchangeStatus: "UNKNOWN",
+        cumulativeQuantity: finalOrder.executedQty,
+        payload: { error: error instanceof Error ? error.message : "user trades unavailable" },
+      });
+      throw error;
+    }
+    const eventUid = `binance:${this.market}:${orderId}:${finalOrder.status}:${finalOrder.executedQty}:${finalOrder.updateTime ?? Date.now()}`;
+    if (Number(finalOrder.executedQty) === 0) {
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        venueOrderId: String(orderId),
+        eventUid,
+        eventType: "order_terminal_without_fill",
+        exchangeStatus: finalOrder.status,
+        cumulativeQuantity: "0",
+        exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+        payload: { tradeCount: trades.length, market: this.market },
+      });
+      throw new Error("Binance order reached a terminal state without an executed fill");
+    }
+    let reconciled;
+    try {
+      reconciled = reconcileBinanceUserTrades(finalOrder, trades, { ...intent, clientOrderId }, this.market, this.mode);
+    } catch (error) {
+      await this.telemetry.recordOrderEvent({
+        intentId: intentResult.id,
+        venueOrderId: String(orderId),
+        eventUid: eventUid + ":reconciliation-failed",
+        eventType: "fill_reconciliation_failed",
+        exchangeStatus: "UNKNOWN",
+        cumulativeQuantity: finalOrder.executedQty,
+        exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+        payload: { error: error instanceof Error ? error.message : "fill reconciliation failed", tradeCount: trades.length },
+      });
+      throw error;
+    }
+    const orderEvent = await this.telemetry.recordOrderEvent({
+      intentId: intentResult.id,
+      venueOrderId: String(orderId),
+      eventUid,
+      eventType: "order_reconciled",
+      exchangeStatus: finalOrder.status,
+      cumulativeQuantity: finalOrder.executedQty,
+      averageFillPrice: reconciled.fill.price.toString(),
+      exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+      payload: { tradeCount: trades.length, market: this.market },
+    });
+
+    await this.persistTrades(intentResult.id, orderEvent.id, instrumentId, intent.symbol, reconciled.trades, intent.side === "LONG" ? "buy" : "sell", orderId);
+    this.fills.push(reconciled.fill);
+    await this.placeProtectiveOrders(intent, intentResult.id, reconciled.fill.quantity);
+    await this.refreshSnapshot();
+    return reconciled.fill;
+  }
+
+  async close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null> {
+    if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
+    const positions = await this.engine.getPositionRisk(symbol);
+    const active = positions.find((position) => Number(position.positionAmt) !== 0);
+    if (!active) return null;
+    return this.place({
+      symbol,
+      side: Number(active.positionAmt) > 0 ? "SHORT" : "LONG",
+      positionSide: this.hedgeMode ? (String(active.positionSide).toUpperCase() === "LONG" ? "LONG" : "SHORT") : undefined,
+      quantity: Math.abs(Number(active.positionAmt)),
+      leverage: Number(active.leverage),
+      referencePrice,
+      reduceOnly: true,
+      guardApprovalDigest,
+    });
+  }
+
   snapshot(): ExecutionSnapshot {
     if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
     return { mode: this.mode, market: this.market, balance: this.balance, positions: [...this.positions], fills: [...this.fills] };

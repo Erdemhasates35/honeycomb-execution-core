@@ -259,6 +259,152 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     }
   }
 
+  private async persistTrades(intentId: string, orderEventId: string, instrumentId: string, symbol: string, trades: BinanceUserTrade[], fallbackSide: "buy" | "sell", orderId: number): Promise<void> {
+    for (const trade of trades) {
+      const side = trade.buyer === undefined ? fallbackSide : trade.buyer ? "buy" : "sell";
+      const fillRecord = await this.telemetry.recordFill({
+        intentId,
+        orderEventId,
+        accountId: this.accountId,
+        instrumentId,
+        venueTradeId: String(trade.id),
+        side,
+        quantity: trade.qty,
+        price: trade.price,
+        feeAmount: trade.commission,
+        feeAsset: trade.commissionAsset,
+        liquidityRole: trade.maker ? "maker" : "taker",
+        executedAt: new Date(trade.time).toISOString(),
+        source: "binance_userTrades",
+      });
+      if (trade.realizedPnl && Number(trade.realizedPnl) !== 0) {
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          intentId,
+          fillId: fillRecord.id,
+          entryType: "realized_pnl",
+          asset: this.settlementAsset,
+          amount: trade.realizedPnl,
+          sourceReference: `binance:${this.market}:${symbol}:${trade.id}:realized_pnl`,
+          occurredAt: new Date(trade.time).toISOString(),
+          metadata: { orderId, market: this.market },
+        });
+      }
+      if (Number(trade.commission) > 0) {
+        await this.telemetry.recordPnl({
+          accountId: this.accountId,
+          intentId,
+          fillId: fillRecord.id,
+          entryType: "fee",
+          asset: trade.commissionAsset,
+          amount: trade.commission.startsWith("-") ? trade.commission : "-" + trade.commission,
+          sourceReference: `binance:${this.market}:${symbol}:${trade.id}:fee`,
+          occurredAt: new Date(trade.time).toISOString(),
+          metadata: { orderId, liquidityRole: trade.maker ? "maker" : "taker" },
+        });
+      }
+    }
+  }
+
+  private async emergencyFlatten(intent: OrderIntent, intentId: string, instrumentId: string, quantity: number, reason: string): Promise<void> {
+    const exitSide = intent.side === "LONG" ? "SHORT" : "LONG";
+    const clientOrderId = `hc-emergency-${randomUUID().replace(/-/g,"").slice(0,24)}`;
+    const response = await this.engine.executeOrder({
+      symbol: intent.symbol,
+      side: exitSide === "LONG" ? "BUY" : "SELL",
+      type: "MARKET",
+      quantity,
+      reduceOnly: true,
+      clientOrderId,
+    }) as BinanceOrderStatus;
+    const orderId = Number(response.orderId);
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error("Emergency flatten returned no valid exchange order ID");
+    let finalOrder = await this.engine.getOrder(intent.symbol, orderId);
+    if (finalOrder.status === "NEW" || finalOrder.status === "PARTIALLY_FILLED") {
+      try { await this.engine.cancelOrder(intent.symbol, orderId); } catch {}
+      finalOrder = await this.engine.getOrder(intent.symbol, orderId);
+    }
+    const trades = await this.engine.getUserTrades(intent.symbol, orderId);
+    const exitIntent: OrderIntent = { ...intent, side: exitSide, quantity, reduceOnly: true, clientOrderId };
+    const reconciled = reconcileBinanceUserTrades(finalOrder, trades, exitIntent, this.market, this.mode);
+    const event = await this.telemetry.recordOrderEvent({
+      intentId,
+      venueOrderId: String(orderId),
+      eventUid: `binance:${this.market}:${orderId}:emergency-flatten:${finalOrder.executedQty}`,
+      eventType: "emergency_flatten_reconciled",
+      exchangeStatus: finalOrder.status,
+      cumulativeQuantity: finalOrder.executedQty,
+      averageFillPrice: reconciled.fill.price.toString(),
+      exchangeTimestamp: new Date(finalOrder.updateTime ?? Date.now()).toISOString(),
+      payload: { reason, tradeCount: trades.length },
+    });
+    await this.persistTrades(intentId, event.id, instrumentId, intent.symbol, reconciled.trades, exitSide === "LONG" ? "buy" : "sell", orderId);
+    this.fills.push(reconciled.fill);
+    await this.refreshSnapshot();
+  }
+
+  private async placeProtectiveOrders(intent: OrderIntent, intentId: string, quantity: number): Promise<void> {
+    if (intent.reduceOnly) return;
+    if (!Number.isFinite(intent.stopLossPrice) || !Number.isFinite(intent.takeProfitPrice)) throw new Error("Protective stop-loss and take-profit prices are mandatory");
+    const exitSide = intent.side === "LONG" ? "SELL" : "BUY";
+    const protections = [
+      { role: "stop_loss", type: "STOP_MARKET", stopPrice: String(intent.stopLossPrice) },
+      { role: "take_profit", type: "TAKE_PROFIT_MARKET", stopPrice: String(intent.takeProfitPrice) },
+    ];
+    const placed: Array<{ orderId: number; role: string }> = [];
+    try {
+      for (const protection of protections) {
+        const clientOrderId = `hc-${protection.role === "stop_loss" ? "sl" : "tp"}-${randomUUID().replace(/-/g,"").slice(0,24)}`;
+        const response = await this.engine.executeOrder({
+          symbol: intent.symbol,
+          side: exitSide,
+          type: protection.type,
+          quantity,
+          stopPrice: protection.stopPrice,
+          reduceOnly: true,
+          workingType: "MARK_PRICE",
+          priceProtect: true,
+          clientOrderId,
+        }) as BinanceOrderStatus;
+        const orderId = Number(response.orderId);
+        if (!Number.isSafeInteger(orderId) || orderId <= 0) throw new Error(protection.role + " order returned no valid exchange order ID");
+        placed.push({ orderId, role: protection.role });
+        const confirmed = await this.engine.getOrder(intent.symbol, orderId);
+        if (confirmed.status !== "NEW") throw new Error(protection.role + " order was not confirmed NEW: " + confirmed.status);
+        await this.telemetry.recordOrderEvent({
+          intentId,
+          venueOrderId: String(orderId),
+          eventUid: `binance:${this.market}:${orderId}:protection:${protection.role}`,
+          eventType: "protection_order_submitted",
+          exchangeStatus: confirmed.status,
+          cumulativeQuantity: confirmed.executedQty,
+          exchangeTimestamp: new Date(confirmed.updateTime ?? Date.now()).toISOString(),
+          payload: { role: protection.role, type: protection.type, stopPrice: protection.stopPrice, reduceOnly: true, workingType: "MARK_PRICE" },
+        });
+      }
+    } catch (error) {
+      for (const order of placed) {
+        try { await this.engine.cancelOrder(intent.symbol, order.orderId); } catch {}
+      }
+      try {
+        await this.emergencyFlatten(intent, intentId, this.instrumentIds.get(intent.symbol)!, quantity, error instanceof Error ? error.message : "protective order placement failed");
+      } catch (flattenError) {
+        await this.telemetry.recordOrderEvent({
+          intentId,
+          eventUid: `binance:${this.market}:${intent.symbol}:emergency-flatten-unconfirmed:${Date.now()}`,
+          eventType: "critical_unprotected_position",
+          exchangeStatus: "UNKNOWN",
+          payload: {
+            protectionError: error instanceof Error ? error.message : "protective order placement failed",
+            flattenError: flattenError instanceof Error ? flattenError.message : "emergency flatten failed",
+          },
+        });
+        throw new Error("Protective order placement failed and emergency flatten could not be confirmed");
+      }
+      throw new Error("Protective order placement failed; emergency flatten was executed and reconciled");
+    }
+  }
+
   async place(intent: OrderIntent): Promise<Fill> {
     if (!Number.isFinite(intent.quantity) || intent.quantity <= 0) throw new Error("Order quantity must be finite and positive");
     if (!this.accountId) throw new Error("Execution adapter is not initialized");
@@ -435,51 +581,9 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       payload: { tradeCount: trades.length, market: this.market },
     });
 
-    for (const trade of reconciled.trades) {
-      const fillRecord = await this.telemetry.recordFill({
-        intentId: intentResult.id,
-        orderEventId: orderEvent.id,
-        accountId: this.accountId,
-        instrumentId,
-        venueTradeId: String(trade.id),
-        side: intent.side === "LONG" ? "buy" : "sell",
-        quantity: trade.qty,
-        price: trade.price,
-        feeAmount: trade.commission,
-        feeAsset: trade.commissionAsset,
-        liquidityRole: trade.maker ? "maker" : "taker",
-        executedAt: new Date(trade.time).toISOString(),
-        source: "binance_userTrades",
-      });
-      if (trade.realizedPnl && Number(trade.realizedPnl) !== 0) {
-        await this.telemetry.recordPnl({
-          accountId: this.accountId,
-          intentId: intentResult.id,
-          fillId: fillRecord.id,
-          entryType: "realized_pnl",
-          asset: this.settlementAsset,
-          amount: trade.realizedPnl,
-          sourceReference: `binance:${this.market}:${intent.symbol}:${trade.id}:realized_pnl`,
-          occurredAt: new Date(trade.time).toISOString(),
-          metadata: { orderId, market: this.market },
-        });
-      }
-      if (Number(trade.commission) > 0) {
-        await this.telemetry.recordPnl({
-          accountId: this.accountId,
-          intentId: intentResult.id,
-          fillId: fillRecord.id,
-          entryType: "fee",
-          asset: trade.commissionAsset,
-          amount: trade.commission.startsWith("-") ? trade.commission : "-" + trade.commission,
-          sourceReference: `binance:${this.market}:${intent.symbol}:${trade.id}:fee`,
-          occurredAt: new Date(trade.time).toISOString(),
-          metadata: { orderId, liquidityRole: trade.maker ? "maker" : "taker" },
-        });
-      }
-    }
-
+    await this.persistTrades(intentResult.id, orderEvent.id, instrumentId, intent.symbol, reconciled.trades, intent.side === "LONG" ? "buy" : "sell", orderId);
     this.fills.push(reconciled.fill);
+    await this.placeProtectiveOrders(intent, intentResult.id, reconciled.fill.quantity);
     await this.refreshSnapshot();
     return reconciled.fill;
   }

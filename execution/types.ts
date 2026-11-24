@@ -1,4 +1,4 @@
-export type ExecutionMode = 'TEST' | 'PAPER' | 'LIVE';
+export type ExecutionMode = 'TEST' | 'PAPER' | 'TESTNET' | 'LIVE';
 export type FuturesMarket = 'COIN_M' | 'USDT_M';
 export type OrderSide = 'LONG' | 'SHORT';
 
@@ -10,6 +10,10 @@ export interface OrderIntent {
   referencePrice?: number;
   reduceOnly?: boolean;
   clientOrderId?: string;
+  strategyCode?: string;
+  riskProfileCode?: string;
+  guardApprovalDigest?: string;
+  idempotencyKey?: string;
 }
 
 export interface Fill {
@@ -20,6 +24,7 @@ export interface Fill {
   price: number;
   fee: number;
   feeEstimated?: boolean;
+  feeAsset?: string;
   status?: 'FILLED' | 'PARTIALLY_FILLED';
   clientOrderId?: string;
   settlementAsset: string;

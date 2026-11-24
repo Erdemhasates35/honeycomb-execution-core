@@ -10,7 +10,7 @@ export interface BinanceExchangeFilter { filterType?: string; tickSize?: string;
 export interface BinanceExchangeSymbol { symbol: string; status: string; contractType?: string; baseAsset: string; quoteAsset: string; marginAsset?: string; contractSize?: string; filters: BinanceExchangeFilter[]; }
 export interface BinanceExchangeInfo { symbols: BinanceExchangeSymbol[]; }
 export interface BinanceOrderStatus { orderId: number; clientOrderId?: string; status: string; executedQty: string; avgPrice: string; cumQuote?: string; updateTime?: number; }
-export interface BinanceUserTrade { id: number; orderId: number; price: string; qty: string; commission: string; commissionAsset: string; time: number; maker: boolean; realizedPnl?: string; }
+export interface BinanceUserTrade { id: number | string; orderId: number | string; price: string; qty: string; commission: string; commissionAsset: string; time: number; maker: boolean; buyer?: boolean; realizedPnl?: string; }
 export interface PositionRisk { symbol:string; positionAmt:string; entryPrice:string; markPrice:string; unRealizedProfit:string; liquidationPrice:string; leverage:string; marginType:string; isolatedMargin:string; positionSide:string; }
 
 export class BinanceFuturesEngineCatE extends EventEmitter {

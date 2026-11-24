@@ -19,6 +19,7 @@ export function evaluateCorrelationRelativeValue(input:{
   minCorrelation:number;
   entryZScore:number;
 }):CorrelationRelativeValueSignal{
+  if (!Number.isFinite(input.minCorrelation)||input.minCorrelation<0||input.minCorrelation>1||!Number.isFinite(input.entryZScore)||input.entryZScore<=0) throw new Error("Relative value policy is invalid");
   const leftReturns=returns(input.leftPrices);
   const rightReturns=returns(input.rightPrices);
   if(leftReturns.length!==rightReturns.length)throw new Error("Relative value series are misaligned");

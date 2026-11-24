@@ -631,7 +631,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       stopPrice: intent.stopLossPrice === undefined ? undefined : String(intent.stopLossPrice),
       metadata: { market: this.market, leverage: intent.leverage ?? 1, takeProfitPrice: intent.takeProfitPrice ?? null, reduceOnly: intent.reduceOnly ?? false },
     });
-    const decision = this.riskEngine.evaluate(intent, price, this.riskContext(intent.symbol, price));
+    const context = await this.riskContext(intent, price);
+    const decision = this.riskEngine.evaluate(intent, price, context);
     await this.telemetry.recordRiskDecision({
       intentId: intentResult.id,
       profileCode: riskProfileCode,

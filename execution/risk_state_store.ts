@@ -12,7 +12,8 @@ export class RiskStateStore {
   readonly filePath: string;
 
   constructor(filePath = process.env.NEXUS_RISK_STATE_PATH ?? path.join(homedir(), ".local", "state", "honeycomb", "risk-state.ndjson")) {
-    this.filePath = path.resolve(filePath);
+    const expanded = filePath === "~" ? homedir() : filePath.startsWith("~/") ? path.join(homedir(), filePath.slice(2)) : filePath;
+    this.filePath = path.resolve(expanded);
   }
 
   async loadPeakEquity(accountId: string): Promise<number> {

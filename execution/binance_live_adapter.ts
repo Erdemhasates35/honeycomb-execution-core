@@ -293,6 +293,27 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     });
     if (decision.decision !== "allow") throw new Error("Risk engine rejected order: " + decision.reasonCode);
 
+    if (!intent.reduceOnly) {
+      try {
+        try {
+          await this.engine.setMarginType(intent.symbol, "ISOLATED");
+        } catch (error) {
+          if (!String(error instanceof Error ? error.message : error).includes("-4046")) throw error;
+        }
+        const leverageResult = await this.engine.setLeverage(intent.symbol, intent.leverage!);
+        if (Number((leverageResult as { leverage?: number }).leverage) !== intent.leverage) throw new Error("Exchange leverage confirmation does not match requested leverage");
+      } catch (error) {
+        await this.telemetry.recordOrderEvent({
+          intentId: intentResult.id,
+          eventUid: `binance:${this.market}:${clientOrderId}:preflight-failed`,
+          eventType: "execution_preflight_failed",
+          exchangeStatus: "REJECTED",
+          payload: { error: error instanceof Error ? error.message : "margin or leverage configuration failed" },
+        });
+        throw error;
+      }
+    }
+
     let authorizationId: string | undefined;
     if (this.mode === "LIVE") {
       if (!intent.guardApprovalDigest) throw new Error("LIVE requires a per-intent signed Guard approval digest");
@@ -471,6 +492,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       symbol,
       side: Number(active.positionAmt) > 0 ? "SHORT" : "LONG",
       quantity: Math.abs(Number(active.positionAmt)),
+      leverage: Number(active.leverage),
       referencePrice,
       reduceOnly: true,
       guardApprovalDigest,

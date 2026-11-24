@@ -60,6 +60,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
   private readonly fills: Fill[] = [];
   private readonly instrumentIds = new Map<string,string>();
   private readonly contractSizes = new Map<string,number>();
+  private readonly instrumentSettlementAssets = new Map<string,string>();
   private accountId = "";
   private balance = 0;
   private positions: Position[] = [];
@@ -151,6 +152,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     });
     this.instrumentIds.set(symbol, registered.id);
     this.contractSizes.set(symbol, Number(item.contractSize ?? 1));
+    this.instrumentSettlementAssets.set(symbol, item.marginAsset ?? item.quoteAsset);
     return registered.id;
   }
 
@@ -215,7 +217,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         realizedPnl: 0,
         unrealizedPnl: Number(position.unRealizedProfit),
         feePaid: 0,
-        settlementAsset: this.settlementAsset,
+        settlementAsset: this.instrumentSettlementAssets.get(position.symbol) ?? this.settlementAsset,
       }));
     const observedAt = new Date().toISOString();
     const walletBalance = Number(balanceRow.walletBalance ?? balanceRow.balance ?? available);
@@ -234,6 +236,8 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     });
     for (const position of rawPositions.filter((item) => Number(item.positionAmt) !== 0)) {
       const instrumentId = await this.ensureInstrument(position.symbol);
+      const positionSettlementAsset = this.instrumentSettlementAssets.get(position.symbol) ?? this.settlementAsset;
+      if (positionSettlementAsset !== this.settlementAsset) throw new Error("Mixed settlement assets are not supported by this risk snapshot: " + position.symbol);
       const amount = Math.abs(Number(position.positionAmt));
       await this.telemetry.record("position", {
         account_id: this.accountId,

@@ -216,7 +216,10 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     let cursor = this.lastIncomeSyncTime;
     for (let page = 0; page < 10; page++) {
       const records = await this.engine.getIncomeHistory({ incomeType: "FUNDING_FEE", startTime: cursor, limit: 1000 });
-      if (records.length === 0) break;
+      if (records.length === 0) {
+        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
+        break;
+      }
       const ordered = [...records].sort((a,b) => a.time - b.time);
       for (const record of ordered) {
         const sourceReference = `binance:${this.market}:${record.tranId}:funding`;
@@ -238,13 +241,13 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         });
       }
       const latest = ordered[ordered.length - 1].time;
-      if (records.length < 1000 || latest < cursor) {
-        cursor = Math.max(cursor, latest + 1);
+      cursor = latest + 1;
+      if (records.length < 1000 || latest < cursor - 1) {
+        cursor = Math.max(cursor, Date.now() - 60 * 60 * 1000);
         break;
       }
-      cursor = latest + 1;
     }
-    this.lastIncomeSyncTime = Math.max(cursor, Date.now() - 60 * 60 * 1000);
+    this.lastIncomeSyncTime = cursor;
   }
 
   private async refreshSnapshot(): Promise<void> {

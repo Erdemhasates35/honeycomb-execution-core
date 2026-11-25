@@ -727,8 +727,9 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         } catch (error) {
           if (!String(error instanceof Error ? error.message : error).includes("-4046")) throw error;
         }
-        const leverageResult = await this.engine.setLeverage(intent.symbol, intent.leverage!);
-        if (Number((leverageResult as { leverage?: number }).leverage) !== intent.leverage) throw new Error("Exchange leverage confirmation does not match requested leverage");
+        const requestedLeverage = intent.leverage ?? 1;
+        const leverageResult = await this.engine.setLeverage(intent.symbol, requestedLeverage);
+        if (Number((leverageResult as { leverage?: number }).leverage) !== requestedLeverage) throw new Error("Exchange leverage confirmation does not match requested leverage");
       } catch (error) {
         await this.telemetry.recordOrderEvent({
           intentId: intentResult.id,
@@ -870,7 +871,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return reconciled.fill;
   }
 
-  async close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null> {
+  async close(symbol: string, referencePrice?: number, guardApprovalDigest?: string, idempotencyKey?: string): Promise<Fill | null> {
     if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
     const positions = await this.engine.getPositionRisk(symbol);
     const active = positions.find((position) => Number(position.positionAmt) !== 0);
@@ -884,6 +885,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       referencePrice,
       reduceOnly: true,
       guardApprovalDigest,
+      idempotencyKey,
     });
   }
 

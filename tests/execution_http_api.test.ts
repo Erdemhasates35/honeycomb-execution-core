@@ -132,6 +132,21 @@ test("private routes reject missing and incorrect Bearer tokens", async () => {
   });
 });
 
+test("HTTP API rejects non-JSON order payloads", async () => {
+  const router = new ExecutionRouter({ mode: "TEST", market: "USDT_M" });
+  const handler = createExecutionHttpHandler(router, TOKEN);
+  await withServer(handler, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/order/open`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${TOKEN}`, "content-type": "text/plain" },
+      body: "not-json",
+    });
+    const payload = await response.json() as Record<string, unknown>;
+    assert.equal(response.status, 415);
+    assert.equal(payload.error, "application_json_required");
+  });
+});
+
 test("HTTP API rejects oversized order bodies before reaching the execution router", async () => {
   const router = new ExecutionRouter({ mode: "TEST", market: "USDT_M" });
   const handler = createExecutionHttpHandler(router, TOKEN);

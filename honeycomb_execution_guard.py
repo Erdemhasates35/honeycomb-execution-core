@@ -9,6 +9,7 @@ public market cache fed by Binance Futures WebSocket streams.
 from __future__ import annotations
 
 import fcntl
+import importlib
 import io
 import json
 import os
@@ -18,7 +19,8 @@ import threading
 import time
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, Optional
+from types import TracebackType
+from typing import Any, Dict, Optional, Self, cast
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 RUNTIME = os.path.join(ROOT, ".honeycomb_runtime")
@@ -103,12 +105,12 @@ def _write_state(d: Dict[str, Any]) -> None:
 
 
 class _FileGuard:
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.fd = open(LOCK_PATH, "a+")
         fcntl.flock(self.fd, fcntl.LOCK_EX)
         return self
 
-    def __exit__(self, *_):
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None:
         try:
             fcntl.flock(self.fd, fcntl.LOCK_UN)
         finally:
@@ -199,13 +201,13 @@ class _SimpleResponse:
     def read(self, amt: int = -1) -> bytes:
         return self._bio.read(amt)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *_):
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None:
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         self._bio.close()
 
 
@@ -290,11 +292,14 @@ def _get_mark(symbol: str) -> Optional[Dict[str, Any]]:
     with _db_lock:
         con = _db(); row = con.execute("SELECT ts,payload FROM mark WHERE symbol=?", (symbol.upper(),)).fetchone(); con.close()
     if not row or time.time()-row[0] > PUBLIC_CACHE_TTL: return None
-    try: return json.loads(row[1])
-    except Exception: return None
+    try:
+        payload = json.loads(row[1])
+        return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
 
 
-def _get_klines(symbol: str, interval: str, limit: int) -> Optional[list]:
+def _get_klines(symbol: str, interval: str, limit: int) -> Optional[list[Any]]:
     with _db_lock:
         con = _db(); rows = con.execute("SELECT payload FROM kline WHERE symbol=? AND interval=? ORDER BY open_time DESC LIMIT ?", (symbol.upper(), interval, int(limit))).fetchall(); con.close()
     if len(rows) < int(limit): return None
@@ -314,7 +319,7 @@ def cache_public(url: str) -> Optional[Any]:
             bid, ask = float(b["bidPrice"]), float(b["askPrice"])
             return {"symbol": symbol, "price": "%.12f" % ((bid + ask) / 2.0)}
     if p.endswith("/klines") and symbol:
-        interval = (q.get("interval") or ["1m"])[0]; limit = int((q.get("limit") or [500])[0])
+        interval = (q.get("interval") or ["1m"])[0]; limit = int((q.get("limit") or ["500"])[0])
         return _get_klines(symbol, interval, limit)
     return None
 
@@ -323,7 +328,9 @@ def cache_seed_public(url: str, payload: Any) -> None:
     u = urllib.parse.urlparse(url); p = u.path; q = urllib.parse.parse_qs(u.query); symbol = (q.get("symbol") or [""])[0].upper()
     try:
         if p.endswith("/exchangeInfo"):
-            _put_kv("exchangeInfo:" + u.hostname, payload); return
+            if u.hostname:
+                _put_kv("exchangeInfo:" + u.hostname, payload)
+            return
         if p.endswith("/ticker/bookTicker") and isinstance(payload, dict): _put_book(payload); return
         if p.endswith("/premiumIndex") and isinstance(payload, dict): _put_mark(payload); return
         if p.endswith("/klines") and symbol and isinstance(payload, list):
@@ -354,8 +361,10 @@ def _ws_url() -> str:
 
 
 def _ws_worker() -> None:
-    try: import websocket
-    except Exception: return
+    try:
+        websocket = importlib.import_module("websocket")
+    except Exception:
+        return
     if not WS_ENABLED: return
     fd = open(WS_LOCK_PATH, "a+")
     try: fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -392,11 +401,11 @@ def start_ws() -> None:
         threading.Thread(target=_ws_worker, name="honeycomb-binance-ws", daemon=True).start()
 
 
-_ORIGINAL_URLOPEN = urllib.request.urlopen
+_ORIGINAL_URLOPEN = cast(Any, urllib.request.urlopen)
 _PATCHED = False
 
 
-def guarded_urlopen(url_or_req: Any, data=None, timeout=None, *args, **kwargs):
+def guarded_urlopen(url_or_req: Any, data: Any = None, timeout: Any = None, *args: Any, **kwargs: Any) -> Any:
     req_url = url_or_req.full_url if hasattr(url_or_req, "full_url") else str(url_or_req)
     host = urllib.parse.urlparse(req_url).hostname
     if host not in _BINANCE_HOSTS:
@@ -417,8 +426,11 @@ def guarded_urlopen(url_or_req: Any, data=None, timeout=None, *args, **kwargs):
         return resp
     except Exception as e:
         code=getattr(e,"code",None); body=""
-        try: body=e.read().decode("utf-8") if hasattr(e,"read") else str(e)
-        except Exception: body=str(e)
+        try:
+            reader = getattr(e, "read", None)
+            body = reader().decode("utf-8") if callable(reader) else str(e)
+        except Exception:
+            body = str(e)
         if code in (418,429) or "-1003" in body:
             RATE_GATE.record_http_error(int(code or 418), body, getattr(e,"headers",None))
         raise
@@ -432,7 +444,7 @@ def install() -> None:
     if "," in lp:
         first = lp.split(",",1)[0].strip()
         if first: os.environ["LEARNING_DB_PATH"] = first
-    urllib.request.urlopen = guarded_urlopen
+    setattr(urllib.request, "urlopen", guarded_urlopen)
     start_ws()
 
 install()

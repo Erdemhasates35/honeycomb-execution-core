@@ -870,7 +870,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
     return reconciled.fill;
   }
 
-  async close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null> {
+  async close(symbol: string, referencePrice?: number, guardApprovalDigest?: string, idempotencyKey?: string): Promise<Fill | null> {
     if (!this.initialized) throw new Error("Binance execution adapter is not initialized");
     const positions = await this.engine.getPositionRisk(symbol);
     const active = positions.find((position) => Number(position.positionAmt) !== 0);
@@ -884,6 +884,7 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
       referencePrice,
       reduceOnly: true,
       guardApprovalDigest,
+      idempotencyKey,
     });
   }
 

@@ -37,8 +37,9 @@ def load_env(path=None):
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
                     env[k.strip()] = v.strip().split("#")[0].strip()
+    # Process environment must override file values (especially LIVE_ARMED).
     for k, v in os.environ.items():
-        env.setdefault(k, v)
+        env[k] = v
     return env
 
 class TokenBucket:

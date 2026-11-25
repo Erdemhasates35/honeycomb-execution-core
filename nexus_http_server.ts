@@ -71,8 +71,8 @@ export function assertProductionExecutionMode(mode: string): asserts mode is "TE
 }
 
 export function validateControlApiToken(token: string): void {
-  if (Buffer.byteLength(token, "utf8") < 32) {
-    throw new Error("CONTROL_API_TOKEN must contain at least 32 bytes");
+  if (Buffer.byteLength(token.trim(), "utf8") < 32) {
+    throw new Error("CONTROL_API_TOKEN must contain at least 32 non-whitespace bytes");
   }
 }
 
@@ -311,7 +311,7 @@ export async function startExecutionApi(): Promise<void> {
   const mode = (process.env.EXECUTION_MODE ?? "").trim().toUpperCase();
   assertProductionExecutionMode(mode);
 
-  const token = process.env.CONTROL_API_TOKEN ?? "";
+  const token = process.env.CONTROL_API_TOKEN?.trim() ?? "";
   validateControlApiToken(token);
 
   const port = Number(process.env.HTTP_PORT ?? "8080");

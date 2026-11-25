@@ -202,7 +202,7 @@ jobs:
               except Exception as e:
                   print(f"  ⚠️ DB check skipped: {e}")
           else:
-              print("\\n[DB] NOT RUN: no runtime SQLite database was provisioned in CI; no database-integrity claim is made.")
+              print("\n[DB] NOT RUN: no runtime SQLite database was provisioned in CI; no database-integrity claim is made.")
           DB_INTEGRITY
 
       # ========== 新增: SECURITY CHECKS ==========

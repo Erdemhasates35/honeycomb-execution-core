@@ -5,12 +5,41 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
+
+function loadEnvFile() {
+  const envPath = path.join(ROOT, '.env');
+  try {
+    for (const raw of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line || line.startsWith('#') || !line.includes('=')) continue;
+      const [key, ...rest] = line.split('=');
+      if (key && process.env[key] === undefined) {
+        process.env[key] = rest.join('=').trim().replace(/^['"]|['"]$/g, '');
+      }
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+}
+loadEnvFile();
+
 const RUNTIME = path.join(ROOT, '.honeycomb_runtime');
 const STATE = path.join(RUNTIME, 'binance_guard.json');
-const LOCK = path.join(RUNTIME, 'binance_guard.node.lock');
+// This exact lock path and O_EXCL protocol are shared with honeycomb_execution_guard.py.
+const LOCK = path.join(RUNTIME, 'binance_guard.lock');
+const LOCK_STALE_MS = 60_000;
 fs.mkdirSync(RUNTIME, { recursive: true });
-const SAFE_WEIGHT = Number(process.env.BINANCE_SAFE_WEIGHT_PER_MIN || 900);
-const SAFE_ORDERS = Number(process.env.BINANCE_SAFE_ORDERS_PER_10S || 60);
+
+function positiveLimit(name, fallback) {
+  const raw = process.env[name];
+  const value = raw === undefined || raw.trim() === '' ? fallback : Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name} must be a finite positive number`);
+  }
+  return value;
+}
+const SAFE_WEIGHT = positiveLimit('BINANCE_SAFE_WEIGHT_PER_MIN', 900);
+const SAFE_ORDERS = positiveLimit('BINANCE_SAFE_ORDERS_PER_10S', 60);
 const HOSTS = new Set(['fapi.binance.com','dapi.binance.com','testnet.binancefuture.com','demo-fapi.binance.com']);
 
 function sleep(ms) {
@@ -18,12 +47,46 @@ function sleep(ms) {
 }
 function withLock(fn) {
   for (;;) {
+    let fd;
     try {
-      const fd = fs.openSync(LOCK, 'wx', 0o600);
-      try { return fn(); } finally { fs.closeSync(fd); try { fs.unlinkSync(LOCK); } catch {} }
-    } catch (e) {
-      if (e?.code !== 'EEXIST') throw e;
+      fd = fs.openSync(LOCK, 'wx', 0o600);
+      fs.writeFileSync(fd, `${process.pid} ${Date.now()}\n`);
+    } catch (error) {
+      if (fd !== undefined) {
+        const own = fs.fstatSync(fd);
+        fs.closeSync(fd);
+        try {
+          const current = fs.statSync(LOCK);
+          if (current.dev === own.dev && current.ino === own.ino) fs.unlinkSync(LOCK);
+        } catch {}
+      }
+      if (error?.code !== 'EEXIST') throw error;
+      try {
+        const previous = fs.statSync(LOCK);
+        if (Date.now() - previous.mtimeMs > LOCK_STALE_MS) {
+          const current = fs.statSync(LOCK);
+          if (current.dev === previous.dev && current.ino === previous.ino) {
+            fs.unlinkSync(LOCK);
+            continue;
+          }
+        }
+      } catch (statError) {
+        if (statError?.code === 'ENOENT') continue;
+        throw statError;
+      }
       sleep(25);
+      continue;
+    }
+
+    try {
+      return fn();
+    } finally {
+      try {
+        const own = fs.fstatSync(fd);
+        const current = fs.statSync(LOCK);
+        if (current.dev === own.dev && current.ino === own.ino) fs.unlinkSync(LOCK);
+      } catch {}
+      fs.closeSync(fd);
     }
   }
 }

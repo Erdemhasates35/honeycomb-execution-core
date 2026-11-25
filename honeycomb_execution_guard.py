@@ -12,6 +12,7 @@ import fcntl
 import importlib
 import io
 import json
+import math
 import os
 import re
 import sqlite3
@@ -30,12 +31,6 @@ LOCK_PATH = os.path.join(RUNTIME, "binance_guard.lock")
 WS_LOCK_PATH = os.path.join(RUNTIME, "binance_market_ws.lock")
 CACHE_DB = os.path.join(RUNTIME, "market_cache.db")
 
-SAFE_WEIGHT_PER_MIN = float(os.getenv("BINANCE_SAFE_WEIGHT_PER_MIN", "900"))
-SAFE_ORDERS_PER_10S = float(os.getenv("BINANCE_SAFE_ORDERS_PER_10S", "60"))
-PUBLIC_CACHE_TTL = float(os.getenv("BINANCE_PUBLIC_CACHE_TTL", "8"))
-EXCHANGEINFO_TTL = float(os.getenv("BINANCE_EXCHANGEINFO_TTL", "21600"))
-WS_ENABLED = os.getenv("BINANCE_WS_FIRST", "1") != "0"
-
 _BINANCE_HOSTS = {
     "fapi.binance.com", "dapi.binance.com",
     "testnet.binancefuture.com", "demo-fapi.binance.com",
@@ -53,15 +48,43 @@ def _load_env_file() -> Dict[str, str]:
                     if line and not line.startswith("#") and "=" in line:
                         k, v = line.split("=", 1)
                         out[k.strip()] = v.strip().split("#")[0].strip()
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError("Failed to read the repository .env file") from exc
     for k, v in os.environ.items():
-        out.setdefault(k, v)
+        out[k] = v
     return out
 
 
 ENV = _load_env_file()
 
+
+def _positive_env_float(name: str, default: float) -> float:
+    raw = ENV.get(name, str(default))
+    try:
+        value = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"{name} must be a finite positive number") from exc
+    if not math.isfinite(value) or value <= 0:
+        raise RuntimeError(f"{name} must be a finite positive number")
+    return value
+
+
+def _nonnegative_env_float(name: str, default: float) -> float:
+    raw = ENV.get(name, str(default))
+    try:
+        value = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"{name} must be a finite non-negative number") from exc
+    if not math.isfinite(value) or value < 0:
+        raise RuntimeError(f"{name} must be a finite non-negative number")
+    return value
+
+
+SAFE_WEIGHT_PER_MIN = _positive_env_float("BINANCE_SAFE_WEIGHT_PER_MIN", 900)
+SAFE_ORDERS_PER_10S = _positive_env_float("BINANCE_SAFE_ORDERS_PER_10S", 60)
+PUBLIC_CACHE_TTL = _nonnegative_env_float("BINANCE_PUBLIC_CACHE_TTL", 8)
+EXCHANGEINFO_TTL = _nonnegative_env_float("BINANCE_EXCHANGEINFO_TTL", 21600)
+WS_ENABLED = ENV.get("BINANCE_WS_FIRST", "1") != "0"
 
 def parse_retry_after(headers: Any) -> Optional[float]:
     try:
@@ -104,17 +127,52 @@ def _write_state(d: Dict[str, Any]) -> None:
     os.replace(tmp, STATE_PATH)
 
 
+LOCK_STALE_SECONDS = 60.0
+
+
 class _FileGuard:
     def __enter__(self) -> Self:
-        self.fd = open(LOCK_PATH, "a+")
-        fcntl.flock(self.fd, fcntl.LOCK_EX)
-        return self
+        while True:
+            try:
+                fd = os.open(LOCK_PATH, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            except FileExistsError:
+                try:
+                    previous = os.stat(LOCK_PATH)
+                    if time.time() - previous.st_mtime > LOCK_STALE_SECONDS:
+                        current = os.stat(LOCK_PATH)
+                        if (current.st_dev, current.st_ino) == (previous.st_dev, previous.st_ino):
+                            os.unlink(LOCK_PATH)
+                            continue
+                except FileNotFoundError:
+                    continue
+                time.sleep(0.025)
+                continue
+
+            try:
+                os.write(fd, f"{os.getpid()} {time.time():.6f}\n".encode("ascii"))
+            except Exception:
+                own = os.fstat(fd)
+                os.close(fd)
+                try:
+                    current = os.stat(LOCK_PATH)
+                    if (current.st_dev, current.st_ino) == (own.st_dev, own.st_ino):
+                        os.unlink(LOCK_PATH)
+                except FileNotFoundError:
+                    pass
+                raise
+            self.fd = fd
+            return self
 
     def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None:
         try:
-            fcntl.flock(self.fd, fcntl.LOCK_UN)
+            own = os.fstat(self.fd)
+            current = os.stat(LOCK_PATH)
+            if (current.st_dev, current.st_ino) == (own.st_dev, own.st_ino):
+                os.unlink(LOCK_PATH)
+        except FileNotFoundError:
+            pass
         finally:
-            self.fd.close()
+            os.close(self.fd)
 
 
 def _weight_for_url(url: str, method: str) -> int:

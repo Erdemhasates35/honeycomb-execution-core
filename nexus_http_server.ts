@@ -80,8 +80,7 @@ export function parseOpenIntent(value: unknown, mode: ExecutionMode): OrderInten
   const body = asRecord(value);
   validateKnownFields(body, [
     "symbol", "side", "quantity", "size", "leverage", "referencePrice", "positionSide",
-    "clientOrderId", "strategyCode", "riskProfileCode", "idempotencyKey",
-    "stopLossPrice", "takeProfitPrice", "guardApprovalDigest",
+    "clientOrderId", "idempotencyKey", "stopLossPrice", "takeProfitPrice", "guardApprovalDigest",
   ]);
 
   const symbol = typeof body.symbol === "string" ? body.symbol.trim().toUpperCase() : "";
@@ -99,8 +98,8 @@ export function parseOpenIntent(value: unknown, mode: ExecutionMode): OrderInten
   const guardApprovalDigest = optionalString(body.guardApprovalDigest, "guard_approval_digest", 512);
   if (mode === "LIVE" && !guardApprovalDigest) throw new ApiError(400, "live_guard_approval_digest_required");
 
-  const leverage = optionalPositiveNumber(body.leverage, "leverage");
-  if (leverage !== undefined && (leverage < 1 || leverage > 125)) throw new ApiError(400, "leverage_out_of_range");
+  const leverage = optionalPositiveNumber(body.leverage, "leverage") ?? 1;
+  if (leverage < 1 || leverage > 125) throw new ApiError(400, "leverage_out_of_range");
 
   const positionSideRaw = optionalString(body.positionSide, "position_side", 5);
   const positionSide = positionSideRaw?.toUpperCase() as "LONG" | "SHORT" | undefined;
@@ -113,8 +112,6 @@ export function parseOpenIntent(value: unknown, mode: ExecutionMode): OrderInten
     throw new ApiError(400, "invalid_client_order_id");
   }
 
-  const strategyCode = optionalString(body.strategyCode, "strategy_code", 64);
-  const riskProfileCode = optionalString(body.riskProfileCode, "risk_profile_code", 64);
   const referencePrice = optionalPositiveNumber(body.referencePrice, "reference_price");
   const stopLossPrice = optionalPositiveNumber(body.stopLossPrice, "stop_loss_price");
   const takeProfitPrice = optionalPositiveNumber(body.takeProfitPrice, "take_profit_price");
@@ -128,8 +125,6 @@ export function parseOpenIntent(value: unknown, mode: ExecutionMode): OrderInten
     ...(referencePrice === undefined ? {} : { referencePrice }),
     ...(positionSide === undefined ? {} : { positionSide }),
     ...(clientOrderId === undefined ? {} : { clientOrderId }),
-    ...(strategyCode === undefined ? {} : { strategyCode }),
-    ...(riskProfileCode === undefined ? {} : { riskProfileCode }),
     ...(stopLossPrice === undefined ? {} : { stopLossPrice }),
     ...(takeProfitPrice === undefined ? {} : { takeProfitPrice }),
     ...(guardApprovalDigest === undefined ? {} : { guardApprovalDigest }),

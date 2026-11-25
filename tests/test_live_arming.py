@@ -1,8 +1,11 @@
+import os
+import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
-from live.kernel import LiveKernel, TokenBucket
+from live.kernel import LiveKernel, TokenBucket, load_env
 
 
 class NoNetworkKernel(LiveKernel):
@@ -81,6 +84,18 @@ class OpenKernel(NoNetworkKernel):
 
 
 class LiveKernelSafetyTests(unittest.TestCase):
+    def test_process_environment_overrides_dotenv_values(self):
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as handle:
+            handle.write("LIVE_ARMED=1\\nBINANCE_API_KEY=file-key\\n")
+            path = handle.name
+        try:
+            with patch.dict(os.environ, {"LIVE_ARMED": "0", "BINANCE_API_KEY": "process-key"}):
+                loaded = load_env(path)
+            self.assertEqual(loaded["LIVE_ARMED"], "0")
+            self.assertEqual(loaded["BINANCE_API_KEY"], "process-key")
+        finally:
+            os.unlink(path)
+
     def test_every_state_change_requires_live_arming_before_network(self):
         kernel = NoNetworkKernel(
             env={

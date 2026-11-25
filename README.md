@@ -66,8 +66,6 @@ Example entry request:
   "side": "LONG",
   "quantity": 0.001,
   "leverage": 1,
-  "strategyCode": "your_enabled_strategy",
-  "riskProfileCode": "your_enabled_risk_profile",
   "idempotencyKey": "unique-client-generated-key",
   "guardApprovalDigest": "signed-guard-digest"
 }

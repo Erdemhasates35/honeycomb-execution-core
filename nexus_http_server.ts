@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { timingSafeEqual, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -297,7 +298,21 @@ function listen(server: ReturnType<typeof createServer>, host: string, port: num
   });
 }
 
+function loadEnv(): void {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (!fs.existsSync(envPath)) return;
+  for (const raw of fs.readFileSync(envPath, "utf8").split(/\\r?\\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#") || !line.includes("=")) continue;
+    const [key, ...rest] = line.split("=");
+    if (key && process.env[key] === undefined) {
+      process.env[key] = rest.join("=").trim().replace(/^['"]|['"]$/g, "");
+    }
+  }
+}
+
 export async function startExecutionApi(): Promise<void> {
+  loadEnv();
   const mode = (process.env.EXECUTION_MODE ?? "").trim().toUpperCase();
   assertProductionExecutionMode(mode);
 

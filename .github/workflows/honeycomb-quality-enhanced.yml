@@ -140,7 +140,7 @@ jobs:
       - name: Action workflow lint
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7
 
-            - name: Live kernel safety and fill-contract unit tests (no network calls)
+      - name: Live kernel safety and fill-contract unit tests (no network calls)
         run: python3 -m unittest discover -s tests -p 'test_live_*.py' -v
 
       - name: Local rate limiter throughput check (not exchange latency)

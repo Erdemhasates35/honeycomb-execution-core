@@ -23,5 +23,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
-      - run: python -m unittest discover -s tests -p 'test_live_fill_contract.py' -v
-      - run: python -m compileall -q live tests/test_live_fill_contract.py
+      - name: Live kernel safety and fill-contract unit tests (no network calls)
+        run: python -m unittest discover -s tests -p 'test_live_*.py' -v
+      - name: Compile live kernel and focused tests
+        run: python -m compileall -q live tests/test_live_*.py

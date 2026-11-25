@@ -37,30 +37,39 @@ def load_env(path=None):
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
                     env[k.strip()] = v.strip().split("#")[0].strip()
+    # Process environment must override file values (especially LIVE_ARMED).
     for k, v in os.environ.items():
-        env.setdefault(k, v)
+        env[k] = v
     return env
 
 class TokenBucket:
     def __init__(self, wpm=1800.0, o10=200.0):
+        if not math.isfinite(wpm) or not math.isfinite(o10) or wpm <= 0 or o10 <= 0:
+            raise ValueError("Token bucket capacities must be finite and positive")
         self.w_cap, self.o_cap, self.w, self.o = wpm, o10, wpm, o10
-        self.t = time.time()
+        self.t = time.monotonic()
         self.lock = threading.Lock()
+
     def take(self, weight=1, is_order=False):
-        with self.lock:
-            now = time.time()
-            elapsed = now - self.t
-            self.t = now
-            self.w = min(self.w_cap, self.w + elapsed * (self.w_cap / 60.0))
-            self.o = min(self.o_cap, self.o + elapsed * (self.o_cap / 10.0))
-            if self.w < weight or (is_order and self.o < 1):
-                need_w = max(0, (weight - self.w) / (self.w_cap / 60.0))
-                need_o = max(0, (1 - self.o) / (self.o_cap / 10.0)) if is_order else 0
-                time.sleep(max(need_w, need_o, 0.05))
-                return self.take(weight, is_order)
-            self.w -= weight
-            if is_order: self.o -= 1
-            return True
+        if not math.isfinite(weight) or weight <= 0 or weight > self.w_cap:
+            raise ValueError("Request weight must be finite, positive and no greater than bucket capacity")
+        while True:
+            with self.lock:
+                now = time.monotonic()
+                elapsed = max(0.0, now - self.t)
+                self.t = now
+                self.w = min(self.w_cap, self.w + elapsed * (self.w_cap / 60.0))
+                self.o = min(self.o_cap, self.o + elapsed * (self.o_cap / 10.0))
+                need_w = max(0.0, (weight - self.w) / (self.w_cap / 60.0))
+                need_o = max(0.0, (1.0 - self.o) / (self.o_cap / 10.0)) if is_order else 0.0
+                if need_w <= 0 and need_o <= 0:
+                    self.w -= weight
+                    if is_order:
+                        self.o -= 1
+                    return True
+                wait_seconds = max(need_w, need_o, 0.01)
+            # Never sleep or recurse while holding the non-reentrant lock.
+            time.sleep(wait_seconds)
 
 class SingleFlight:
     def __init__(self, path=None):
@@ -159,7 +168,7 @@ class LiveKernel:
                 self._dual = bool(dual) if dual is not None else self._dual
                 return self._dual
             self.log("position_mode: %s" % e)
-            return self._dual
+            raise RuntimeError("Binance position mode could not be verified") from e
 
     def _sign(self, params: Dict) -> str:
         # Değerler string, insertion order korunur — Binance imza kuralı
@@ -168,7 +177,18 @@ class LiveKernel:
         sig = hmac.new(self.secret, qs.encode("utf-8"), hashlib.sha256).hexdigest()
         return qs + "&signature=" + sig
 
+    def _assert_mutation_authorized(self, method, signed):
+        method = method.upper()
+        if method not in ("POST", "PUT", "PATCH", "DELETE"):
+            return
+        if not signed:
+            raise RuntimeError("State-changing Binance requests must be signed")
+        if self.env.get("LIVE_ARMED") != "1":
+            raise RuntimeError("LIVE_ARMED=1 is required before any Binance state-changing request")
+
     def _http(self, method, path, params=None, signed=False, weight=1, is_order=False, retries=3):
+        method = method.upper()
+        self._assert_mutation_authorized(method, signed)
         if time.time() < self._stale_until:
             raise RuntimeError("stale-halt active %.0fs" % (self._stale_until - time.time()))
         self.bucket.take(weight, is_order)
@@ -183,7 +203,8 @@ class LiveKernel:
         data = body.encode("utf-8") if method != "GET" else None
         headers = {"X-MBX-APIKEY": self.key, "Content-Type": "application/x-www-form-urlencoded"}
         last_err = None
-        attempts = 1 if is_order and method == "POST" else retries
+        # Never automatically replay a state-changing request after an ambiguous response.
+        attempts = 1 if method in ("POST", "PUT", "PATCH", "DELETE") else retries
         for attempt in range(attempts):
             try:
                 req = urllib.request.Request(url, data=data, headers=headers, method=method)
@@ -274,19 +295,26 @@ class LiveKernel:
         return total if side is None else 0.0
 
     def set_leverage(self, symbol, lev):
-        try:
-            self._http("POST", self.v["leverage"], {"symbol": symbol, "leverage": int(lev)}, signed=True, weight=1, is_order=True)
-        except Exception as e:
-            self.log("lev set %s: %s" % (symbol, e))
+        if not isinstance(lev, (int, float)) or not math.isfinite(lev) or int(lev) < 1 or int(lev) > 125:
+            raise ValueError("leverage must be an integer between 1 and 125")
+        self._http("POST", self.v["leverage"], {"symbol": symbol, "leverage": int(lev)}, signed=True, weight=1, is_order=True)
 
     def set_margin(self, symbol, isolated=True):
+        mt = "ISOLATED" if isolated else "CROSSED"
         try:
-            mt = "ISOLATED" if isolated else "CROSSED"
             self._http("POST", self.v["marginType"], {"symbol": symbol, "marginType": mt}, signed=True, weight=1, is_order=True)
         except Exception as e:
-            if "No need" not in str(e): self.log("margin %s: %s" % (symbol, e))
+            if "No need" not in str(e) and "not modified" not in str(e).lower():
+                raise
 
     def place_market(self, symbol, side, qty, position_side=None, reduce_only=False):
+        self._assert_mutation_authorized("POST", signed=True)
+        try:
+            qty = float(qty)
+        except (TypeError, ValueError):
+            raise ValueError("quantity must be a finite positive number")
+        if not math.isfinite(qty) or qty <= 0:
+            raise ValueError("quantity must be a finite positive number")
         f = self.get_filters(symbol)
         q = self.round_step(qty, f["stepSize"])
         if self.venue == "coin":
@@ -298,11 +326,10 @@ class LiveKernel:
         elif side in ("SHORT", "SELL"): order_side = "SELL"
         else: raise ValueError("Invalid side: %s" % side)
         params = {"symbol": symbol, "side": order_side, "type": "MARKET", "quantity": q}
-        # Position mode kontrolü
-        try:
-            dual = self.position_mode()
-        except Exception:
-            dual = False
+        # Position mode must be known; never guess One-Way mode after an API error.
+        dual = self.position_mode()
+        if not isinstance(dual, bool):
+            raise RuntimeError("Binance position mode is unknown; order submission blocked")
         if dual and position_side:
             params["positionSide"] = position_side
         elif not dual:
@@ -315,26 +342,36 @@ class LiveKernel:
         return self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
 
     def place_protect(self, symbol, side, entry, tp, sl, position_side=None):
+        self._assert_mutation_authorized("POST", signed=True)
+        if side not in ("LONG", "SHORT"):
+            raise ValueError("protective order side must be LONG or SHORT")
+        values = (entry, tp, sl)
+        if any(not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0 for value in values):
+            raise ValueError("entry, take-profit and stop-loss prices must be finite and positive")
+        if side == "LONG" and not (tp > entry > sl):
+            raise ValueError("LONG protection requires take-profit > entry > stop-loss")
+        if side == "SHORT" and not (tp < entry < sl):
+            raise ValueError("SHORT protection requires take-profit < entry < stop-loss")
         close_side = "SELL" if side == "LONG" else "BUY"
         ps = position_side or ("LONG" if side == "LONG" else "SHORT")
+        acknowledgements = []
         for kind, stop in (("TAKE_PROFIT_MARKET", tp), ("STOP_MARKET", sl)):
-            try:
-                params = {
-                    "symbol": symbol, "side": close_side, "type": kind,
-                    "stopPrice": round(stop, 8), "closePosition": "true",
-                    "workingType": "MARK_PRICE",
-                }
-                if position_side:
-                    params["positionSide"] = ps
-                self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
-            except Exception as e:
-                self.log("protect %s fail: %s" % (kind, e))
+            params = {
+                "symbol": symbol, "side": close_side, "type": kind,
+                "stopPrice": round(stop, 8), "closePosition": "true",
+                "workingType": "MARK_PRICE",
+            }
+            if position_side:
+                params["positionSide"] = ps
+            result = self._http("POST", self.v["order"], params, signed=True, weight=1, is_order=True)
+            if not isinstance(result, dict) or not result.get("orderId"):
+                raise RuntimeError("Protective %s order returned no exchange orderId" % kind)
+            acknowledgements.append({"type": kind, "orderId": result["orderId"], "status": result.get("status", "NEW")})
+        return acknowledgements
 
     def cancel_all(self, symbol):
-        try:
-            self._http("DELETE", self.v["allOpen"], {"symbol": symbol}, signed=True, weight=1, is_order=True)
-        except Exception as e:
-            self.log("cancel_all %s: %s" % (symbol, e))
+        self._assert_mutation_authorized("DELETE", signed=True)
+        return self._http("DELETE", self.v["allOpen"], {"symbol": symbol}, signed=True, weight=1, is_order=True)
 
     def resolve_fill(self, symbol, order_id, fallback_avg=None, qty=None):
         if order_id is None or str(order_id).strip() == "":
@@ -371,6 +408,14 @@ class LiveKernel:
         raise RuntimeError("order %s execution quantity could not be reconciled to userTrades" % order_id)
 
     def open_market(self, symbol, side, risk_pct, lev, tp_pct, sl_pct, max_notional=200.0):
+        self._assert_mutation_authorized("POST", signed=True)
+        numeric_inputs = (risk_pct, lev, tp_pct, sl_pct, max_notional)
+        if any(not isinstance(value, (int, float)) or not math.isfinite(value) for value in numeric_inputs):
+            raise ValueError("risk, leverage, protection and notional inputs must be finite numbers")
+        if not (0 < risk_pct <= 1) or not (1 <= int(lev) <= 125):
+            raise ValueError("risk_pct must be in (0, 1] and leverage must be between 1 and 125")
+        if int(lev) != lev or tp_pct <= 0 or sl_pct <= 0 or tp_pct >= 100 or sl_pct >= 100 or max_notional <= 0:
+            raise ValueError("invalid leverage, take-profit, stop-loss or max_notional")
         side = str(side).upper().strip()
         if side in ("LONG", "BUY"):
             side = "LONG"
@@ -402,22 +447,41 @@ class LiveKernel:
             slip_bps = abs(fill["avg"] - entry_px) / entry_px * 10000 if entry_px else 0
             if slip_bps > 25:
                 self.log("SLIP REJECT %.1f bps — closing" % slip_bps)
-                try: self.close_market(symbol, side, fill["qty"], pos_side)
-                except Exception: pass
-                raise RuntimeError("slip %.1f bps" % slip_bps)
+                try:
+                    self.close_market(symbol, side, fill["qty"], pos_side)
+                except Exception as close_error:
+                    raise RuntimeError(
+                        "slippage limit exceeded and emergency flatten could not be confirmed; "
+                        "manual exchange reconciliation is required"
+                    ) from close_error
+                raise RuntimeError("slippage %.1f bps exceeded the 25 bps limit; position flattened" % slip_bps)
             entry = fill["avg"]
             if side == "LONG":
                 tp, sl = entry * (1 + tp_pct / 100.0), entry * (1 - sl_pct / 100.0)
             else:
                 tp, sl = entry * (1 - tp_pct / 100.0), entry * (1 + sl_pct / 100.0)
-            self.place_protect(symbol, side, entry, tp, sl, pos_side)
+            try:
+                protective_orders = self.place_protect(symbol, side, entry, tp, sl, pos_side)
+            except Exception as protection_error:
+                try:
+                    self.close_market(symbol, side, fill["qty"], pos_side)
+                except Exception as close_error:
+                    raise RuntimeError(
+                        "CRITICAL: protective order placement failed and emergency flatten could not be confirmed; "
+                        "the exchange position requires immediate reconciliation"
+                    ) from close_error
+                raise RuntimeError(
+                    "protective order placement failed; emergency flatten completed and open orders were canceled"
+                ) from protection_error
             self.log("OPEN %s %s entry=%.6f qty=%s oid=%s slip=%.1fbps" % (side, symbol, entry, qty, oid, slip_bps))
             return {"symbol": symbol, "side": side, "entry": entry, "qty": fill["qty"], "tp": tp, "sl": sl,
-                    "oid": oid, "commission": fill["commission"], "slip_bps": slip_bps, "pos_side": pos_side}
+                    "oid": oid, "commission": fill["commission"], "slip_bps": slip_bps,
+                    "pos_side": pos_side, "protective_orders": protective_orders}
         finally:
             self.flock.release()
 
     def close_market(self, symbol, side, qty, position_side=None):
+        self._assert_mutation_authorized("POST", signed=True)
         real = self.position_amt(symbol, side)
         if real <= 0: raise RuntimeError("no position on exchange")
         f = self.get_filters(symbol)
@@ -427,8 +491,7 @@ class LiveKernel:
         res = self.place_market(symbol, close_side, q, position_side, reduce_only=True)
         oid = res.get("orderId")
         fill = self.resolve_fill(symbol, oid, float(res.get("avgPrice") or 0) or 1.0, q)
-        try: self.cancel_all(symbol)
-        except Exception: pass
+        self.cancel_all(symbol)
         self.log("CLOSE %s %s exit=%.6f oid=%s rp=%.6f" % (side, symbol, fill["avg"], oid, fill["rp"]))
         return fill
 

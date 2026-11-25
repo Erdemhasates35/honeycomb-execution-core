@@ -217,8 +217,8 @@ jobs:
           
           # Scan source and configuration text; exclude credentials files and test fixtures.
           dangerous_patterns = [
-              (r'''(?i)\\b(?:BINANCE_API_KEY|BINANCE_API_SECRET|BINANCE_SECRET|SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY|OPENROUTER_API_KEY|ANTHROPIC_API_KEY)\\b\\s*[:=]\\s*["']([A-Za-z0-9_./+=-]{24,})["']''', "Hardcoded credential"),
-              (r'''(?i)\\bLIVE_ARMED\\b\\s*[:=]\\s*["']1["']''', "Hardcoded LIVE mode"),
+              (r'''(?i)\b(?:BINANCE_API_KEY|BINANCE_API_SECRET|BINANCE_SECRET|SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY|OPENROUTER_API_KEY|ANTHROPIC_API_KEY)\b\s*[:=]\s*["']([A-Za-z0-9_./+=-]{24,})["']''', "Hardcoded credential"),
+              (r'''(?i)\bLIVE_ARMED\b\s*[:=]\s*["']1["']''', "Hardcoded LIVE mode"),
           ]
           allowed_suffixes = {".py", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".sh", ".json", ".yml", ".yaml", ".toml"}
           excluded_parts = {".git", "node_modules", ".env", "test", "coverage", "dist", "build"}

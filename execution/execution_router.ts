@@ -77,7 +77,7 @@ export class ExecutionRouter implements ExecutionAdapter {
 
   initialize(): Promise<void> { return this.adapter.initialize(); }
   place(intent: OrderIntent): Promise<Fill> { return this.adapter.place(intent); }
-  close(symbol: string, referencePrice?: number, guardApprovalDigest?: string): Promise<Fill | null> { return this.adapter.close(symbol, referencePrice, guardApprovalDigest); }
+  close(symbol: string, referencePrice?: number, guardApprovalDigest?: string, idempotencyKey?: string): Promise<Fill | null> { return this.adapter.close(symbol, referencePrice, guardApprovalDigest, idempotencyKey); }
   markPrice(symbol: string): Promise<number> { return this.adapter.markPrice(symbol); }
   snapshot(): ExecutionSnapshot { return this.adapter.snapshot(); }
   terminate(): Promise<void> { return this.adapter.terminate(); }

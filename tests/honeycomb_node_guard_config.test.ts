@@ -9,7 +9,7 @@ test("Node Binance guard fails closed on a non-finite request-weight limit", () 
     {
       cwd: process.cwd(),
       encoding: "utf8",
-      env: { ...process.env, BINANCE_SAFE_WEIGHT_PER_MIN: "NaN" },
+      env: { ...process.env, BINANCE_SAFE_WEIGHT_PER_MIN: "NaN", BINANCE_SAFE_ORDERS_PER_10S: "60" },
     },
   );
 
@@ -24,7 +24,7 @@ test("Node Binance guard fails closed on a non-positive order limit", () => {
     {
       cwd: process.cwd(),
       encoding: "utf8",
-      env: { ...process.env, BINANCE_SAFE_ORDERS_PER_10S: "0" },
+      env: { ...process.env, BINANCE_SAFE_WEIGHT_PER_MIN: "900", BINANCE_SAFE_ORDERS_PER_10S: "0" },
     },
   );
 

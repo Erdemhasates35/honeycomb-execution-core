@@ -152,6 +152,9 @@ export function parseCloseIntent(value: unknown, mode: ExecutionMode): CloseInte
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
+  const contentType = request.headers["content-type"]?.split(";")[0].trim().toLowerCase();
+  if (contentType !== "application/json") throw new ApiError(415, "application_json_required");
+
   const chunks: Buffer[] = [];
   let totalBytes = 0;
 

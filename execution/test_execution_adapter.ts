@@ -65,7 +65,7 @@ export class TestExecutionAdapter implements ExecutionAdapter {
     return fill;
   }
 
-  async close(symbol: string, referencePrice?: number, _guardApprovalDigest?: string): Promise<Fill | null> {
+  async close(symbol: string, referencePrice?: number, _guardApprovalDigest?: string, _idempotencyKey?: string): Promise<Fill | null> {
     const position = this.positions.get(symbol);
     if (!position) return null;
     const price = referencePrice ?? await this.markPrice(symbol);

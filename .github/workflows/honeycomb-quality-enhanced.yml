@@ -221,7 +221,7 @@ jobs:
               (r'''(?i)\bLIVE_ARMED\b\s*[:=]\s*["']1["']''', "Hardcoded LIVE mode"),
           ]
           allowed_suffixes = {".py", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".sh", ".json", ".yml", ".yaml", ".toml"}
-          excluded_parts = {".git", "node_modules", ".env", "test", "coverage", "dist", "build"}
+          excluded_parts = {".git", "node_modules", ".env", "test", "tests", "fixtures", "coverage", "dist", "build"}
           leaked_files = []
           scanned_files = 0
 

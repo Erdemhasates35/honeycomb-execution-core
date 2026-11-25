@@ -58,19 +58,30 @@ jobs:
         if: hashFiles('package.json') != ''
         run: npm test
 
-      - name: Python type checking (mypy)
+      - name: Python type checking (mypy advisory; not a release gate)
         run: |
-          mypy honeycomb_execution_guard.py --strict --no-implicit-optional 2>&1 | tee mypy-report.txt || true
-          if grep -q "error:" mypy-report.txt; then
-            echo "⚠️ Type hints need improvement"
+          set +e
+          mypy honeycomb_execution_guard.py --strict --no-implicit-optional 2>&1 | tee mypy-report.txt
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::mypy reported issues; this advisory step is not counted as a passing type gate."
           else
-            echo "✅ All type checks passed"
+            echo "mypy reported no issues for honeycomb_execution_guard.py"
           fi
+          exit 0
 
-      - name: Python linting (pyright)
+      - name: Python type checking (pyright advisory; not a release gate)
         run: |
-          pyright honeycomb_execution_guard.py --outputjson > pyright-report.json || true
+          set +e
+          pyright honeycomb_execution_guard.py --outputjson > pyright-report.json
+          status=$?
           cat pyright-report.json
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::pyright reported issues; this advisory step is not counted as a passing type gate."
+          else
+            echo "pyright reported no issues for honeycomb_execution_guard.py"
+          fi
+          exit 0
 
       - name: Python compile gate
         run: |
@@ -129,102 +140,28 @@ jobs:
       - name: Action workflow lint
         uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7
 
-      # ========== 新增: FINANCIAL ERROR HANDLING TESTS ==========
-      - name: Financial Error Simulation Tests
-        run: |
-          python3 <<'FINANCIAL_TESTS'
-          import sys
-          import traceback
-          
-          tests_passed = 0
-          tests_failed = 0
-          
-          # Test 1: API Disconnect During Order
-          print("\n[TEST 1] API Disconnect Simulation")
-          try:
-              # Simulate Binance connection drop
-              class MockAPIFail:
-                  def __init__(self):
-                      raise ConnectionError("Connection refused")
-              
-              try:
-                  mock = MockAPIFail()
-              except ConnectionError as e:
-                  print(f"  ✅ Correctly caught: {e}")
-                  tests_passed += 1
-          except Exception as e:
-              print(f"  ❌ Failed: {e}")
-              traceback.print_exc()
-              tests_failed += 1
-          
-          # Test 2: Margin Call Response
-          print("\n[TEST 2] Margin Call Detection")
-          try:
-              error_response = {
-                  "code": -2015,
-                  "msg": "Invalid quantity."
-              }
-              
-              if error_response["code"] == -2015:
-                  print(f"  ✅ Margin call detected correctly")
-                  tests_passed += 1
-          except Exception as e:
-              print(f"  ❌ Failed: {e}")
-              tests_failed += 1
-          
-          # Test 3: Binance Ban Backoff
-          print("\n[TEST 3] Rate Limit / Ban Backoff")
-          try:
-              import time
-              
-              def backoff_strategy(attempt):
-                  return min(2 ** attempt, 600)  # exponential, max 10min
-              
-              for i in range(3):
-                  delay = backoff_strategy(i)
-                  print(f"  Attempt {i+1}: {delay}s backoff")
-              
-              print(f"  ✅ Backoff strategy implemented")
-              tests_passed += 1
-          except Exception as e:
-              print(f"  ❌ Failed: {e}")
-              tests_failed += 1
-          
-          print(f"\n{'='*50}")
-          print(f"Financial Tests: {tests_passed} passed, {tests_failed} failed")
-          
-          if tests_failed > 0:
-              sys.exit(1)
-          FINANCIAL_TESTS
+            - name: Live kernel safety and fill-contract unit tests (no network calls)
+        run: python3 -m unittest discover -s tests -p 'test_live_*.py' -v
 
-      # ========== 新增: PERFORMANCE BENCHMARKING ==========
-      - name: Order Latency Benchmark
+      - name: Local rate limiter throughput check (not exchange latency)
         run: |
-          python3 <<'ORDER_BENCH'
+          python3 <<'RATE_LIMITER'
+          import math
           import time
-          import sys
-          
-          print("\n[BENCH] Order Processing Latency")
-          
-          # Simulate rate gate check 1000x
-          start = time.time()
-          for i in range(1000):
-              # Simulate order submission
-              pass
-          elapsed = time.time() - start
-          
-          latency_per_order = (elapsed / 1000) * 1000  # ms
-          
-          print(f"  1000 order gate checks: {elapsed:.3f}s")
-          print(f"  Per-order latency: {latency_per_order:.2f}ms")
-          
-          TARGET_MS = 2.5
-          if latency_per_order <= TARGET_MS:
-              print(f"  ✅ Within target ({TARGET_MS}ms)")
-          else:
-              print(f"  ⚠️ Above target ({TARGET_MS}ms)")
-              sys.exit(1)
-          ORDER_BENCH
+          from live.kernel import TokenBucket
+
+          bucket = TokenBucket(wpm=1_000_000.0, o10=1_000_000.0)
+          start = time.perf_counter()
+          operations = 10_000
+          for _ in range(operations):
+              bucket.take(weight=1)
+          elapsed = time.perf_counter() - start
+          throughput = operations / elapsed if elapsed > 0 else float("inf")
+          if not math.isfinite(throughput) or throughput <= 0:
+              raise SystemExit("Rate limiter throughput measurement is invalid")
+          print(f"Local TokenBucket throughput: {throughput:.0f} operations/s")
+          print("This is a local code-path measurement, not exchange order latency or production performance.")
+          RATE_LIMITER
 
       # ========== 新增: DATABASE INTEGRITY ==========
       - name: SQLite Database Integrity Check
@@ -265,7 +202,7 @@ jobs:
               except Exception as e:
                   print(f"  ⚠️ DB check skipped: {e}")
           else:
-              print(f"\n[DB] Database will be created on first run (expected)")
+              print("\\n[DB] NOT RUN: no runtime SQLite database was provisioned in CI; no database-integrity claim is made.")
           DB_INTEGRITY
 
       # ========== 新增: SECURITY CHECKS ==========
@@ -329,24 +266,11 @@ jobs:
           print("\n[SAFETY] LIVE Mode Guard")
           
           if os.getenv('LIVE_ARMED') == '1':
-              print("  🔴 LIVE MODE DETECTED")
-              
-              # Production checks
-              checks = {
-                  'BINANCE_API_KEY': (len(os.getenv('BINANCE_API_KEY', '')), 64),
-                  'BINANCE_SECRET': (len(os.getenv('BINANCE_SECRET', '')), 64),
-              }
-              
-              for key, (actual, expected) in checks.items():
-                  if actual == expected:
-                      print(f"  ✅ {key}: {actual} chars (expected {expected})")
-                  else:
-                      print(f"  ❌ {key}: {actual} chars (expected {expected})")
-                      sys.exit(1)
-              
-              print("  ✅ LIVE mode safety checks PASSED")
+              print("  ❌ LIVE_ARMED must never be enabled in CI.")
+              print("  This workflow validates code; it must not be able to submit production orders.")
+              sys.exit(1)
           else:
-              print("  ✅ PAPER/TEST mode - no live checks needed")
+              print("  LIVE_ARMED is unset. CI validates code safety only; it does not prove live readiness or exchange connectivity.")
           
           LIVE_GUARD
 

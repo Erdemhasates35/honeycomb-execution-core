@@ -47,8 +47,8 @@ def _load_env_file() -> Dict[str, str]:
                     if line and not line.startswith("#") and "=" in line:
                         k, v = line.split("=", 1)
                         out[k.strip()] = v.strip().split("#")[0].strip()
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError("Failed to read the repository .env file") from exc
     for k, v in os.environ.items():
         out[k] = v
     return out

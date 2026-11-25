@@ -62,8 +62,6 @@ test("entry parser normalizes the request and accepts the documented size alias"
     side: "long",
     size: 0.001,
     leverage: 2,
-    strategyCode: "strategy_alpha",
-    riskProfileCode: "risk_conservative",
     idempotencyKey: "client-order-key-123",
     guardApprovalDigest: "signed-testnet-approval",
   }, "TESTNET");
@@ -73,6 +71,16 @@ test("entry parser normalizes the request and accepts the documented size alias"
   assert.equal(intent.quantity, 0.001);
   assert.equal(intent.leverage, 2);
   assert.equal(intent.idempotencyKey, "client-order-key-123");
+});
+
+test("entry parser does not let clients override server-owned strategy or risk profiles", () => {
+  assert.throws(
+    () => parseOpenIntent({
+      symbol: "BTCUSDT", side: "LONG", quantity: 0.001,
+      idempotencyKey: "client-order-key-123", strategyCode: "unapproved_strategy",
+    }, "TESTNET"),
+    /unexpected_field_strategyCode/,
+  );
 });
 
 test("close parser requires idempotency and a LIVE Guard approval digest", () => {

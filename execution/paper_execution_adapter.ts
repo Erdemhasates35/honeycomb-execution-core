@@ -112,7 +112,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     return fill;
   }
 
-  async close(symbol: string, referencePrice?: number, _guardApprovalDigest?: string): Promise<Fill | null> {
+  async close(symbol: string, referencePrice?: number, _guardApprovalDigest?: string, _idempotencyKey?: string): Promise<Fill | null> {
     const position = this.positions.get(symbol);
     if (!position) return null;
     const reference = referencePrice ?? await this.markPrice(symbol);

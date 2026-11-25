@@ -428,7 +428,8 @@ def guarded_urlopen(url_or_req: Any, data: Any = None, timeout: Any = None, *arg
         code=getattr(e,"code",None); body=""
         try:
             reader = getattr(e, "read", None)
-            body = reader().decode("utf-8") if callable(reader) else str(e)
+            raw_body = reader() if callable(reader) else None
+            body = raw_body.decode("utf-8", errors="replace") if isinstance(raw_body, bytes) else str(raw_body or e)
         except Exception:
             body = str(e)
         if code in (418,429) or "-1003" in body:

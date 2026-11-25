@@ -148,7 +148,7 @@ class _FileGuard:
                 continue
 
             try:
-                os.write(fd, f"{os.getpid()} {time.time():.6f}\\n".encode("ascii"))
+                os.write(fd, f"{os.getpid()} {time.time():.6f}\n".encode("ascii"))
             except Exception:
                 own = os.fstat(fd)
                 os.close(fd)

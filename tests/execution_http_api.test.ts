@@ -41,7 +41,8 @@ test("production HTTP API rejects TEST and PAPER execution modes", () => {
 });
 
 test("control API token must be at least 32 bytes", () => {
-  assert.throws(() => validateControlApiToken("short"), /at least 32 bytes/);
+  assert.throws(() => validateControlApiToken("short"), /at least 32 non-whitespace bytes/);
+  assert.throws(() => validateControlApiToken(" ".repeat(64)), /at least 32 non-whitespace bytes/);
   assert.doesNotThrow(() => validateControlApiToken(TOKEN));
 });
 

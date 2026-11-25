@@ -322,7 +322,12 @@ export async function startExecutionApi(): Promise<void> {
   const host = process.env.HTTP_HOST?.trim() || "127.0.0.1";
 
   const router = new ExecutionRouter({ mode: mode as ExecutionMode });
-  await router.initialize();
+  try {
+    await router.initialize();
+  } catch (error) {
+    try { await router.terminate(); } catch { /* preserve the initialization failure */ }
+    throw error;
+  }
 
   const logs: string[] = [];
   const server = createServer(createExecutionHttpHandler(router, token, logs));
@@ -331,7 +336,12 @@ export async function startExecutionApi(): Promise<void> {
   server.keepAliveTimeout = 5_000;
   server.maxHeadersCount = 50;
 
-  await listen(server, host, port);
+  try {
+    await listen(server, host, port);
+  } catch (error) {
+    try { await router.terminate(); } catch { /* preserve the bind failure */ }
+    throw error;
+  }
   process.stdout.write(JSON.stringify({
     status: "ready",
     service: "honeycomb-execution-core",
@@ -345,10 +355,13 @@ export async function startExecutionApi(): Promise<void> {
   const shutdown = async (): Promise<void> => {
     if (stopping) return;
     stopping = true;
-    await new Promise<void>((resolve, reject) => {
-      server.close((error) => error ? reject(error) : resolve());
-    });
-    await router.terminate();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => error ? reject(error) : resolve());
+      });
+    } finally {
+      await router.terminate();
+    }
   };
   const handleSignal = (): void => {
     void shutdown().then(() => {

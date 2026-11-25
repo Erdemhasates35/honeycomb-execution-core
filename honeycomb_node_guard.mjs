@@ -50,7 +50,7 @@ function withLock(fn) {
     let fd;
     try {
       fd = fs.openSync(LOCK, 'wx', 0o600);
-      fs.writeFileSync(fd, `${process.pid} ${Date.now()}\\n`);
+      fs.writeFileSync(fd, `${process.pid} ${Date.now()}\n`);
     } catch (error) {
       if (fd !== undefined) {
         const own = fs.fstatSync(fd);

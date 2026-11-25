@@ -58,30 +58,16 @@ jobs:
         if: hashFiles('package.json') != ''
         run: npm test
 
-      - name: Python type checking (mypy advisory; not a release gate)
-        run: |
-          set +e
-          mypy honeycomb_execution_guard.py --strict --no-implicit-optional 2>&1 | tee mypy-report.txt
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "::warning::mypy reported issues; this advisory step is not counted as a passing type gate."
-          else
-            echo "mypy reported no issues for honeycomb_execution_guard.py"
-          fi
-          exit 0
+      - name: Python strict type checking (mypy)
+        run: mypy honeycomb_execution_guard.py --strict --no-implicit-optional
 
-      - name: Python type checking (pyright advisory; not a release gate)
+      - name: Python strict type checking (pyright)
         run: |
-          set +e
-          pyright honeycomb_execution_guard.py --outputjson > pyright-report.json
-          status=$?
+          pyright honeycomb_execution_guard.py --outputjson > pyright-report.json || {
+            cat pyright-report.json
+            exit 1
+          }
           cat pyright-report.json
-          if [ "$status" -ne 0 ]; then
-            echo "::warning::pyright reported issues; this advisory step is not counted as a passing type gate."
-          else
-            echo "pyright reported no issues for honeycomb_execution_guard.py"
-          fi
-          exit 0
 
       - name: Python compile gate
         run: |
@@ -142,6 +128,19 @@ jobs:
 
       - name: Live kernel safety and fill-contract unit tests (no network calls)
         run: python3 -m unittest discover -s tests -p 'test_live_*.py' -v
+
+      - name: Repeat core test suites 10 times
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "$tmpdir"' EXIT
+          for attempt in $(seq 1 10); do
+            npm test >"$tmpdir/node-$attempt.log" 2>&1 || { cat "$tmpdir/node-$attempt.log"; exit 1; }
+            go test ./... >"$tmpdir/go-$attempt.log" 2>&1 || { cat "$tmpdir/go-$attempt.log"; exit 1; }
+            python3 -m unittest discover -s tests -p 'test_live_*.py' >"$tmpdir/python-$attempt.log" 2>&1 || { cat "$tmpdir/python-$attempt.log"; exit 1; }
+            echo "Core test iteration $attempt/10: PASS"
+          done
 
       - name: Local rate limiter throughput check (not exchange latency)
         run: |

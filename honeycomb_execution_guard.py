@@ -8,6 +8,7 @@ public market cache fed by Binance Futures WebSocket streams.
 """
 from __future__ import annotations
 
+import fcntl
 import importlib
 import io
 import json

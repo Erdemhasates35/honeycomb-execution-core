@@ -46,7 +46,7 @@ class TestLiveGuardLock(unittest.TestCase):
                 encoding="utf-8",
             )
             with patch.object(guard, "ROOT", directory):
-                with patch.dict(os.environ, {"BINANCE_SAFE_WEIGHT_PER_MIN": "200"}, clear=False):
+                with patch.dict(os.environ, {"BINANCE_SAFE_WEIGHT_PER_MIN": "200"}, clear=True):
                     loaded = guard._load_env_file()
 
         self.assertEqual(loaded["BINANCE_SAFE_WEIGHT_PER_MIN"], "200")

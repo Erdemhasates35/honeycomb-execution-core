@@ -727,8 +727,9 @@ export class BinanceLiveExecutionAdapter implements ExecutionAdapter {
         } catch (error) {
           if (!String(error instanceof Error ? error.message : error).includes("-4046")) throw error;
         }
-        const leverageResult = await this.engine.setLeverage(intent.symbol, intent.leverage!);
-        if (Number((leverageResult as { leverage?: number }).leverage) !== intent.leverage) throw new Error("Exchange leverage confirmation does not match requested leverage");
+        const requestedLeverage = intent.leverage ?? 1;
+        const leverageResult = await this.engine.setLeverage(intent.symbol, requestedLeverage);
+        if (Number((leverageResult as { leverage?: number }).leverage) !== requestedLeverage) throw new Error("Exchange leverage confirmation does not match requested leverage");
       } catch (error) {
         await this.telemetry.recordOrderEvent({
           intentId: intentResult.id,

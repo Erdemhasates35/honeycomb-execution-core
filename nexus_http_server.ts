@@ -102,7 +102,7 @@ export function parseOpenIntent(value: unknown, mode: ExecutionMode): OrderInten
   if (leverage !== undefined && (leverage < 1 || leverage > 125)) throw new ApiError(400, "leverage_out_of_range");
 
   const positionSideRaw = optionalString(body.positionSide, "position_side", 5);
-  const positionSide = positionSideRaw?.toUpperCase();
+  const positionSide = positionSideRaw?.toUpperCase() as "LONG" | "SHORT" | undefined;
   if (positionSide !== undefined && positionSide !== "LONG" && positionSide !== "SHORT") {
     throw new ApiError(400, "invalid_position_side");
   }

@@ -301,7 +301,7 @@ function listen(server: ReturnType<typeof createServer>, host: string, port: num
 function loadEnv(): void {
   const envPath = path.resolve(process.cwd(), ".env");
   if (!fs.existsSync(envPath)) return;
-  for (const raw of fs.readFileSync(envPath, "utf8").split(/\\r?\\n/)) {
+  for (const raw of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line.startsWith("#") || !line.includes("=")) continue;
     const [key, ...rest] = line.split("=");
